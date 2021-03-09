@@ -4,12 +4,14 @@
 #[cfg(feature = "dashboard")]
 pub mod dashboard;
 pub mod mps;
+#[cfg(feature = "mqtt")]
 pub mod mqtt;
 pub mod version_checker;
 
 #[cfg(feature = "dashboard")]
 pub use dashboard::Dashboard;
 pub use mps::Mps;
+#[cfg(feature = "mqtt")]
 pub use mqtt::Mqtt;
 pub use version_checker::VersionChecker;
 

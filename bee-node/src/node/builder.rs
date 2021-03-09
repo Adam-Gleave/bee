@@ -4,11 +4,14 @@
 #[cfg(feature = "dashboard")]
 use crate::plugins::Dashboard;
 
+#[cfg(feature = "mqtt")]
+use crate::plugins::Mqtt;
+
 use crate::{
     config::NodeConfig,
     constants::{BEE_GIT_COMMIT, BEE_VERSION},
     node::{BeeNode, Error},
-    plugins::{self, Mqtt, VersionChecker},
+    plugins::{self, VersionChecker},
     storage::StorageBackend,
 };
 
@@ -205,12 +208,16 @@ impl<B: StorageBackend> NodeBuilder<BeeNode<B>> for BeeNodeBuilder<B> {
 
         info!("Initializing tangle...");
         let this = bee_tangle::init::<BeeNode<B>>(this);
-
         let mut this = this.with_worker::<VersionChecker>();
-        this = this.with_worker_cfg::<Mqtt>(config.mqtt);
-        #[cfg(feature = "dashboard")]
+
+        #[cfg(feature = "mqtt")]
         {
-            this = this.with_worker_cfg::<Dashboard>(config.dashboard);
+        this = this.with_worker_cfg::<Mqtt>(config.mqtt);
+
+            #[cfg(feature = "dashboard")]
+            {
+                this = this.with_worker_cfg::<Dashboard>(config.dashboard);
+            }
         }
 
         let mut node = BeeNode {

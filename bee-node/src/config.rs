@@ -4,6 +4,7 @@
 #[cfg(feature = "dashboard")]
 use crate::plugins::dashboard::config::{DashboardConfig, DashboardConfigBuilder};
 
+#[cfg(feature = "mqtt")]
 use crate::plugins::mqtt::config::{MqttConfig, MqttConfigBuilder};
 
 use bee_common::logger::{LoggerConfig, LoggerConfigBuilder};
@@ -48,6 +49,7 @@ pub struct NodeConfigBuilder<B: StorageBackend> {
     pub(crate) storage: Option<B::ConfigBuilder>,
     pub(crate) tangle: Option<TangleConfigBuilder>,
     pub(crate) ledger: Option<LedgerConfigBuilder>,
+    #[cfg(feature = "mqtt")]
     pub(crate) mqtt: Option<MqttConfigBuilder>,
     #[cfg(feature = "dashboard")]
     pub(crate) dashboard: Option<DashboardConfigBuilder>,
@@ -83,6 +85,7 @@ impl<B: StorageBackend> NodeConfigBuilder<B> {
             storage: self.storage.unwrap_or_default().into(),
             tangle: self.tangle.unwrap_or_default().finish(),
             ledger: self.ledger.unwrap_or_default().finish(),
+            #[cfg(feature = "mqtt")]
             mqtt: self.mqtt.unwrap_or_default().finish(),
             #[cfg(feature = "dashboard")]
             dashboard: self.dashboard.unwrap_or_default().finish(),
@@ -103,6 +106,7 @@ pub struct NodeConfig<B: StorageBackend> {
     pub storage: B::Config,
     pub tangle: TangleConfig,
     pub ledger: LedgerConfig,
+    #[cfg(feature = "mqtt")]
     pub mqtt: MqttConfig,
     #[cfg(feature = "dashboard")]
     pub dashboard: DashboardConfig,
@@ -123,6 +127,7 @@ impl<B: StorageBackend> Clone for NodeConfig<B> {
             storage: self.storage.clone(),
             tangle: self.tangle.clone(),
             ledger: self.ledger.clone(),
+            #[cfg(feature = "mqtt")]
             mqtt: self.mqtt.clone(),
             #[cfg(feature = "dashboard")]
             dashboard: self.dashboard.clone(),
