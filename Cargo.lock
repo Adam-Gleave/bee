@@ -563,6 +563,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "bee-vote"
+version = "0.1.0"
+
+[[package]]
 name = "bindgen"
 version = "0.54.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
