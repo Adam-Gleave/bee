@@ -32,11 +32,11 @@ impl VoteContext {
     /// Constructs a new `VoteContext`.
     pub fn new(id: String, object_type: ObjectType, initial_opinion: Opinion) -> Self {
         Self {
-            id, 
-            object_type, 
-            liked: LIKED_INITIAL, 
-            rounds: 0, 
-            opinions: Opinions::new(vec![initial_opinion]), 
+            id,
+            object_type,
+            liked: LIKED_INITIAL,
+            rounds: 0,
+            opinions: Opinions::new(vec![initial_opinion]),
         }
     }
 
@@ -88,5 +88,17 @@ impl VoteContext {
     /// Described whether the `VoteContext` has *just* finished its first round.
     pub fn had_first_round(&self) -> bool {
         self.rounds == 1
+    }
+
+    pub fn id(&self) -> String {
+        self.id.clone()
+    }
+
+    pub fn liked(&self) -> f64 {
+        self.liked
+    }
+
+    pub fn rounds(&self) -> u32 {
+        self.rounds
     }
 }

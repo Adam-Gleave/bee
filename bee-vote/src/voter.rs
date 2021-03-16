@@ -1,6 +1,10 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
-use crate::{context::{ObjectType, VoteContext}, error::Error, opinion::{Opinion, QueriedOpinions}};
+use crate::{
+    context::{ObjectType, VoteContext},
+    error::Error,
+    opinion::{Opinion, QueriedOpinions},
+};
 
 use std::{collections::HashMap, time::Duration};
 
@@ -9,7 +13,7 @@ pub trait Voter {
 
     fn intermediate_opinion(id: String) -> Result<Opinion, Error>;
 
-    //TODO events
+    // TODO events
 }
 
 /// Holds data about a voting round.

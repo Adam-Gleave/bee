@@ -28,7 +28,7 @@ pub struct QueriedOpinions {
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Opinion {
     /// Defines a "like" opinion.
-    Like    = 0x01,
+    Like = 0x01,
     /// Defines a "dislike" opinion.
     Dislike = 0x02,
     /// Defines an "unknown" opinion.
