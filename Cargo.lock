@@ -565,6 +565,9 @@ dependencies = [
 [[package]]
 name = "bee-vote"
 version = "0.1.0-alpha"
+dependencies = [
+ "thiserror",
+]
 
 [[package]]
 name = "bindgen"

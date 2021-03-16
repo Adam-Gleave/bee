@@ -11,3 +11,4 @@ keywords = ["iota", "tangle", "bee", "framework", "message"]
 homepage = "https://www.iota.org"
 
 [dependencies]
+thiserror = "1.0"

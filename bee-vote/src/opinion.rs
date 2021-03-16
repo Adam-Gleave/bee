@@ -1,11 +1,12 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
-use std::{collections::HashMap, fmt, ops::Deref};
+use std::{collections::HashMap, fmt, ops};
 
 pub trait OpinionGiver {
     // TODO
 }
 
+#[derive(Debug)]
 /// Represents `Opinion`s queried from an `OpinionGiver`.
 pub struct QueriedOpinions {
     /// ID of the `OpinionGiver`.
@@ -39,11 +40,23 @@ impl fmt::Display for Opinion {
 /// Wrapper tuple struct for a collection of opinions.
 pub struct Opinions(Vec<Opinion>);
 
-impl Deref for Opinions {
+impl fmt::Debug for Opinions {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
+}
+
+impl ops::Deref for Opinions {
     type Target = Vec<Opinion>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl ops::DerefMut for Opinions {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
