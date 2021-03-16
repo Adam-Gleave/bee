@@ -1,9 +1,13 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
+use crate::{context::VoteContext, error::Error};
+
 use std::{collections::HashMap, fmt, ops};
 
 pub trait OpinionGiver {
-    // TODO
+    fn query(&self, ctx: VoteContext, conflict_ids: &[String], timestep_ids: &[String]) -> Result<Opinions, Error>;
+
+    fn id(&self) -> &str;
 }
 
 #[derive(Debug)]
