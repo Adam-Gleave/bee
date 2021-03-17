@@ -1,6 +1,10 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
-use crate::{context::{ObjectType, VoteContext}, error::Error, opinion::{self, Opinion, OpinionGiver, Opinions, QueriedOpinions, QueryIds}};
+use crate::{
+    context::{ObjectType, VoteContext},
+    error::Error,
+    opinion::{self, Opinion, OpinionGiver, Opinions, QueriedOpinions, QueryIds},
+};
 
 use rand::prelude::*;
 
@@ -116,7 +120,10 @@ where
             let (lower_bound, upper_bound) = if context.had_first_round() {
                 (self.params.first_round_lower_bound, self.params.first_round_upper_bound)
             } else {
-                (self.params.subsequent_rounds_lower_bound, self.params.subsequent_rounds_upper_bound)
+                (
+                    self.params.subsequent_rounds_lower_bound,
+                    self.params.subsequent_rounds_upper_bound,
+                )
             };
 
             if context.liked() >= self.rand_uniform_threshold(rand, lower_bound, upper_bound) {
@@ -133,20 +140,20 @@ where
 
         for (id, context) in context_guard.iter() {
             if context.finalized(self.params.cooling_off_period, self.params.finalization_threshold) {
-                //TODO fire finalized event
+                // TODO fire finalized event
                 to_remove.push(id.clone());
                 continue;
             }
 
             if context.rounds() >= self.params.max_rounds_per_vote_context {
-                //TODO fire failed event
+                // TODO fire failed event
                 to_remove.push(id.clone());
             }
         }
 
         for id in to_remove {
             context_guard.remove(&id);
-        }        
+        }
     }
 
     pub async fn query_opinions(&self) -> Result<Vec<QueriedOpinions>, Error> {
@@ -168,7 +175,7 @@ where
 
         for _ in 0..self.params.query_sample_size {
             let index = rng.sample(dist);
-            
+
             if let Some(selected_count) = queries.get_mut(index) {
                 *selected_count = *selected_count + 1;
             }
@@ -187,7 +194,7 @@ where
                     &query_ids,
                     vote_map.clone(),
                     all_queried_opinions.clone(),
-                    opinion_giver, 
+                    opinion_giver,
                     *selected_count,
                 ));
             }
@@ -201,13 +208,13 @@ where
         for (id, votes) in votes_guard.iter() {
             let mut liked_sum = 0.0;
             let mut voted_count = votes.len() as f64;
-        
+
             for vote in votes.iter() {
                 match vote {
-                    Opinion::Unknown => { voted_count -= 1.0 },
-                    Opinion::Like    => { liked_sum += 1.0 },
+                    Opinion::Unknown => voted_count -= 1.0,
+                    Opinion::Like => liked_sum += 1.0,
                     _ => {}
-                } 
+                }
             }
 
             contexts_guard.get_mut(id).unwrap().round_completed();
@@ -218,10 +225,10 @@ where
     }
 
     async fn do_query(
-        query_ids: &QueryIds, 
+        query_ids: &QueryIds,
         vote_map: Arc<Mutex<HashMap<String, Opinions>>>,
         all_queried_opinions: Arc<Mutex<Vec<QueriedOpinions>>>,
-        opinion_giver: &Box<dyn OpinionGiver>, 
+        opinion_giver: &Box<dyn OpinionGiver>,
         selected_count: u32,
     ) {
         let opinions = opinion_giver.query(query_ids);
@@ -236,9 +243,9 @@ where
             return;
         };
 
-        let mut queried_opinions = QueriedOpinions { 
-            opinion_giver_id: opinion_giver.id().to_string(), 
-            opinions:  HashMap::new(),
+        let mut queried_opinions = QueriedOpinions {
+            opinion_giver_id: opinion_giver.id().to_string(),
+            opinions: HashMap::new(),
             times_counted: selected_count,
         };
 
@@ -252,7 +259,7 @@ where
             }
 
             *queried_opinions.opinions.get_mut(id).unwrap() = opinions[i];
-            
+
             if vote_map_guard.contains_key(id) {
                 *vote_map_guard.get_mut(id).unwrap() = votes;
             } else {
@@ -268,7 +275,7 @@ where
             }
 
             *queried_opinions.opinions.get_mut(id).unwrap() = opinions[i];
-            
+
             if vote_map_guard.contains_key(id) {
                 *vote_map_guard.get_mut(id).unwrap() = votes;
             } else {
@@ -277,7 +284,7 @@ where
         }
 
         all_queried_opinions.lock().unwrap().push(queried_opinions);
-    } 
+    }
 
     fn vote_context_ids(&self) -> QueryIds {
         let context_guard = self.contexts.lock().unwrap();
@@ -286,19 +293,25 @@ where
 
         for (id, context) in context_guard.iter() {
             match context.object_type() {
-                ObjectType::Conflict => { conflict_ids.push(id.clone()); }
-                ObjectType::Timestamp => { timestamp_ids.push(id.clone()); }
+                ObjectType::Conflict => {
+                    conflict_ids.push(id.clone());
+                }
+                ObjectType::Timestamp => {
+                    timestamp_ids.push(id.clone());
+                }
             }
         }
 
-        QueryIds { conflict_ids, timestamp_ids }
+        QueryIds {
+            conflict_ids,
+            timestamp_ids,
+        }
     }
 
     fn rand_uniform_threshold(&self, rand: f64, lower_bound: f64, upper_bound: f64) -> f64 {
         lower_bound + rand * (upper_bound - lower_bound)
     }
 }
-
 
 pub struct FpcParameters {
     first_round_lower_bound: f64,
@@ -332,7 +345,8 @@ impl Default for FpcParameters {
 mod tests {
     use super::*;
     use crate::{
-        context::LIKED_INITIAL, opinion::{Opinion, Opinions},
+        context::LIKED_INITIAL,
+        opinion::{Opinion, Opinions},
     };
 
     impl VoteContext {
@@ -346,44 +360,59 @@ mod tests {
             }
         }
     }
+
     #[test]
     fn is_finalized() {
-        let ctx = VoteContext::with_opinions(Opinions::new(
-            vec![Opinion::Like, Opinion::Like, Opinion::Like, Opinion::Like, Opinion::Like],
-        ));
+        let ctx = VoteContext::with_opinions(Opinions::new(vec![
+            Opinion::Like,
+            Opinion::Like,
+            Opinion::Like,
+            Opinion::Like,
+            Opinion::Like,
+        ]));
 
         assert!(ctx.finalized(2, 2));
     }
 
     #[test]
     fn is_not_finalized() {
-        let ctx = VoteContext::with_opinions(Opinions::new(
-            vec![Opinion::Like, Opinion::Like, Opinion::Like, Opinion::Like, Opinion::Dislike],
-        ));
+        let ctx = VoteContext::with_opinions(Opinions::new(vec![
+            Opinion::Like,
+            Opinion::Like,
+            Opinion::Like,
+            Opinion::Like,
+            Opinion::Dislike,
+        ]));
 
         assert!(!ctx.finalized(2, 2));
     }
 
     #[test]
     fn last_opinion() {
-        let ctx = VoteContext::with_opinions(Opinions::new(
-            vec![Opinion::Like, Opinion::Like, Opinion::Like, Opinion::Like],
-        ));
+        let ctx = VoteContext::with_opinions(Opinions::new(vec![
+            Opinion::Like,
+            Opinion::Like,
+            Opinion::Like,
+            Opinion::Like,
+        ]));
 
         assert_eq!(ctx.last_opinion(), Some(Opinion::Like));
 
-        let ctx = VoteContext::with_opinions(Opinions::new(
-            vec![Opinion::Like, Opinion::Like, Opinion::Like, Opinion::Dislike],
-        ));
+        let ctx = VoteContext::with_opinions(Opinions::new(vec![
+            Opinion::Like,
+            Opinion::Like,
+            Opinion::Like,
+            Opinion::Dislike,
+        ]));
 
         assert_eq!(ctx.last_opinion(), Some(Opinion::Dislike));
     }
 
     #[test]
     fn prohibit_multiple_votes() {
-        let opinion_giver_fn = || { Err(Error::NoOpinionGivers) };
+        let opinion_giver_fn = || Err(Error::NoOpinionGivers);
 
-        let voter = Fpc { 
+        let voter = Fpc {
             opinion_giver_fn: Box::new(opinion_giver_fn),
             queue: Mutex::new(Queue::new()),
             contexts: Mutex::new(HashMap::new()),
@@ -393,6 +422,12 @@ mod tests {
 
         let id = "test".to_string();
         assert!(voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like).is_ok());
-        assert!(matches!(voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like), Err(Error::VoteOngoing(_))));
+        assert!(matches!(
+            voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like),
+            Err(Error::VoteOngoing(_))
+        ));
+
+        let id = "test_2".to_string();
+        assert!(voter.vote(id, ObjectType::Conflict, Opinion::Like).is_ok());
     }
 }
