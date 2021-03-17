@@ -3,7 +3,7 @@
 use crate::opinion::{Opinion, Opinions};
 
 /// Initial "liked" value for a new `Context`.
-const LIKED_INITIAL: f64 = -1.0;
+pub const LIKED_INITIAL: f64 = -1.0;
 
 /// Object type of a vote.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -16,16 +16,16 @@ pub enum ObjectType {
 #[derive(Debug)]
 pub struct VoteContext {
     /// Voter ID.
-    id: String,
+    pub(crate) id: String,
     /// Object type of the vote.
-    object_type: ObjectType,
+    pub(crate) object_type: ObjectType,
     /// The percentage of `OpinionGiver`s who liked this item on the last query.
-    liked: f64,
+    pub(crate) liked: f64,
     /// The number of voting rounds performed so far.
-    rounds: u32,
+    pub(crate) rounds: u32,
     /// List of opinions formed at the end of each voting round.
     /// The first in this list is the initial opinion when this `VoteContext` was created.
-    opinions: Opinions,
+    pub(crate) opinions: Opinions,
 }
 
 impl VoteContext {

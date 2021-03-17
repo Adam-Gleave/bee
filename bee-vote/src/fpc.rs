@@ -327,3 +327,72 @@ impl Default for FpcParameters {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        context::LIKED_INITIAL, opinion::{Opinion, Opinions},
+    };
+
+    impl VoteContext {
+        fn with_opinions(opinions: Opinions) -> Self {
+            Self {
+                id: "test".to_string(),
+                object_type: ObjectType::Conflict,
+                liked: LIKED_INITIAL,
+                rounds: 0,
+                opinions,
+            }
+        }
+    }
+    #[test]
+    fn is_finalized() {
+        let ctx = VoteContext::with_opinions(Opinions::new(
+            vec![Opinion::Like, Opinion::Like, Opinion::Like, Opinion::Like, Opinion::Like],
+        ));
+
+        assert!(ctx.finalized(2, 2));
+    }
+
+    #[test]
+    fn is_not_finalized() {
+        let ctx = VoteContext::with_opinions(Opinions::new(
+            vec![Opinion::Like, Opinion::Like, Opinion::Like, Opinion::Like, Opinion::Dislike],
+        ));
+
+        assert!(!ctx.finalized(2, 2));
+    }
+
+    #[test]
+    fn last_opinion() {
+        let ctx = VoteContext::with_opinions(Opinions::new(
+            vec![Opinion::Like, Opinion::Like, Opinion::Like, Opinion::Like],
+        ));
+
+        assert_eq!(ctx.last_opinion(), Some(Opinion::Like));
+
+        let ctx = VoteContext::with_opinions(Opinions::new(
+            vec![Opinion::Like, Opinion::Like, Opinion::Like, Opinion::Dislike],
+        ));
+
+        assert_eq!(ctx.last_opinion(), Some(Opinion::Dislike));
+    }
+
+    #[test]
+    fn prohibit_multiple_votes() {
+        let opinion_giver_fn = || { Err(Error::NoOpinionGivers) };
+
+        let voter = Fpc { 
+            opinion_giver_fn: Box::new(opinion_giver_fn),
+            queue: Mutex::new(Queue::new()),
+            contexts: Mutex::new(HashMap::new()),
+            params: Default::default(),
+            last_round_successful: false,
+        };
+
+        let id = "test".to_string();
+        assert!(voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like).is_ok());
+        assert!(matches!(voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like), Err(Error::VoteOngoing(_))));
+    }
+}
