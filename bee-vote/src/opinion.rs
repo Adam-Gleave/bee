@@ -1,26 +1,31 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
-use crate::{context::VoteContext, error::Error};
+use crate::error::Error;
 
 use std::{collections::HashMap, fmt, ops};
 
 pub trait OpinionGiver {
-    fn query(&self, ctx: VoteContext, conflict_ids: &[String], timestep_ids: &[String]) -> Result<Opinions, Error>;
+    fn query(&self, ids: &QueryIds) -> Result<Opinions, Error>;
 
     fn id(&self) -> &str;
+}
+
+pub struct QueryIds {
+    pub conflict_ids: Vec<String>,
+    pub timestamp_ids: Vec<String>,
 }
 
 #[derive(Debug)]
 /// Represents `Opinion`s queried from an `OpinionGiver`.
 pub struct QueriedOpinions {
     /// ID of the `OpinionGiver`.
-    opinion_giver_id: String,
+    pub opinion_giver_id: String,
     /// Map of IDs to `Opinion`s.
-    opinions: HashMap<String, Opinion>,
+    pub opinions: HashMap<String, Opinion>,
     /// The amount of times the `OpinionGiver`'s opinion has been counted.
     /// Usually this number is 1, but due to randomisation of the queried `OpinionGiver`s,
     /// the same `OpinionGiver`'s opinions might be counted multiple times.
-    times_counted: u32,
+    pub times_counted: u32,
 }
 
 /// Defines an opinion.
@@ -42,6 +47,7 @@ impl fmt::Display for Opinion {
 }
 
 /// Wrapper tuple struct for a collection of opinions.
+#[derive(Clone)]
 pub struct Opinions(Vec<Opinion>);
 
 impl fmt::Debug for Opinions {

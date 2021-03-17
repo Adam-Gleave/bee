@@ -6,7 +6,7 @@ use crate::opinion::{Opinion, Opinions};
 const LIKED_INITIAL: f64 = -1.0;
 
 /// Object type of a vote.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ObjectType {
     Conflict,
     Timestamp,
@@ -94,11 +94,23 @@ impl VoteContext {
         self.id.clone()
     }
 
+    pub fn object_type(&self) -> ObjectType {
+        self.object_type
+    }
+
     pub fn liked(&self) -> f64 {
         self.liked
     }
 
+    pub fn set_liked(&mut self, liked: f64) {
+        self.liked = liked;
+    }
+
     pub fn rounds(&self) -> u32 {
         self.rounds
+    }
+
+    pub fn round_completed(&mut self) {
+        self.rounds += 1;
     }
 }
