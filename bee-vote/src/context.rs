@@ -13,7 +13,7 @@ pub enum ObjectType {
 }
 
 /// Voting context.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct VoteContext {
     /// Voter ID.
     pub(crate) id: String,
