@@ -3,7 +3,8 @@
 use crate::{
     context::{ObjectType, VoteContext},
     error::Error,
-    opinion::{self, Opinion, OpinionGiver, Opinions, QueriedOpinions, QueryIds},
+    events::{Event, RoundStats, OpinionEvent},
+    opinion::{Opinion, OpinionGiver, Opinions, QueriedOpinions, QueryIds},
 };
 
 use rand::prelude::*;
@@ -12,7 +13,7 @@ use std::{
     collections::{HashMap, HashSet, VecDeque},
     default::Default,
     sync::{Arc, Mutex},
-    time::Duration,
+    time::{Duration, SystemTime},
 };
 
 struct Queue {
@@ -54,7 +55,6 @@ where
     contexts: Mutex<HashMap<String, VoteContext>>,
     params: FpcParameters,
     last_round_successful: bool,
-    // TODO rng
 }
 
 impl<F> Fpc<F>
@@ -154,6 +154,28 @@ where
         for id in to_remove {
             context_guard.remove(&id);
         }
+    }
+
+    pub async fn do_round(&self, rand: f64) -> Result<(), Error> {
+        let start = SystemTime::now();
+        self.enqueue();
+
+        if self.last_round_successful {
+            self.form_opinions(rand);
+            self.finalize_opinions();
+        }
+
+        let queried_opinions = self.query_opinions().await?;
+        let round_stats = RoundStats {
+            duration: start.elapsed().unwrap(),
+            rand_used: rand,
+            vote_contexts: self.contexts.lock().unwrap().clone(),
+            queried_opinions,
+        };
+
+        //TODO fire round event
+
+        Ok(())
     }
 
     pub async fn query_opinions(&self) -> Result<Vec<QueriedOpinions>, Error> {
