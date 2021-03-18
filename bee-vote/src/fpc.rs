@@ -7,7 +7,9 @@ use crate::{
     opinion::{Opinion, OpinionGiver, Opinions, QueriedOpinions, QueryIds},
 };
 
+use flume::Sender;
 use rand::prelude::*;
+use tokio::time::timeout;
 
 use std::{
     collections::{HashMap, HashSet, VecDeque},
@@ -55,6 +57,7 @@ where
     contexts: Mutex<HashMap<String, VoteContext>>,
     params: FpcParameters,
     last_round_successful: bool,
+    tx: Option<Sender<Event>>,
 }
 
 impl<F> Fpc<F>
@@ -68,11 +71,17 @@ where
             contexts: Mutex::new(HashMap::new()),
             params: Default::default(),
             last_round_successful: false,
+            tx: None,
         }
     }
 
     pub fn with_params(mut self, params: FpcParameters) -> Self {
         self.params = params;
+        self
+    }
+
+    pub fn with_tx(mut self, tx: Sender<Event>) -> Self {
+        self.tx = Some(tx);
         self
     }
 
@@ -140,13 +149,21 @@ where
 
         for (id, context) in context_guard.iter() {
             if context.finalized(self.params.cooling_off_period, self.params.finalization_threshold) {
-                // TODO fire finalized event
+                self.tx.as_ref().unwrap().send(
+                    Event::Finalized(OpinionEvent { 
+                        id: id.clone(), opinion: context.last_opinion().unwrap(), context: context.clone() 
+                    })
+                ).unwrap();
                 to_remove.push(id.clone());
                 continue;
             }
 
             if context.rounds() >= self.params.max_rounds_per_vote_context {
-                // TODO fire failed event
+                self.tx.as_ref().unwrap().send(
+                    Event::Failed(OpinionEvent { 
+                        id: id.clone(), opinion: context.last_opinion().unwrap(), context: context.clone() 
+                    })
+                ).unwrap();
                 to_remove.push(id.clone());
             }
         }
@@ -173,7 +190,7 @@ where
             queried_opinions,
         };
 
-        //TODO fire round event
+        self.tx.as_ref().unwrap().send(Event::RoundExecuted(round_stats)).unwrap();
 
         Ok(())
     }
@@ -212,12 +229,15 @@ where
             if *selected_count > 0 {
                 let opinion_giver = &opinion_givers[i];
 
-                futures.push(Self::do_query(
-                    &query_ids,
-                    vote_map.clone(),
-                    all_queried_opinions.clone(),
-                    opinion_giver,
-                    *selected_count,
+                futures.push(timeout(
+                    self.params.query_timeout, 
+                    Self::do_query(
+                        &query_ids,
+                        vote_map.clone(),
+                        all_queried_opinions.clone(),
+                        opinion_giver,
+                        *selected_count,
+                    )
                 ));
             }
         }
@@ -440,6 +460,7 @@ mod tests {
             contexts: Mutex::new(HashMap::new()),
             params: Default::default(),
             last_round_successful: false,
+            tx: None,
         };
 
         let id = "test".to_string();

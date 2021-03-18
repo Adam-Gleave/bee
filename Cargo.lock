@@ -566,9 +566,11 @@ dependencies = [
 name = "bee-vote"
 version = "0.1.0-alpha"
 dependencies = [
+ "flume",
  "futures",
  "rand 0.8.3",
  "thiserror",
+ "tokio",
 ]
 
 [[package]]
