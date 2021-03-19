@@ -5,7 +5,7 @@ use crate::error::Error;
 use std::{collections::HashMap, fmt, ops};
 
 pub trait OpinionGiver {
-    fn query(&self, ids: &QueryIds) -> Result<Opinions, Error>;
+    fn query(&mut self, ids: &QueryIds) -> Result<Opinions, Error>;
 
     fn id(&self) -> &str;
 }

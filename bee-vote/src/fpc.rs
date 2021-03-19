@@ -56,7 +56,7 @@ where
     queue: Mutex<Queue>,
     contexts: Mutex<HashMap<String, VoteContext>>,
     params: FpcParameters,
-    last_round_successful: bool,
+    last_round_successful: Mutex<bool>,
     tx: Option<Sender<Event>>,
 }
 
@@ -70,7 +70,7 @@ where
             queue: Mutex::new(Queue::new()),
             contexts: Mutex::new(HashMap::new()),
             params: Default::default(),
-            last_round_successful: false,
+            last_round_successful: Mutex::new(false),
             tx: None,
         }
     }
@@ -177,12 +177,14 @@ where
         let start = SystemTime::now();
         self.enqueue();
 
-        if self.last_round_successful {
+        if *self.last_round_successful.lock().unwrap() {
             self.form_opinions(rand);
             self.finalize_opinions();
         }
 
         let queried_opinions = self.query_opinions().await?;
+        *self.last_round_successful.lock().unwrap() = true;
+
         let round_stats = RoundStats {
             duration: start.elapsed().unwrap(),
             rand_used: rand,
@@ -203,13 +205,13 @@ where
             return Ok(vec![]);
         }
 
-        let opinion_givers = (self.opinion_giver_fn)()?;
+        let mut opinion_givers = (self.opinion_giver_fn)()?;
 
         if opinion_givers.len() == 0 {
             return Err(Error::NoOpinionGivers);
         }
 
-        let dist = rand::distributions::Uniform::new_inclusive(0, opinion_givers.len());
+        let dist = rand::distributions::Uniform::new(0, opinion_givers.len());
         let mut queries = vec![0u32; opinion_givers.len()];
 
         for _ in 0..self.params.query_sample_size {
@@ -225,10 +227,10 @@ where
 
         let mut futures = vec![];
 
-        for (i, selected_count) in queries.iter().enumerate() {
-            if *selected_count > 0 {
-                let opinion_giver = &opinion_givers[i];
+        for (i, opinion_giver) in opinion_givers.iter_mut().enumerate() {
+            let selected_count = queries.get(i).unwrap();
 
+            if *selected_count > 0 {
                 futures.push(timeout(
                     self.params.query_timeout, 
                     Self::do_query(
@@ -238,7 +240,7 @@ where
                         opinion_giver,
                         *selected_count,
                     )
-                ));
+                )); 
             }
         }
 
@@ -260,6 +262,11 @@ where
             }
 
             contexts_guard.get_mut(id).unwrap().round_completed();
+            
+            if voted_count == 0.0 {
+                continue;
+            }
+
             contexts_guard.get_mut(id).unwrap().set_liked(liked_sum / voted_count);
         }
 
@@ -270,7 +277,7 @@ where
         query_ids: &QueryIds,
         vote_map: Arc<Mutex<HashMap<String, Opinions>>>,
         all_queried_opinions: Arc<Mutex<Vec<QueriedOpinions>>>,
-        opinion_giver: &Box<dyn OpinionGiver>,
+        opinion_giver: &mut Box<dyn OpinionGiver>,
         selected_count: u32,
     ) {
         let opinions = opinion_giver.query(query_ids);
@@ -300,7 +307,7 @@ where
                 votes.push(opinions[i]);
             }
 
-            *queried_opinions.opinions.get_mut(id).unwrap() = opinions[i];
+            queried_opinions.opinions.insert(id.to_string(), opinions[i]);
 
             if vote_map_guard.contains_key(id) {
                 *vote_map_guard.get_mut(id).unwrap() = votes;
@@ -316,7 +323,7 @@ where
                 votes.push(opinions[i]);
             }
 
-            *queried_opinions.opinions.get_mut(id).unwrap() = opinions[i];
+            queried_opinions.opinions.insert(id.to_string(), opinions[i]);
 
             if vote_map_guard.contains_key(id) {
                 *vote_map_guard.get_mut(id).unwrap() = votes;
@@ -356,15 +363,15 @@ where
 }
 
 pub struct FpcParameters {
-    first_round_lower_bound: f64,
-    first_round_upper_bound: f64,
-    subsequent_rounds_lower_bound: f64,
-    subsequent_rounds_upper_bound: f64,
-    query_sample_size: u32,
-    finalization_threshold: u32,
-    cooling_off_period: u32,
-    max_rounds_per_vote_context: u32,
-    query_timeout: Duration,
+    pub first_round_lower_bound: f64,
+    pub first_round_upper_bound: f64,
+    pub subsequent_rounds_lower_bound: f64,
+    pub subsequent_rounds_upper_bound: f64,
+    pub query_sample_size: u32,
+    pub finalization_threshold: u32,
+    pub cooling_off_period: u32,
+    pub max_rounds_per_vote_context: u32,
+    pub query_timeout: Duration,
 }
 
 impl Default for FpcParameters {
@@ -459,7 +466,7 @@ mod tests {
             queue: Mutex::new(Queue::new()),
             contexts: Mutex::new(HashMap::new()),
             params: Default::default(),
-            last_round_successful: false,
+            last_round_successful: Mutex::new(false),
             tx: None,
         };
 
