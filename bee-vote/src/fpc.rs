@@ -14,7 +14,10 @@ use tokio::time::timeout;
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     default::Default,
-    sync::{Arc, Mutex},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Mutex,
+    },
     time::{Duration, SystemTime},
 };
 
@@ -31,7 +34,7 @@ impl Queue {
         }
     }
 
-    pub fn contains(&self, value: &String) -> bool {
+    pub fn contains(&self, value: &str) -> bool {
         self.queue_set.contains(value)
     }
 
@@ -56,7 +59,7 @@ where
     queue: Mutex<Queue>,
     contexts: Mutex<HashMap<String, VoteContext>>,
     params: FpcParameters,
-    last_round_successful: Mutex<bool>,
+    last_round_successful: AtomicBool,
     tx: Option<Sender<Event>>,
 }
 
@@ -70,7 +73,7 @@ where
             queue: Mutex::new(Queue::new()),
             contexts: Mutex::new(HashMap::new()),
             params: Default::default(),
-            last_round_successful: Mutex::new(false),
+            last_round_successful: AtomicBool::new(false),
             tx: None,
         }
     }
@@ -185,13 +188,13 @@ where
         let start = SystemTime::now();
         self.enqueue();
 
-        if *self.last_round_successful.lock().unwrap() {
+        if self.last_round_successful.load(Ordering::Relaxed) {
             self.form_opinions(rand);
             self.finalize_opinions();
         }
 
         let queried_opinions = self.query_opinions().await?;
-        *self.last_round_successful.lock().unwrap() = true;
+        self.last_round_successful.store(true, Ordering::Relaxed);
 
         let round_stats = RoundStats {
             duration: start.elapsed().unwrap(),
@@ -213,13 +216,13 @@ where
         let mut rng = thread_rng();
         let query_ids = self.vote_context_ids();
 
-        if query_ids.conflict_ids.len() == 0 && query_ids.timestamp_ids.len() == 0 {
+        if query_ids.conflict_ids.is_empty() && query_ids.timestamp_ids.is_empty() {
             return Ok(vec![]);
         }
 
         let mut opinion_givers = (self.opinion_giver_fn)()?;
 
-        if opinion_givers.len() == 0 {
+        if opinion_givers.is_empty() {
             return Err(Error::NoOpinionGivers);
         }
 
@@ -230,7 +233,7 @@ where
             let index = rng.sample(dist);
 
             if let Some(selected_count) = queries.get_mut(index) {
-                *selected_count = *selected_count + 1;
+                *selected_count += 1;
             }
         }
 
