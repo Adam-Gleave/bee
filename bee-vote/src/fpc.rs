@@ -21,12 +21,19 @@ use std::{
     time::{Duration, SystemTime},
 };
 
+pub const DEFAULT_SAMPLE_SIZE: u32 = 21;
+
+/// Stores `VoteContext`s in a queue, and provides a HashMap for quick lookup.
+#[derive(Debug)]
 struct Queue {
+    /// Queue of all `VoteContext`s
     queue: VecDeque<VoteContext>,
+    /// `HashSet` of IDs, for quick lookup.
     queue_set: HashSet<String>,
 }
 
 impl Queue {
+    /// Construct a new, empty `Queue`.
     pub fn new() -> Self {
         Self {
             queue: VecDeque::new(),
@@ -34,15 +41,18 @@ impl Queue {
         }
     }
 
+    /// Look up a `VoteContext` ID and determine if it is in the queue.
     pub fn contains(&self, value: &str) -> bool {
         self.queue_set.contains(value)
     }
 
+    /// Push a new `VoteContext` to the end of the queue.
     pub fn push(&mut self, context: VoteContext) {
         self.queue_set.insert(context.id());
         self.queue.push_back(context);
     }
 
+    /// Pop a `VoteContext` from the front of the queue.
     pub fn pop(&mut self) -> Option<VoteContext> {
         let context = self.queue.pop_front()?;
         self.queue_set.remove(&context.id());
@@ -51,43 +61,135 @@ impl Queue {
     }
 }
 
+pub struct FpcBuilder<F>
+where
+    F: Fn() -> Result<Vec<Box<dyn OpinionGiver>>, Error>,
+{
+    tx: Option<Sender<Event>>,
+    opinion_giver_fn: Option<F>,
+    first_round_lower_bound: f64,
+    first_round_upper_bound: f64,
+    subsequent_rounds_lower_bound: f64,
+    subsequent_rounds_upper_bound: f64,
+    query_sample_size: u32,
+    finalization_threshold: u32,
+    cooling_off_period: u32,
+    max_rounds_per_vote_context: u32,
+    query_timeout: Duration,
+}
+
+impl<F> Default for FpcBuilder<F>
+where 
+    F: Fn() -> Result<Vec<Box<dyn OpinionGiver>>, Error>,
+{
+    fn default() -> Self {
+        Self {
+            tx: None,
+            opinion_giver_fn: None,
+            first_round_lower_bound: 0.67,
+            first_round_upper_bound: 0.67,
+            subsequent_rounds_lower_bound: 0.5,
+            subsequent_rounds_upper_bound: 0.67,
+            query_sample_size: DEFAULT_SAMPLE_SIZE,
+            finalization_threshold: 10,
+            cooling_off_period: 0,
+            max_rounds_per_vote_context: 100,
+            query_timeout: Duration::from_millis(6500),
+        }
+    }
+}
+
+impl<F> FpcBuilder<F>
+where 
+    F: Fn() -> Result<Vec<Box<dyn OpinionGiver>>, Error>,
+{
+    pub fn with_tx(mut self, tx: Sender<Event>) -> Self {
+        self.tx = Some(tx);
+        self
+    }
+
+    pub fn with_opinion_giver_fn(mut self, opinion_giver_fn: F) -> Self {
+        self.opinion_giver_fn = Some(opinion_giver_fn);
+        self
+    }
+
+    pub fn with_first_round_bounds(mut self, lower: f64, upper: f64) -> Self {
+        self.first_round_lower_bound = lower;
+        self.first_round_upper_bound = upper;
+        self
+    }
+
+    pub fn with_subsequent_rounds_bounds(mut self, lower: f64, upper: f64) -> Self {
+        self.subsequent_rounds_lower_bound = lower;
+        self.subsequent_rounds_upper_bound = upper;
+        self
+    }
+
+    pub fn with_query_sample_size(mut self, sample_size: u32) -> Self {
+        self.query_sample_size = sample_size;
+        self
+    }
+
+    pub fn with_finalization_threshold(mut self, threshold: u32) -> Self {
+        self.finalization_threshold = threshold;
+        self
+    }
+
+    pub fn with_cooling_off_period(mut self, period: u32) -> Self {
+        self.cooling_off_period = period;
+        self
+    }
+
+    pub fn with_max_rounds(mut self, max: u32) -> Self {
+        self.max_rounds_per_vote_context = max;
+        self
+    }
+
+    pub fn build(self) -> Result<Fpc<F>, Error> {
+        Ok(Fpc {
+            tx: self.tx.ok_or(Error::FpcNoSender)?,
+            opinion_giver_fn: self.opinion_giver_fn.ok_or(Error::FpcNoOpinionGiverFn)?,
+            queue: Mutex::new(Queue::new()),
+            contexts: Mutex::new(HashMap::new()),
+            last_round_successful: AtomicBool::new(false),
+            first_round_lower_bound: self.first_round_lower_bound,
+            first_round_upper_bound: self.first_round_lower_bound,
+            subsequent_rounds_lower_bound: self.subsequent_rounds_lower_bound,
+            subsequent_rounds_upper_bound: self.subsequent_rounds_upper_bound,
+            query_sample_size: self.query_sample_size,
+            finalization_threshold: self.finalization_threshold,
+            cooling_off_period: self.cooling_off_period,
+            max_rounds_per_vote_context: self.max_rounds_per_vote_context,
+            query_timeout: Duration::from_millis(6500), 
+        })
+    }
+}
+
+#[derive(Debug)]
 pub struct Fpc<F>
 where
     F: Fn() -> Result<Vec<Box<dyn OpinionGiver>>, Error>,
 {
+    tx: Sender<Event>,
     opinion_giver_fn: F,
     queue: Mutex<Queue>,
     contexts: Mutex<HashMap<String, VoteContext>>,
-    params: FpcParameters,
     last_round_successful: AtomicBool,
-    tx: Option<Sender<Event>>,
+    first_round_lower_bound: f64,
+    first_round_upper_bound: f64,
+    subsequent_rounds_lower_bound: f64,
+    subsequent_rounds_upper_bound: f64,
+    query_sample_size: u32,
+    finalization_threshold: u32,
+    cooling_off_period: u32,
+    max_rounds_per_vote_context: u32,
+    query_timeout: Duration,
 }
 
 impl<F> Fpc<F>
 where
     F: Fn() -> Result<Vec<Box<dyn OpinionGiver>>, Error>,
 {
-    pub fn new(opinion_giver_fn: F) -> Self {
-        Self {
-            opinion_giver_fn,
-            queue: Mutex::new(Queue::new()),
-            contexts: Mutex::new(HashMap::new()),
-            params: Default::default(),
-            last_round_successful: AtomicBool::new(false),
-            tx: None,
-        }
-    }
-
-    pub fn with_params(mut self, params: FpcParameters) -> Self {
-        self.params = params;
-        self
-    }
-
-    pub fn with_tx(mut self, tx: Sender<Event>) -> Self {
-        self.tx = Some(tx);
-        self
-    }
-
     pub fn vote(&self, id: String, object_type: ObjectType, initial_opinion: Opinion) -> Result<(), Error> {
         let mut queue_guard = self.queue.lock().unwrap();
         let context_guard = self.contexts.lock().unwrap();
@@ -130,11 +232,11 @@ where
             }
 
             let (lower_bound, upper_bound) = if context.had_first_round() {
-                (self.params.first_round_lower_bound, self.params.first_round_upper_bound)
+                (self.first_round_lower_bound, self.first_round_upper_bound)
             } else {
                 (
-                    self.params.subsequent_rounds_lower_bound,
-                    self.params.subsequent_rounds_upper_bound,
+                    self.subsequent_rounds_lower_bound,
+                    self.subsequent_rounds_upper_bound,
                 )
             };
 
@@ -151,30 +253,25 @@ where
         let mut to_remove = vec![];
 
         for (id, context) in context_guard.iter() {
-            if context.finalized(self.params.cooling_off_period, self.params.finalization_threshold) {
-                self.tx
-                    .as_ref()
-                    .unwrap()
-                    .send(Event::Finalized(OpinionEvent {
-                        id: id.clone(),
-                        opinion: context.last_opinion().unwrap(),
-                        context: context.clone(),
-                    }))
-                    .unwrap();
+            if context.finalized(self.cooling_off_period, self.finalization_threshold) {
+                self.tx.send(Event::Finalized(OpinionEvent {
+                    id: id.clone(),
+                    opinion: context.last_opinion().unwrap(),
+                    context: context.clone(),
+                }))
+                .unwrap();
+                
                 to_remove.push(id.clone());
                 continue;
             }
 
-            if context.rounds() >= self.params.max_rounds_per_vote_context {
-                self.tx
-                    .as_ref()
-                    .unwrap()
-                    .send(Event::Failed(OpinionEvent {
-                        id: id.clone(),
-                        opinion: context.last_opinion().unwrap(),
-                        context: context.clone(),
-                    }))
-                    .unwrap();
+            if context.rounds() >= self.max_rounds_per_vote_context {
+                self.tx.send(Event::Failed(OpinionEvent {
+                    id: id.clone(),
+                    opinion: context.last_opinion().unwrap(),
+                    context: context.clone(),
+                })).unwrap();
+
                 to_remove.push(id.clone());
             }
         }
@@ -203,11 +300,7 @@ where
             queried_opinions,
         };
 
-        self.tx
-            .as_ref()
-            .unwrap()
-            .send(Event::RoundExecuted(round_stats))
-            .unwrap();
+        self.tx.send(Event::RoundExecuted(round_stats)).unwrap();
 
         Ok(())
     }
@@ -229,7 +322,7 @@ where
         let dist = rand::distributions::Uniform::new(0, opinion_givers.len());
         let mut queries = vec![0u32; opinion_givers.len()];
 
-        for _ in 0..self.params.query_sample_size {
+        for _ in 0..self.query_sample_size {
             let index = rng.sample(dist);
 
             if let Some(selected_count) = queries.get_mut(index) {
@@ -247,7 +340,7 @@ where
 
             if *selected_count > 0 {
                 futures.push(timeout(
-                    self.params.query_timeout,
+                    self.query_timeout,
                     Self::do_query(
                         &query_ids,
                         vote_map.clone(),
@@ -377,34 +470,6 @@ where
     }
 }
 
-pub struct FpcParameters {
-    pub first_round_lower_bound: f64,
-    pub first_round_upper_bound: f64,
-    pub subsequent_rounds_lower_bound: f64,
-    pub subsequent_rounds_upper_bound: f64,
-    pub query_sample_size: u32,
-    pub finalization_threshold: u32,
-    pub cooling_off_period: u32,
-    pub max_rounds_per_vote_context: u32,
-    pub query_timeout: Duration,
-}
-
-impl Default for FpcParameters {
-    fn default() -> Self {
-        Self {
-            first_round_lower_bound: 0.67,
-            first_round_upper_bound: 0.67,
-            subsequent_rounds_lower_bound: 0.5,
-            subsequent_rounds_upper_bound: 0.67,
-            query_sample_size: 21,
-            finalization_threshold: 10,
-            cooling_off_period: 0,
-            max_rounds_per_vote_context: 100,
-            query_timeout: Duration::from_millis(6500),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -475,15 +540,13 @@ mod tests {
     #[test]
     fn prohibit_multiple_votes() {
         let opinion_giver_fn = || Err(Error::NoOpinionGivers);
+        let (tx, rx) = flume::unbounded();
 
-        let voter = Fpc {
-            opinion_giver_fn: Box::new(opinion_giver_fn),
-            queue: Mutex::new(Queue::new()),
-            contexts: Mutex::new(HashMap::new()),
-            params: Default::default(),
-            last_round_successful: Mutex::new(false),
-            tx: None,
-        };
+        let voter = FpcBuilder::default()
+            .with_opinion_giver_fn(opinion_giver_fn)
+            .with_tx(tx)
+            .build()
+            .unwrap();
 
         let id = "test".to_string();
         assert!(voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like).is_ok());

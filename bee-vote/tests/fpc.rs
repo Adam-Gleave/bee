@@ -4,7 +4,7 @@ use bee_vote::{
     context::ObjectType,
     error::Error,
     events::Event,
-    fpc::{Fpc, FpcParameters},
+    fpc::{self, Fpc, FpcBuilder},
     opinion::{Opinion, OpinionGiver, Opinions, QueryIds},
 };
 
@@ -56,17 +56,17 @@ async fn finalized_event() {
     };
 
     let opinion_giver_fn = || -> Result<Vec<Box<dyn OpinionGiver>>, Error> { Ok(vec![Box::new(mock.clone())]) };
-
     let id = String::from("test");
 
-    let mut params = FpcParameters::default();
-    params.finalization_threshold = 2;
-    params.cooling_off_period = 2;
-    params.query_sample_size = 1;
-
     let (tx, rx) = flume::unbounded();
-
-    let voter = Fpc::new(opinion_giver_fn).with_params(params).with_tx(tx);
+    let voter = FpcBuilder::default()
+        .with_opinion_giver_fn(opinion_giver_fn)
+        .with_tx(tx)
+        .with_finalization_threshold(2)
+        .with_cooling_off_period(2)
+        .with_query_sample_size(1)
+        .build()
+        .unwrap();
 
     assert!(voter.vote(id, ObjectType::Conflict, Opinion::Like).is_ok());
 
@@ -95,18 +95,18 @@ async fn failed_event() {
     };
 
     let opinion_giver_fn = || -> Result<Vec<Box<dyn OpinionGiver>>, Error> { Ok(vec![Box::new(mock.clone())]) };
-
     let id = String::from("test");
 
-    let mut params = FpcParameters::default();
-    params.finalization_threshold = 4;
-    params.cooling_off_period = 0;
-    params.query_sample_size = 1;
-    params.max_rounds_per_vote_context = 3;
-
     let (tx, rx) = flume::unbounded();
-
-    let voter = Fpc::new(opinion_giver_fn).with_params(params).with_tx(tx);
+    let voter = FpcBuilder::default()
+        .with_opinion_giver_fn(opinion_giver_fn)
+        .with_tx(tx)
+        .with_finalization_threshold(4)
+        .with_cooling_off_period(0)
+        .with_query_sample_size(1)
+        .with_max_rounds(3)
+        .build()
+        .unwrap();
 
     assert!(voter.vote(id, ObjectType::Conflict, Opinion::Like).is_ok());
 
@@ -128,7 +128,6 @@ async fn failed_event() {
 
 #[tokio::test]
 async fn multiple_opinion_givers() {
-    let default_params = FpcParameters::default();
     let init_opinions = vec![Opinion::Like, Opinion::Dislike];
     let expected_opinions = vec![Opinion::Like, Opinion::Dislike];
     let num_tests = 2;
@@ -137,7 +136,7 @@ async fn multiple_opinion_givers() {
         let opinion_giver_fn = || -> Result<Vec<Box<dyn OpinionGiver>>, Error> {
             let mut opinion_givers: Vec<Box<dyn OpinionGiver>> = vec![];
 
-            for _ in 0..default_params.query_sample_size {
+            for _ in 0..fpc::DEFAULT_SAMPLE_SIZE {
                 opinion_givers.push(Box::new(MockOpinionGiver {
                     id: random_id_string(),
                     round: 0,
@@ -148,22 +147,23 @@ async fn multiple_opinion_givers() {
             Ok(opinion_givers)
         };
 
-        let mut params = FpcParameters::default();
-        params.finalization_threshold = 2;
-        params.cooling_off_period = 2;
-
         let (tx, rx) = flume::unbounded();
-
-        let voter = Fpc::new(opinion_giver_fn).with_params(params).with_tx(tx);
+        let voter = FpcBuilder::default()
+            .with_opinion_giver_fn(opinion_giver_fn)
+            .with_tx(tx)
+            .with_finalization_threshold(2)
+            .with_cooling_off_period(2)
+            .build()
+            .unwrap();
 
         assert!(voter
             .vote("test".to_string(), ObjectType::Conflict, init_opinions[i])
             .is_ok());
 
-        let mut rounds = 0;
+        let mut rounds = 0u32;
 
         let final_opinion = loop {
-            assert!(voter.do_round(0.7).await.is_ok());
+            assert!(voter.do_round(0.7f64).await.is_ok());
             rounds += 1;
 
             let mut iter = rx.try_iter();
