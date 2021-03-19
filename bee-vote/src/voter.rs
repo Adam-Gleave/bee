@@ -12,8 +12,6 @@ pub trait Voter {
     fn vote(id: String, object_type: ObjectType, initial_opinion: Opinion) -> Result<(), Error>;
 
     fn intermediate_opinion(id: String) -> Result<Opinion, Error>;
-
-    // TODO events
 }
 
 /// Holds data about a voting round.

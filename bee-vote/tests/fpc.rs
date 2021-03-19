@@ -1,6 +1,12 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
-use bee_vote::{context::ObjectType, error::Error, events::Event, fpc::{Fpc, FpcParameters}, opinion::{Opinion, Opinions, OpinionGiver, QueryIds}};
+use bee_vote::{
+    context::ObjectType,
+    error::Error,
+    events::Event,
+    fpc::{Fpc, FpcParameters},
+    opinion::{Opinion, OpinionGiver, Opinions, QueryIds},
+};
 
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 
@@ -22,7 +28,7 @@ impl OpinionGiver for MockOpinionGiver {
 
         Ok(opinions)
     }
-    
+
     fn id(&self) -> &str {
         &self.id
     }
@@ -42,19 +48,17 @@ async fn finalized_event() {
         id: random_id_string(),
         round: 0,
         round_replies: vec![
-            Opinions::new(vec![Opinion::Like]), 
             Opinions::new(vec![Opinion::Like]),
             Opinions::new(vec![Opinion::Like]),
             Opinions::new(vec![Opinion::Like]),
-        ], 
+            Opinions::new(vec![Opinion::Like]),
+        ],
     };
 
-    let opinion_giver_fn = || -> Result<Vec<Box<dyn OpinionGiver>>, Error> {
-        Ok(vec![Box::new(mock.clone())])
-    };
+    let opinion_giver_fn = || -> Result<Vec<Box<dyn OpinionGiver>>, Error> { Ok(vec![Box::new(mock.clone())]) };
 
     let id = String::from("test");
-    
+
     let mut params = FpcParameters::default();
     params.finalization_threshold = 2;
     params.cooling_off_period = 2;
@@ -62,7 +66,7 @@ async fn finalized_event() {
 
     let (tx, rx) = flume::unbounded();
 
-    let voter = Fpc::new(opinion_giver_fn).with_params(params).with_tx(tx);    
+    let voter = Fpc::new(opinion_giver_fn).with_params(params).with_tx(tx);
 
     assert!(voter.vote(id, ObjectType::Conflict, Opinion::Like).is_ok());
 
@@ -87,15 +91,13 @@ async fn failed_event() {
     let mock = MockOpinionGiver {
         id: random_id_string(),
         round: 0,
-        round_replies: vec![Opinions::new(vec![Opinion::Dislike])], 
+        round_replies: vec![Opinions::new(vec![Opinion::Dislike])],
     };
 
-    let opinion_giver_fn = || -> Result<Vec<Box<dyn OpinionGiver>>, Error> {
-        Ok(vec![Box::new(mock.clone())])
-    };
+    let opinion_giver_fn = || -> Result<Vec<Box<dyn OpinionGiver>>, Error> { Ok(vec![Box::new(mock.clone())]) };
 
     let id = String::from("test");
-    
+
     let mut params = FpcParameters::default();
     params.finalization_threshold = 4;
     params.cooling_off_period = 0;
@@ -104,7 +106,7 @@ async fn failed_event() {
 
     let (tx, rx) = flume::unbounded();
 
-    let voter = Fpc::new(opinion_giver_fn).with_params(params).with_tx(tx);    
+    let voter = Fpc::new(opinion_giver_fn).with_params(params).with_tx(tx);
 
     assert!(voter.vote(id, ObjectType::Conflict, Opinion::Like).is_ok());
 
@@ -139,7 +141,7 @@ async fn multiple_opinion_givers() {
                 opinion_givers.push(Box::new(MockOpinionGiver {
                     id: random_id_string(),
                     round: 0,
-                    round_replies: vec![Opinions::new(vec![init_opinions[i]])], 
+                    round_replies: vec![Opinions::new(vec![init_opinions[i]])],
                 }));
             }
 
@@ -154,7 +156,9 @@ async fn multiple_opinion_givers() {
 
         let voter = Fpc::new(opinion_giver_fn).with_params(params).with_tx(tx);
 
-        assert!(voter.vote("test".to_string(), ObjectType::Conflict, init_opinions[i]).is_ok());
+        assert!(voter
+            .vote("test".to_string(), ObjectType::Conflict, init_opinions[i])
+            .is_ok());
 
         let mut rounds = 0;
 

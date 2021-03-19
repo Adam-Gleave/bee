@@ -3,7 +3,7 @@
 use crate::{
     context::{ObjectType, VoteContext},
     error::Error,
-    events::{Event, RoundStats, OpinionEvent},
+    events::{Event, OpinionEvent, RoundStats},
     opinion::{Opinion, OpinionGiver, Opinions, QueriedOpinions, QueryIds},
 };
 
@@ -149,21 +149,29 @@ where
 
         for (id, context) in context_guard.iter() {
             if context.finalized(self.params.cooling_off_period, self.params.finalization_threshold) {
-                self.tx.as_ref().unwrap().send(
-                    Event::Finalized(OpinionEvent { 
-                        id: id.clone(), opinion: context.last_opinion().unwrap(), context: context.clone() 
-                    })
-                ).unwrap();
+                self.tx
+                    .as_ref()
+                    .unwrap()
+                    .send(Event::Finalized(OpinionEvent {
+                        id: id.clone(),
+                        opinion: context.last_opinion().unwrap(),
+                        context: context.clone(),
+                    }))
+                    .unwrap();
                 to_remove.push(id.clone());
                 continue;
             }
 
             if context.rounds() >= self.params.max_rounds_per_vote_context {
-                self.tx.as_ref().unwrap().send(
-                    Event::Failed(OpinionEvent { 
-                        id: id.clone(), opinion: context.last_opinion().unwrap(), context: context.clone() 
-                    })
-                ).unwrap();
+                self.tx
+                    .as_ref()
+                    .unwrap()
+                    .send(Event::Failed(OpinionEvent {
+                        id: id.clone(),
+                        opinion: context.last_opinion().unwrap(),
+                        context: context.clone(),
+                    }))
+                    .unwrap();
                 to_remove.push(id.clone());
             }
         }
@@ -192,7 +200,11 @@ where
             queried_opinions,
         };
 
-        self.tx.as_ref().unwrap().send(Event::RoundExecuted(round_stats)).unwrap();
+        self.tx
+            .as_ref()
+            .unwrap()
+            .send(Event::RoundExecuted(round_stats))
+            .unwrap();
 
         Ok(())
     }
@@ -232,15 +244,15 @@ where
 
             if *selected_count > 0 {
                 futures.push(timeout(
-                    self.params.query_timeout, 
+                    self.params.query_timeout,
                     Self::do_query(
                         &query_ids,
                         vote_map.clone(),
                         all_queried_opinions.clone(),
                         opinion_giver,
                         *selected_count,
-                    )
-                )); 
+                    ),
+                ));
             }
         }
 
@@ -262,7 +274,7 @@ where
             }
 
             contexts_guard.get_mut(id).unwrap().round_completed();
-            
+
             if voted_count == 0.0 {
                 continue;
             }
