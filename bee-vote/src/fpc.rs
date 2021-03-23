@@ -79,7 +79,7 @@ where
 }
 
 impl<F> Default for FpcBuilder<F>
-where 
+where
     F: Fn() -> Result<Vec<Box<dyn OpinionGiver>>, Error>,
 {
     fn default() -> Self {
@@ -100,7 +100,7 @@ where
 }
 
 impl<F> FpcBuilder<F>
-where 
+where
     F: Fn() -> Result<Vec<Box<dyn OpinionGiver>>, Error>,
 {
     pub fn with_tx(mut self, tx: Sender<Event>) -> Self {
@@ -160,7 +160,7 @@ where
             finalization_threshold: self.finalization_threshold,
             cooling_off_period: self.cooling_off_period,
             max_rounds_per_vote_context: self.max_rounds_per_vote_context,
-            query_timeout: Duration::from_millis(6500), 
+            query_timeout: Duration::from_millis(6500),
         })
     }
 }
@@ -206,11 +206,11 @@ where
         Ok(())
     }
 
-    pub fn intermediate_opinion(&self, id: String) -> Result<Opinion, Error> {
+    pub fn intermediate_opinion(&self, id: String) -> Opinion {
         if let Some(context) = self.contexts.lock().unwrap().get(&id) {
-            Ok(context.last_opinion().unwrap())
+            context.last_opinion().unwrap()
         } else {
-            Err(Error::VotingNotFound(id))
+            Opinion::Unknown
         }
     }
 
@@ -234,10 +234,7 @@ where
             let (lower_bound, upper_bound) = if context.had_first_round() {
                 (self.first_round_lower_bound, self.first_round_upper_bound)
             } else {
-                (
-                    self.subsequent_rounds_lower_bound,
-                    self.subsequent_rounds_upper_bound,
-                )
+                (self.subsequent_rounds_lower_bound, self.subsequent_rounds_upper_bound)
             };
 
             if context.liked() >= self.rand_uniform_threshold(rand, lower_bound, upper_bound) {
@@ -254,23 +251,26 @@ where
 
         for (id, context) in context_guard.iter() {
             if context.finalized(self.cooling_off_period, self.finalization_threshold) {
-                self.tx.send(Event::Finalized(OpinionEvent {
-                    id: id.clone(),
-                    opinion: context.last_opinion().unwrap(),
-                    context: context.clone(),
-                }))
-                .unwrap();
-                
+                self.tx
+                    .send(Event::Finalized(OpinionEvent {
+                        id: id.clone(),
+                        opinion: context.last_opinion().unwrap(),
+                        context: context.clone(),
+                    }))
+                    .unwrap();
+
                 to_remove.push(id.clone());
                 continue;
             }
 
             if context.rounds() >= self.max_rounds_per_vote_context {
-                self.tx.send(Event::Failed(OpinionEvent {
-                    id: id.clone(),
-                    opinion: context.last_opinion().unwrap(),
-                    context: context.clone(),
-                })).unwrap();
+                self.tx
+                    .send(Event::Failed(OpinionEvent {
+                        id: id.clone(),
+                        opinion: context.last_opinion().unwrap(),
+                        context: context.clone(),
+                    }))
+                    .unwrap();
 
                 to_remove.push(id.clone());
             }
@@ -540,7 +540,7 @@ mod tests {
     #[test]
     fn prohibit_multiple_votes() {
         let opinion_giver_fn = || Err(Error::NoOpinionGivers);
-        let (tx, rx) = flume::unbounded();
+        let (tx, _) = flume::unbounded();
 
         let voter = FpcBuilder::default()
             .with_opinion_giver_fn(opinion_giver_fn)

@@ -1,58 +1,22 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
+
+mod mock;
+
 use bee_vote::{
     context::ObjectType,
     error::Error,
     events::Event,
-    fpc::{self, Fpc, FpcBuilder},
-    opinion::{Opinion, OpinionGiver, Opinions, QueryIds},
+    fpc::{self, FpcBuilder},
+    opinion::{Opinion, OpinionGiver, Opinions},
 };
-
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
-
-#[derive(Clone)]
-struct MockOpinionGiver {
-    id: String,
-    round: u32,
-    round_replies: Vec<Opinions>,
-}
-
-impl OpinionGiver for MockOpinionGiver {
-    fn query(&mut self, _: &QueryIds) -> Result<Opinions, Error> {
-        if self.round as usize >= self.round_replies.len() {
-            return Ok(self.round_replies.last().unwrap().clone());
-        }
-
-        let opinions = self.round_replies.get(self.round as usize).unwrap().clone();
-        self.round += 1;
-
-        Ok(opinions)
-    }
-
-    fn id(&self) -> &str {
-        &self.id
-    }
-}
-
-fn random_id_string() -> String {
-    thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(30)
-        .map(char::from)
-        .collect()
-}
 
 #[tokio::test]
 async fn finalized_event() {
-    let mock = MockOpinionGiver {
-        id: random_id_string(),
+    let mock = mock::MockOpinionGiver {
+        id: mock::random_id_string(),
         round: 0,
-        round_replies: vec![
-            Opinions::new(vec![Opinion::Like]),
-            Opinions::new(vec![Opinion::Like]),
-            Opinions::new(vec![Opinion::Like]),
-            Opinions::new(vec![Opinion::Like]),
-        ],
+        round_replies: vec![Opinions::new(vec![Opinion::Like]); 4],
     };
 
     let opinion_giver_fn = || -> Result<Vec<Box<dyn OpinionGiver>>, Error> { Ok(vec![Box::new(mock.clone())]) };
@@ -88,8 +52,8 @@ async fn finalized_event() {
 
 #[tokio::test]
 async fn failed_event() {
-    let mock = MockOpinionGiver {
-        id: random_id_string(),
+    let mock = mock::MockOpinionGiver {
+        id: mock::random_id_string(),
         round: 0,
         round_replies: vec![Opinions::new(vec![Opinion::Dislike])],
     };
@@ -137,8 +101,8 @@ async fn multiple_opinion_givers() {
             let mut opinion_givers: Vec<Box<dyn OpinionGiver>> = vec![];
 
             for _ in 0..fpc::DEFAULT_SAMPLE_SIZE {
-                opinion_givers.push(Box::new(MockOpinionGiver {
-                    id: random_id_string(),
+                opinion_givers.push(Box::new(mock::MockOpinionGiver {
+                    id: mock::random_id_string(),
                     round: 0,
                     round_replies: vec![Opinions::new(vec![init_opinions[i]])],
                 }));

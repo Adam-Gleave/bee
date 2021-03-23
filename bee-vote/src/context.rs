@@ -1,5 +1,6 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
+
 use crate::opinion::{Opinion, Opinions};
 
 /// Initial "liked" value for a new `Context`.
@@ -90,26 +91,32 @@ impl VoteContext {
         self.rounds == 1
     }
 
+    /// Returns the ID of the `VoteContext`
     pub fn id(&self) -> String {
         self.id.clone()
     }
 
+    /// Returns the object of the voting.
     pub fn object_type(&self) -> ObjectType {
         self.object_type
     }
 
+    /// Resturns the percentage of `OpinionGiver`s that liked the item on the last query.
     pub fn liked(&self) -> f64 {
         self.liked
     }
 
+    /// Update the `liked` value of a `VoteContext` when new opinions are formed.
     pub fn set_liked(&mut self, liked: f64) {
         self.liked = liked;
     }
 
+    /// Number of voting rounds completed for this item.
     pub fn rounds(&self) -> u32 {
         self.rounds
     }
 
+    /// Indicate the completion of a voting round for this item.
     pub fn round_completed(&mut self) {
         self.rounds += 1;
     }
