@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::opinion::{Opinion, Opinions};
+use crate::{error::Error, opinion::{Opinion, Opinions}};
 
 /// Initial "liked" value for a new `Context`.
 pub const LIKED_INITIAL: f64 = -1.0;
@@ -13,20 +13,52 @@ pub enum ObjectType {
     Timestamp,
 }
 
+pub struct VoteContextBuilder {
+    id: String,
+    object_type: ObjectType,
+    opinions: Option<Opinions>,
+}
+
+impl VoteContextBuilder {
+    pub fn new(id: String, object_type: ObjectType) -> Self {
+        Self { id, object_type, opinions: None }
+    }
+
+    pub fn with_initial_opinion(mut self, opinion: Opinion) -> Self {
+        self.opinions = Some(Opinions::new(vec![opinion]));
+        self
+    }
+
+    pub fn with_initial_opinions(mut self, opinions: Opinions) -> Self {
+        self.opinions = Some(opinions);
+        self
+    }
+
+    pub fn build(self) -> Result<VoteContext, Error> {
+        Ok(VoteContext {
+            id: self.id,
+            object_type: self.object_type,
+            liked: LIKED_INITIAL,
+            rounds: 0,
+            opinions: self.opinions.ok_or(Error::NoInitialOpinions)?,
+        })
+    }
+}
+
 /// Voting context.
 #[derive(Debug, Clone)]
 pub struct VoteContext {
     /// Voter ID.
-    pub(crate) id: String,
+    id: String,
     /// Object type of the vote.
-    pub(crate) object_type: ObjectType,
+    object_type: ObjectType,
     /// The percentage of `OpinionGiver`s who liked this item on the last query.
-    pub(crate) liked: f64,
+    liked: f64,
     /// The number of voting rounds performed so far.
-    pub(crate) rounds: u32,
+    rounds: u32,
     /// List of opinions formed at the end of each voting round.
     /// The first in this list is the initial opinion when this `VoteContext` was created.
-    pub(crate) opinions: Opinions,
+    opinions: Opinions,
 }
 
 impl VoteContext {

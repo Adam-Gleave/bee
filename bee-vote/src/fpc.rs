@@ -474,68 +474,9 @@ where
 mod tests {
     use super::*;
     use crate::{
-        context::LIKED_INITIAL,
+        context::{VoteContextBuilder, LIKED_INITIAL},
         opinion::{Opinion, Opinions},
     };
-
-    impl VoteContext {
-        fn with_opinions(opinions: Opinions) -> Self {
-            Self {
-                id: "test".to_string(),
-                object_type: ObjectType::Conflict,
-                liked: LIKED_INITIAL,
-                rounds: 0,
-                opinions,
-            }
-        }
-    }
-
-    #[test]
-    fn is_finalized() {
-        let ctx = VoteContext::with_opinions(Opinions::new(vec![
-            Opinion::Like,
-            Opinion::Like,
-            Opinion::Like,
-            Opinion::Like,
-            Opinion::Like,
-        ]));
-
-        assert!(ctx.finalized(2, 2));
-    }
-
-    #[test]
-    fn is_not_finalized() {
-        let ctx = VoteContext::with_opinions(Opinions::new(vec![
-            Opinion::Like,
-            Opinion::Like,
-            Opinion::Like,
-            Opinion::Like,
-            Opinion::Dislike,
-        ]));
-
-        assert!(!ctx.finalized(2, 2));
-    }
-
-    #[test]
-    fn last_opinion() {
-        let ctx = VoteContext::with_opinions(Opinions::new(vec![
-            Opinion::Like,
-            Opinion::Like,
-            Opinion::Like,
-            Opinion::Like,
-        ]));
-
-        assert_eq!(ctx.last_opinion(), Some(Opinion::Like));
-
-        let ctx = VoteContext::with_opinions(Opinions::new(vec![
-            Opinion::Like,
-            Opinion::Like,
-            Opinion::Like,
-            Opinion::Dislike,
-        ]));
-
-        assert_eq!(ctx.last_opinion(), Some(Opinion::Dislike));
-    }
 
     #[test]
     fn prohibit_multiple_votes() {

@@ -3,15 +3,18 @@
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    /// User error: Fpc struct not built properly – no `opinion_giver_fn`.
+    /// User error: `Fpc` struct not built properly – no `opinion_giver_fn`.
     #[error("Fpc instance has no OpinionGiver provider function, initialise the `opinion_giver_fn` field")]
     FpcNoOpinionGiverFn,
-    /// User error: Fpc struct not built properly – no `tx` for sending events.
+    /// User error: `Fpc` struct not built properly – no `tx` for sending events.
     #[error("Fpc instance has no event sender, initialise the `tx` field")]
     FpcNoSender,
     /// Vote context has no `OpinionGiver`s available. 
     #[error("No opinion givers are available")]
     NoOpinionGivers,
+    /// User error: `VoteContext` struct not built properly – no initial opinions.
+    #[error("No initial opinions given to VoteContextBuilder")]
+    NoInitialOpinions,
     /// Vote is already ongoing.
     #[error("Vote already ongoing for ID {0}")]
     VoteOngoing(String),
