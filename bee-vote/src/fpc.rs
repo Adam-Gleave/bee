@@ -305,7 +305,9 @@ where
             queried_opinions,
         };
 
-        self.tx.send(Event::RoundExecuted(round_stats)).or(Err(Error::SendError))?;
+        self.tx
+            .send(Event::RoundExecuted(round_stats))
+            .or(Err(Error::SendError))?;
 
         Ok(())
     }
@@ -479,4 +481,3 @@ where
         lower_bound + rand * (upper_bound - lower_bound)
     }
 }
-

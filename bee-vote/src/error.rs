@@ -9,7 +9,7 @@ pub enum Error {
     /// User error: `Fpc` struct not built properly – no `tx` for sending events.
     #[error("Fpc instance has no event sender, initialise the `tx` field")]
     FpcNoSender,
-    /// Vote context has no `OpinionGiver`s available. 
+    /// Vote context has no `OpinionGiver`s available.
     #[error("No opinion givers are available")]
     NoOpinionGivers,
     /// User error: `VoteContext` struct not built properly – no initial opinions.

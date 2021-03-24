@@ -23,7 +23,10 @@ async fn prohibit_multiple_votes() {
         .unwrap();
 
     let id = "test".to_string();
-    assert!(voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like).await.is_ok());
+    assert!(voter
+        .vote(id.clone(), ObjectType::Conflict, Opinion::Like)
+        .await
+        .is_ok());
     assert!(matches!(
         voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like).await,
         Err(Error::VoteOngoing(_))

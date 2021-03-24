@@ -1,7 +1,10 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{error::Error, opinion::{Opinion, Opinions}};
+use crate::{
+    error::Error,
+    opinion::{Opinion, Opinions},
+};
 
 /// Initial "liked" value for a new `Context`.
 pub const LIKED_INITIAL: f64 = -1.0;
@@ -21,7 +24,11 @@ pub struct VoteContextBuilder {
 
 impl VoteContextBuilder {
     pub fn new(id: String, object_type: ObjectType) -> Self {
-        Self { id, object_type, opinions: None }
+        Self {
+            id,
+            object_type,
+            opinions: None,
+        }
     }
 
     pub fn with_initial_opinion(mut self, opinion: Opinion) -> Self {
