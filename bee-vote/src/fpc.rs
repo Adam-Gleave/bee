@@ -257,7 +257,7 @@ where
                         opinion: context.last_opinion().ok_or(Error::Unknown("No opinions found"))?,
                         context: context.clone(),
                     }))
-                    .or(Err(Error::SendError));
+                    .or(Err(Error::SendError))?;
 
                 to_remove.push(id.clone());
                 continue;
@@ -292,7 +292,7 @@ where
 
         if self.last_round_successful.load(Ordering::Relaxed) {
             self.form_opinions(rand).await;
-            self.finalize_opinions().await;
+            self.finalize_opinions().await?;
         }
 
         let queried_opinions = self.query_opinions().await?;
