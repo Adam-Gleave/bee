@@ -15,6 +15,12 @@ pub enum Error {
     /// User error: `VoteContext` struct not built properly – no initial opinions.
     #[error("No initial opinions given to VoteContextBuilder")]
     NoInitialOpinions,
+    /// Error sending message through channel.
+    #[error("Error sending message through channel")]
+    SendError,
+    /// Catch-all error for cases that shouldn't happen.
+    #[error("Error occurred: {0}")]
+    Unknown(&'static str),
     /// Vote is already ongoing.
     #[error("Vote already ongoing for ID {0}")]
     VoteOngoing(String),

@@ -11,8 +11,8 @@ use bee_vote::{
     opinion::{Opinion, OpinionGiver, Opinions},
 };
 
-#[test]
-fn prohibit_multiple_votes() {
+#[tokio::test]
+async fn prohibit_multiple_votes() {
     let opinion_giver_fn = || Err(Error::NoOpinionGivers);
     let (tx, _) = flume::unbounded();
 
@@ -23,14 +23,14 @@ fn prohibit_multiple_votes() {
         .unwrap();
 
     let id = "test".to_string();
-    assert!(voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like).is_ok());
+    assert!(voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like).await.is_ok());
     assert!(matches!(
-        voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like),
+        voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like).await,
         Err(Error::VoteOngoing(_))
     ));
 
     let id = "test_2".to_string();
-    assert!(voter.vote(id, ObjectType::Conflict, Opinion::Like).is_ok());
+    assert!(voter.vote(id, ObjectType::Conflict, Opinion::Like).await.is_ok());
 }
 
 #[tokio::test]
@@ -54,7 +54,7 @@ async fn finalized_event() {
         .build()
         .unwrap();
 
-    assert!(voter.vote(id, ObjectType::Conflict, Opinion::Like).is_ok());
+    assert!(voter.vote(id, ObjectType::Conflict, Opinion::Like).await.is_ok());
 
     for _ in 0..5 {
         futures::executor::block_on(voter.do_round(0.5)).unwrap();
@@ -94,7 +94,7 @@ async fn failed_event() {
         .build()
         .unwrap();
 
-    assert!(voter.vote(id, ObjectType::Conflict, Opinion::Like).is_ok());
+    assert!(voter.vote(id, ObjectType::Conflict, Opinion::Like).await.is_ok());
 
     for _ in 0..4 {
         futures::executor::block_on(voter.do_round(0.5)).unwrap();
@@ -144,6 +144,7 @@ async fn multiple_opinion_givers() {
 
         assert!(voter
             .vote("test".to_string(), ObjectType::Conflict, init_opinions[i])
+            .await
             .is_ok());
 
         let mut rounds = 0u32;

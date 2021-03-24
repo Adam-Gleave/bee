@@ -9,16 +9,16 @@ use crate::{
 
 use flume::Sender;
 use rand::prelude::*;
-use tokio::time::timeout;
+use tokio::{sync::RwLock, time::timeout};
 
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     default::Default,
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc, Mutex,
+        Arc,
     },
-    time::{Duration, SystemTime},
+    time::{Duration, Instant},
 };
 
 pub const DEFAULT_SAMPLE_SIZE: u32 = 21;
@@ -149,8 +149,8 @@ where
         Ok(Fpc {
             tx: self.tx.ok_or(Error::FpcNoSender)?,
             opinion_giver_fn: self.opinion_giver_fn.ok_or(Error::FpcNoOpinionGiverFn)?,
-            queue: Mutex::new(Queue::new()),
-            contexts: Mutex::new(HashMap::new()),
+            queue: RwLock::new(Queue::new()),
+            contexts: RwLock::new(HashMap::new()),
             last_round_successful: AtomicBool::new(false),
             first_round_lower_bound: self.first_round_lower_bound,
             first_round_upper_bound: self.first_round_lower_bound,
@@ -172,8 +172,8 @@ where
 {
     tx: Sender<Event>,
     opinion_giver_fn: F,
-    queue: Mutex<Queue>,
-    contexts: Mutex<HashMap<String, VoteContext>>,
+    queue: RwLock<Queue>,
+    contexts: RwLock<HashMap<String, VoteContext>>,
     last_round_successful: AtomicBool,
     first_round_lower_bound: f64,
     first_round_upper_bound: f64,
@@ -190,9 +190,9 @@ impl<F> Fpc<F>
 where
     F: Fn() -> Result<Vec<Box<dyn OpinionGiver>>, Error>,
 {
-    pub fn vote(&self, id: String, object_type: ObjectType, initial_opinion: Opinion) -> Result<(), Error> {
-        let mut queue_guard = self.queue.lock().unwrap();
-        let context_guard = self.contexts.lock().unwrap();
+    pub async fn vote(&self, id: String, object_type: ObjectType, initial_opinion: Opinion) -> Result<(), Error> {
+        let mut queue_guard = self.queue.write().await;
+        let context_guard = self.contexts.read().await;
 
         if queue_guard.contains(&id) {
             return Err(Error::VoteOngoing(id));
@@ -206,25 +206,25 @@ where
         Ok(())
     }
 
-    pub fn intermediate_opinion(&self, id: String) -> Opinion {
-        if let Some(context) = self.contexts.lock().unwrap().get(&id) {
-            context.last_opinion().unwrap()
+    pub async fn intermediate_opinion(&self, id: String) -> Option<Opinion> {
+        if let Some(context) = self.contexts.read().await.get(&id) {
+            context.last_opinion()
         } else {
-            Opinion::Unknown
+            Some(Opinion::Unknown)
         }
     }
 
-    pub fn enqueue(&self) {
-        let mut queue_guard = self.queue.lock().unwrap();
-        let mut context_guard = self.contexts.lock().unwrap();
+    pub async fn enqueue(&self) {
+        let mut queue_guard = self.queue.write().await;
+        let mut context_guard = self.contexts.write().await;
 
         while let Some(context) = queue_guard.pop() {
             context_guard.insert(context.id(), context);
         }
     }
 
-    pub fn form_opinions(&self, rand: f64) {
-        let mut context_guard = self.contexts.lock().unwrap();
+    pub async fn form_opinions(&self, rand: f64) {
+        let mut context_guard = self.contexts.write().await;
 
         for context in context_guard.values_mut() {
             if context.is_new() {
@@ -245,8 +245,8 @@ where
         }
     }
 
-    pub fn finalize_opinions(&self) {
-        let mut context_guard = self.contexts.lock().unwrap();
+    pub async fn finalize_opinions(&self) -> Result<(), Error> {
+        let context_guard = self.contexts.read().await;
         let mut to_remove = vec![];
 
         for (id, context) in context_guard.iter() {
@@ -254,10 +254,10 @@ where
                 self.tx
                     .send(Event::Finalized(OpinionEvent {
                         id: id.clone(),
-                        opinion: context.last_opinion().unwrap(),
+                        opinion: context.last_opinion().ok_or(Error::Unknown("No opinions found"))?,
                         context: context.clone(),
                     }))
-                    .unwrap();
+                    .or(Err(Error::SendError));
 
                 to_remove.push(id.clone());
                 continue;
@@ -267,47 +267,52 @@ where
                 self.tx
                     .send(Event::Failed(OpinionEvent {
                         id: id.clone(),
-                        opinion: context.last_opinion().unwrap(),
+                        opinion: context.last_opinion().ok_or(Error::Unknown("No opinions found"))?,
                         context: context.clone(),
                     }))
-                    .unwrap();
+                    .or(Err(Error::SendError))?;
 
                 to_remove.push(id.clone());
             }
         }
+        drop(context_guard);
+
+        let mut context_guard = self.contexts.write().await;
 
         for id in to_remove {
             context_guard.remove(&id);
         }
+
+        Ok(())
     }
 
     pub async fn do_round(&self, rand: f64) -> Result<(), Error> {
-        let start = SystemTime::now();
-        self.enqueue();
+        let start = Instant::now();
+        self.enqueue().await;
 
         if self.last_round_successful.load(Ordering::Relaxed) {
-            self.form_opinions(rand);
-            self.finalize_opinions();
+            self.form_opinions(rand).await;
+            self.finalize_opinions().await;
         }
 
         let queried_opinions = self.query_opinions().await?;
         self.last_round_successful.store(true, Ordering::Relaxed);
 
         let round_stats = RoundStats {
-            duration: start.elapsed().unwrap(),
+            duration: start.elapsed(),
             rand_used: rand,
-            vote_contexts: self.contexts.lock().unwrap().clone(),
+            vote_contexts: self.contexts.read().await.clone(),
             queried_opinions,
         };
 
-        self.tx.send(Event::RoundExecuted(round_stats)).unwrap();
+        self.tx.send(Event::RoundExecuted(round_stats)).or(Err(Error::SendError))?;
 
         Ok(())
     }
 
     pub async fn query_opinions(&self) -> Result<Vec<QueriedOpinions>, Error> {
         let mut rng = thread_rng();
-        let query_ids = self.vote_context_ids();
+        let query_ids = self.vote_context_ids().await;
 
         if query_ids.conflict_ids.is_empty() && query_ids.timestamp_ids.is_empty() {
             return Ok(vec![]);
@@ -330,12 +335,13 @@ where
             }
         }
 
-        let vote_map = Arc::new(Mutex::new(HashMap::<String, Opinions>::new()));
-        let all_queried_opinions = Arc::new(Mutex::new(Vec::<QueriedOpinions>::new()));
+        let vote_map = Arc::new(RwLock::new(HashMap::<String, Opinions>::new()));
+        let all_queried_opinions = Arc::new(RwLock::new(Vec::<QueriedOpinions>::new()));
 
         let mut futures = vec![];
 
         for (i, opinion_giver) in opinion_givers.iter_mut().enumerate() {
+            // This should never panic, since `queries.len()` == `opinion_givers.len()`
             let selected_count = queries.get(i).unwrap();
 
             if *selected_count > 0 {
@@ -354,8 +360,8 @@ where
 
         futures::future::join_all(futures).await;
 
-        let mut contexts_guard = self.contexts.lock().unwrap();
-        let votes_guard = vote_map.lock().unwrap();
+        let mut contexts_guard = self.contexts.write().await;
+        let votes_guard = vote_map.read().await;
 
         for (id, votes) in votes_guard.iter() {
             let mut liked_sum = 0.0;
@@ -369,6 +375,7 @@ where
                 }
             }
 
+            // This should never happen – there should always be a context for a given vote.
             contexts_guard.get_mut(id).unwrap().round_completed();
 
             if voted_count == 0.0 {
@@ -378,13 +385,14 @@ where
             contexts_guard.get_mut(id).unwrap().set_liked(liked_sum / voted_count);
         }
 
-        Ok(Arc::try_unwrap(all_queried_opinions).unwrap().into_inner().unwrap())
+        // This should never fail – all futures are completed, so only one reference remains.
+        Ok(Arc::try_unwrap(all_queried_opinions).unwrap().into_inner())
     }
 
     async fn do_query(
         query_ids: &QueryIds,
-        vote_map: Arc<Mutex<HashMap<String, Opinions>>>,
-        all_queried_opinions: Arc<Mutex<Vec<QueriedOpinions>>>,
+        vote_map: Arc<RwLock<HashMap<String, Opinions>>>,
+        all_queried_opinions: Arc<RwLock<Vec<QueriedOpinions>>>,
         opinion_giver: &mut Box<dyn OpinionGiver>,
         selected_count: u32,
     ) {
@@ -406,7 +414,7 @@ where
             times_counted: selected_count,
         };
 
-        let mut vote_map_guard = vote_map.lock().unwrap();
+        let mut vote_map_guard = vote_map.write().await;
 
         for (i, id) in query_ids.conflict_ids.iter().enumerate() {
             let mut votes = vote_map_guard.get(id).map_or(Opinions::new(vec![]), |opt| opt.clone());
@@ -418,6 +426,7 @@ where
             queried_opinions.opinions.insert(id.to_string(), opinions[i]);
 
             if vote_map_guard.contains_key(id) {
+                // This will never fail – the key exists.
                 *vote_map_guard.get_mut(id).unwrap() = votes;
             } else {
                 vote_map_guard.insert(id.to_string(), votes);
@@ -434,17 +443,18 @@ where
             queried_opinions.opinions.insert(id.to_string(), opinions[i]);
 
             if vote_map_guard.contains_key(id) {
+                // This will never fail - the key exists.
                 *vote_map_guard.get_mut(id).unwrap() = votes;
             } else {
                 vote_map_guard.insert(id.to_string(), votes);
             }
         }
 
-        all_queried_opinions.lock().unwrap().push(queried_opinions);
+        all_queried_opinions.write().await.push(queried_opinions);
     }
 
-    fn vote_context_ids(&self) -> QueryIds {
-        let context_guard = self.contexts.lock().unwrap();
+    async fn vote_context_ids(&self) -> QueryIds {
+        let context_guard = self.contexts.read().await;
         let mut conflict_ids = vec![];
         let mut timestamp_ids = vec![];
 
@@ -470,33 +480,3 @@ where
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{
-        context::{VoteContextBuilder, LIKED_INITIAL},
-        opinion::{Opinion, Opinions},
-    };
-
-    #[test]
-    fn prohibit_multiple_votes() {
-        let opinion_giver_fn = || Err(Error::NoOpinionGivers);
-        let (tx, _) = flume::unbounded();
-
-        let voter = FpcBuilder::default()
-            .with_opinion_giver_fn(opinion_giver_fn)
-            .with_tx(tx)
-            .build()
-            .unwrap();
-
-        let id = "test".to_string();
-        assert!(voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like).is_ok());
-        assert!(matches!(
-            voter.vote(id.clone(), ObjectType::Conflict, Opinion::Like),
-            Err(Error::VoteOngoing(_))
-        ));
-
-        let id = "test_2".to_string();
-        assert!(voter.vote(id, ObjectType::Conflict, Opinion::Like).is_ok());
-    }
-}

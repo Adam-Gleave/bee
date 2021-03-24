@@ -3,7 +3,7 @@
 
 use crate::{
     context::VoteContext,
-    error::Error,
+    error,
     opinion::{Opinion, QueriedOpinions},
 };
 
@@ -13,7 +13,7 @@ use std::{collections::HashMap, time::Duration};
 #[derive(Debug)]
 pub enum Event {
     /// Error occurred during voting.
-    Error(Error),
+    Error(error::Error),
     /// Vote failed.
     Failed(OpinionEvent),
     /// Vote finished and finalized correctly.

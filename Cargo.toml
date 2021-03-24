@@ -13,3 +13,6 @@ members = [
 	"bee-test",
 	"bee-vote",
 ]
+
+[patch.crates-io]
+rocksdb = { git = "https://github.com/hdevalence/rust-rocksdb", branch = "master" }
