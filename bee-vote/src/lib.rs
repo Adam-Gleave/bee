@@ -45,6 +45,7 @@ pub mod error;
 pub mod events;
 pub mod fpc;
 pub mod opinion;
+pub mod registry;
 
 pub use context::ObjectType;
 pub use error::Error;

@@ -272,7 +272,7 @@ dependencies = [
  "async-trait",
  "bee-common",
  "bee-crypto",
- "bee-message",
+ "bee-message 0.1.0-alpha",
  "bee-runtime",
  "bee-snapshot",
  "bee-storage",
@@ -297,7 +297,7 @@ version = "0.1.0-alpha"
 dependencies = [
  "bech32",
  "bee-common",
- "bee-pow",
+ "bee-pow 0.1.0-alpha",
  "bee-test",
  "digest 0.9.0",
  "hex",
@@ -305,6 +305,21 @@ dependencies = [
  "num_cpus",
  "ref-cast",
  "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "bee-message"
+version = "0.1.0-alpha"
+source = "git+https://github.com/iotaledger/bee.git?branch=chrysalis-pt-2#91308f225bccffb8a9c522c0cd1b4ae357467166"
+dependencies = [
+ "bech32",
+ "bee-common",
+ "bee-pow 0.1.0-alpha (git+https://github.com/iotaledger/bee.git?branch=chrysalis-pt-2)",
+ "digest 0.9.0",
+ "hex",
+ "iota-crypto",
+ "ref-cast",
  "thiserror",
 ]
 
@@ -340,7 +355,7 @@ dependencies = [
  "bee-common",
  "bee-crypto",
  "bee-ledger",
- "bee-message",
+ "bee-message 0.1.0-alpha",
  "bee-network",
  "bee-protocol",
  "bee-rest-api",
@@ -387,6 +402,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bee-pow"
+version = "0.1.0-alpha"
+source = "git+https://github.com/iotaledger/bee.git?branch=chrysalis-pt-2#91308f225bccffb8a9c522c0cd1b4ae357467166"
+dependencies = [
+ "bee-crypto",
+ "bee-ternary",
+ "iota-crypto",
+ "thiserror",
+]
+
+[[package]]
 name = "bee-protocol"
 version = "0.1.0-alpha"
 dependencies = [
@@ -396,7 +422,7 @@ dependencies = [
  "bee-common",
  "bee-crypto",
  "bee-ledger",
- "bee-message",
+ "bee-message 0.1.0-alpha",
  "bee-network",
  "bee-runtime",
  "bee-snapshot",
@@ -429,9 +455,9 @@ dependencies = [
  "bech32",
  "bee-common",
  "bee-ledger",
- "bee-message",
+ "bee-message 0.1.0-alpha",
  "bee-network",
- "bee-pow",
+ "bee-pow 0.1.0-alpha",
  "bee-protocol",
  "bee-runtime",
  "bee-storage",
@@ -466,7 +492,7 @@ version = "0.1.0-alpha"
 dependencies = [
  "async-trait",
  "bee-common",
- "bee-message",
+ "bee-message 0.1.0-alpha",
  "bee-runtime",
  "bee-storage",
  "chrono",
@@ -497,7 +523,7 @@ dependencies = [
  "bee-common",
  "bee-crypto",
  "bee-ledger",
- "bee-message",
+ "bee-message 0.1.0-alpha",
  "bee-snapshot",
  "bee-storage",
  "bee-tangle",
@@ -517,7 +543,7 @@ version = "0.1.0-alpha"
 dependencies = [
  "async-trait",
  "bee-common",
- "bee-message",
+ "bee-message 0.1.0-alpha",
  "bee-runtime",
  "bee-snapshot",
  "bee-storage",
@@ -549,8 +575,8 @@ version = "0.1.0-alpha"
 dependencies = [
  "bee-crypto",
  "bee-ledger",
- "bee-message",
- "bee-pow",
+ "bee-message 0.1.0-alpha",
+ "bee-pow 0.1.0-alpha",
  "bee-snapshot",
  "bee-storage",
  "bee-tangle",
@@ -566,6 +592,8 @@ dependencies = [
 name = "bee-vote"
 version = "0.1.0-alpha"
 dependencies = [
+ "bee-common",
+ "bee-message 0.1.0-alpha (git+https://github.com/iotaledger/bee.git?branch=chrysalis-pt-2)",
  "flume",
  "futures",
  "rand 0.8.3",

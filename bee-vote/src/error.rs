@@ -11,6 +11,15 @@ pub enum Error {
     /// User error: `Fpc` struct not built properly – no `tx` for sending events.
     #[error("Fpc instance has no event sender, initialise the `tx` field")]
     FpcNoSender,
+    /// IO error, could be generated when packing components.
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
+    /// Invalid `Opinion` variant.
+    #[error("Invalid opinion {0}")]
+    InvalidOpinion(u8),
+    /// Error when packing bee-message components.
+    #[error(transparent)]
+    MessageError(#[from] bee_message::Error),
     /// Vote context has no `OpinionGiver`s available.
     #[error("No opinion givers are available")]
     NoOpinionGivers,

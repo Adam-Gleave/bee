@@ -3,7 +3,9 @@
 
 //! Functionality for handling opinions.
 
-use crate::error::Error;
+use crate::Error;
+
+use bee_common::packable::{Packable, Read, Write};
 
 use std::{collections::HashMap, fmt, ops};
 
@@ -38,19 +40,43 @@ pub struct QueriedOpinions {
 }
 
 /// Defines an opinion.
+#[repr(u8)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Opinion {
     /// Defines a "like" opinion.
-    Like,
+    Like    = 0x01,
     /// Defines a "dislike" opinion.
-    Dislike,
+    Dislike = 0x02,
     /// Defines an "unknown" opinion.
-    Unknown,
+    Unknown = 0x04,
 }
 
 impl fmt::Display for Opinion {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
+    }
+}
+
+impl Packable for Opinion {
+    type Error = Error;
+
+    fn packed_len(&self) -> usize {
+        0u8.packed_len()
+    }
+
+    fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
+        (*self as u8).pack(writer)?;
+
+        Ok(())
+    }
+
+    fn unpack<R: Read + ?Sized>(reader: &mut R) -> Result<Self, Error> {
+        Ok(match u8::unpack(reader)? {
+            0x01 => Opinion::Like,
+            0x02 => Opinion::Dislike,
+            0x04 => Opinion::Unknown,
+            other => return Err(Self::Error::InvalidOpinion(other)),
+        })
     }
 }
 
