@@ -1,5 +1,8 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
+
+//! Functionality for performing an FPC vote.
+
 use crate::{
     context::{ObjectType, VoteContext},
     error::Error,

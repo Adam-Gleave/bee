@@ -1,6 +1,8 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+//! Events that can occur during the vote process, to be transmitted through a channel.
+
 use crate::{
     context::VoteContext,
     error,

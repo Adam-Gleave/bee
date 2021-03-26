@@ -1,6 +1,8 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+//! Functionality for handling opinions.
+
 use crate::error::Error;
 
 use std::{collections::HashMap, fmt, ops};
