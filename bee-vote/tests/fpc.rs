@@ -4,7 +4,7 @@
 mod mock;
 
 use bee_vote::{
-    context::ObjectType,
+    ObjectType,
     error::Error,
     events::Event,
     fpc::{self, FpcBuilder},

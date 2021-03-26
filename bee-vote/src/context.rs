@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//! 
+//! Context information for the voting pool. 
 
 use crate::{
     error::Error,
@@ -19,7 +19,7 @@ pub enum ObjectType {
 }
 
 /// Builder pattern struct for instantiating a `VoteContext`.
-pub struct VoteContextBuilder {
+pub(crate) struct VoteContextBuilder {
     id: String,
     object_type: ObjectType,
     opinions: Option<Opinions>,
@@ -27,7 +27,7 @@ pub struct VoteContextBuilder {
 
 impl VoteContextBuilder {
     /// Create a new `VoteContextBuilder`, defining an ID and an `ObjectType` (voting object).
-    pub fn new(id: String, object_type: ObjectType) -> Self {
+    pub(crate) fn new(id: String, object_type: ObjectType) -> Self {
         Self {
             id,
             object_type,
@@ -36,20 +36,20 @@ impl VoteContextBuilder {
     }
 
     /// Set a single initial `Opinion`.
-    pub fn with_initial_opinion(mut self, opinion: Opinion) -> Self {
+    pub(crate) fn with_initial_opinion(mut self, opinion: Opinion) -> Self {
         self.opinions = Some(Opinions::new(vec![opinion]));
         self
     }
 
     /// Set a list of initial `Opinion`s.
-    pub fn with_initial_opinions(mut self, opinions: Opinions) -> Self {
+    pub(crate) fn with_initial_opinions(mut self, opinions: Opinions) -> Self {
         self.opinions = Some(opinions);
         self
     }
 
     /// Build a `VoteContext`.
     /// Note: this will panic if no initial opinions have been provided.
-    pub fn build(self) -> Result<VoteContext, Error> {
+    pub(crate) fn build(self) -> Result<VoteContext, Error> {
         Ok(VoteContext {
             id: self.id,
             object_type: self.object_type,
@@ -78,7 +78,7 @@ pub struct VoteContext {
 
 impl VoteContext {
     /// Constructs a new `VoteContext`.
-    pub fn new(id: String, object_type: ObjectType, initial_opinion: Opinion) -> Self {
+    pub(crate) fn new(id: String, object_type: ObjectType, initial_opinion: Opinion) -> Self {
         Self {
             id,
             object_type,
@@ -89,7 +89,7 @@ impl VoteContext {
     }
 
     /// Add the given `Opinion` to the `VoteContext`.
-    pub fn add_opinion(&mut self, opinion: Opinion) {
+    pub(crate) fn add_opinion(&mut self, opinion: Opinion) {
         self.opinions.push(opinion);
     }
 
@@ -129,12 +129,12 @@ impl VoteContext {
     }
 
     /// Describes whether the `VoteContext` is new (has not participated in a vote).
-    pub fn is_new(&self) -> bool {
+    pub(crate) fn is_new(&self) -> bool {
         self.liked == LIKED_INITIAL
     }
 
     /// Described whether the `VoteContext` has *just* finished its first round.
-    pub fn had_first_round(&self) -> bool {
+    pub(crate) fn had_first_round(&self) -> bool {
         self.rounds == 1
     }
 
@@ -154,7 +154,7 @@ impl VoteContext {
     }
 
     /// Update the `liked` value of a `VoteContext` when new opinions are formed.
-    pub fn set_liked(&mut self, liked: f64) {
+    pub(crate) fn set_liked(&mut self, liked: f64) {
         self.liked = liked;
     }
 
@@ -164,7 +164,7 @@ impl VoteContext {
     }
 
     /// Indicate the completion of a voting round for this item.
-    pub fn round_completed(&mut self) {
+    pub(crate) fn round_completed(&mut self) {
         self.rounds += 1;
     }
 }
