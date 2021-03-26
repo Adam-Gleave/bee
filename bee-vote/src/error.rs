@@ -18,7 +18,7 @@ pub enum Error {
     /// Error sending message through channel.
     #[error("Error sending message through channel")]
     SendError,
-    /// Catch-all error for cases that shouldn't happen.
+    /// Catch-all error for cases that really shouldn't happen.
     #[error("Error occurred: {0}")]
     Unknown(&'static str),
     /// Vote is already ongoing.

@@ -16,6 +16,7 @@ pub enum ObjectType {
     Timestamp,
 }
 
+/// Builder pattern struct for instantiating a `VoteContext`.
 pub struct VoteContextBuilder {
     id: String,
     object_type: ObjectType,
@@ -23,6 +24,7 @@ pub struct VoteContextBuilder {
 }
 
 impl VoteContextBuilder {
+    /// Create a new `VoteContextBuilder`, defining an ID and an `ObjectType` (voting object).
     pub fn new(id: String, object_type: ObjectType) -> Self {
         Self {
             id,
@@ -31,16 +33,20 @@ impl VoteContextBuilder {
         }
     }
 
+    /// Set a single initial `Opinion`.
     pub fn with_initial_opinion(mut self, opinion: Opinion) -> Self {
         self.opinions = Some(Opinions::new(vec![opinion]));
         self
     }
 
+    /// Set a list of initial `Opinion`s.
     pub fn with_initial_opinions(mut self, opinions: Opinions) -> Self {
         self.opinions = Some(opinions);
         self
     }
 
+    /// Build a `VoteContext`.
+    /// Note: this will panic if no initial opinions have been provided.
     pub fn build(self) -> Result<VoteContext, Error> {
         Ok(VoteContext {
             id: self.id,

@@ -9,9 +9,12 @@ use crate::{
 
 use std::{collections::HashMap, time::Duration};
 
+/// Votes on IDs.
 pub trait Voter {
+    /// Submits the initial ID and `ObjectType` of a voting, along with an initial opinion held by this `Voter`.
     fn vote(id: String, object_type: ObjectType, initial_opinion: Opinion) -> Result<(), Error>;
 
+    /// Gets the most recent opinion held by the `Voter` for the given ID.
     fn intermediate_opinion(id: String) -> Result<Opinion, Error>;
 }
 

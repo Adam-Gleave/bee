@@ -23,7 +23,7 @@ use std::{
 
 pub const DEFAULT_SAMPLE_SIZE: u32 = 21;
 
-/// Stores `VoteContext`s in a queue, and provides a HashMap for quick lookup.
+/// Stores `VoteContext`s in a queue, and provides a HashSet for quick lookup.
 #[derive(Debug)]
 struct Queue {
     /// Queue of all `VoteContext`s
@@ -61,6 +61,7 @@ impl Queue {
     }
 }
 
+/// Builder pattern struct for instantiating `Fpc`s.
 pub struct FpcBuilder<F>
 where
     F: Fn() -> Result<Vec<Box<dyn OpinionGiver>>, Error>,
@@ -82,6 +83,8 @@ impl<F> Default for FpcBuilder<F>
 where
     F: Fn() -> Result<Vec<Box<dyn OpinionGiver>>, Error>,
 {
+    /// Initialise with default parameters.
+    /// Note that the `tx` and `opinion_giver_fn` fields still need to be set before building.
     fn default() -> Self {
         Self {
             tx: None,
@@ -103,48 +106,63 @@ impl<F> FpcBuilder<F>
 where
     F: Fn() -> Result<Vec<Box<dyn OpinionGiver>>, Error>,
 {
+    /// Provide a `Sender<Event>` to the builder, so that the user may receive events as the voting proceeds.
     pub fn with_tx(mut self, tx: Sender<Event>) -> Self {
         self.tx = Some(tx);
         self
     }
 
+    /// Provide a closure to the builder that describes the `OpinionGivers` that will be used for voting.
     pub fn with_opinion_giver_fn(mut self, opinion_giver_fn: F) -> Self {
         self.opinion_giver_fn = Some(opinion_giver_fn);
         self
     }
 
+    /// Provide upper and lower bounds for random opinion forming threshold, used on the first voting round.
+    /// These bounds will be used to determine whether a `VoteContext` likes or dislikes a voting object.
     pub fn with_first_round_bounds(mut self, lower: f64, upper: f64) -> Self {
         self.first_round_lower_bound = lower;
         self.first_round_upper_bound = upper;
         self
     }
 
+    /// Provide upper and lower bounds for random opinion forming threshold, used on subsequent voting rounds.
+    /// These bounds will be used to determine whether a `VoteContext` likes or dislikes a voting object.
     pub fn with_subsequent_rounds_bounds(mut self, lower: f64, upper: f64) -> Self {
         self.subsequent_rounds_lower_bound = lower;
         self.subsequent_rounds_upper_bound = upper;
         self
     }
 
+    /// Provide a query sample size.
+    /// This is used to define the number of `Opinion`s to query on each voting round.
     pub fn with_query_sample_size(mut self, sample_size: u32) -> Self {
         self.query_sample_size = sample_size;
         self
     }
 
+    /// Provide a finalization threshold.
+    /// This is used to define the number of voting rounds in which a `VoteContext`s opinion must stay constant for.
     pub fn with_finalization_threshold(mut self, threshold: u32) -> Self {
         self.finalization_threshold = threshold;
         self
     }
 
+    /// Provide a cool-off period.
+    /// This is used to define the number of voting rounds in which to skip any finalization checks.
     pub fn with_cooling_off_period(mut self, period: u32) -> Self {
         self.cooling_off_period = period;
         self
     }
 
+    /// Define the maximum number of rounds to execute before aborting the vote (if not finalized).
     pub fn with_max_rounds(mut self, max: u32) -> Self {
         self.max_rounds_per_vote_context = max;
         self
     }
 
+    /// Instantiate a new `Fpc` struct using parameters given by the `FpcBuilder`.
+    /// Note: this will panic if `tx` or `opinion_giver_fn` are not defined.
     pub fn build(self) -> Result<Fpc<F>, Error> {
         Ok(Fpc {
             tx: self.tx.ok_or(Error::FpcNoSender)?,
@@ -165,24 +183,43 @@ where
     }
 }
 
+/// Contains all instance information about a vote, including all `VoteContext`s, a queue of contexts
+/// to be added to the vote in the next round, and RNG paramaters.
 #[derive(Debug)]
 pub struct Fpc<F>
 where
     F: Fn() -> Result<Vec<Box<dyn OpinionGiver>>, Error>,
 {
+    /// `Sender` for transmitting voting events through a channel.
     tx: Sender<Event>,
+    /// Closure that describes the `OpinionGiver`s used in the vote.
     opinion_giver_fn: F,
+    /// `Queue` of `VoteContext`s to be added to the next voting round.
     queue: RwLock<Queue>,
+    /// Map of `VoteContext` IDs to contexts.
+    /// Contains all `VoteContext`s that are participating in this voting round.
     contexts: RwLock<HashMap<String, VoteContext>>,
+    /// Indicates whether the last round completed without error or other failure.
+    /// These will be indicated through `Error` or `Failed` events.
     last_round_successful: AtomicBool,
+    /// Lower bound for random opinion forming threshold, used on the first voting round.
+    /// These bounds will be used to determine whether a `VoteContext` likes or dislikes a voting object.
     first_round_lower_bound: f64,
+    /// Upper bound for random opinion forming threshold, used on the first voting round.
     first_round_upper_bound: f64,
+    /// Lower bound for random opinion forming threshold, used on subsequent voting rounds.
     subsequent_rounds_lower_bound: f64,
+    /// Upper bound for random opinion forming threshold, used on subsequent voting rounds.
     subsequent_rounds_upper_bound: f64,
+    /// Number of `Opinion`s to query on each voting round.
     query_sample_size: u32,
+    /// Number of voting rounds in which a `VoteContext`s opinion must stay constant for. 
     finalization_threshold: u32,
+    /// Number of voting rounds in which to skip any finalization checks.
     cooling_off_period: u32,
+    /// Maximum number of rounds to execute before aborting the vote (if not finalized). 
     max_rounds_per_vote_context: u32,
+    /// Maximum time before aborting a query.
     query_timeout: Duration,
 }
 
@@ -190,6 +227,9 @@ impl<F> Fpc<F>
 where
     F: Fn() -> Result<Vec<Box<dyn OpinionGiver>>, Error>,
 {
+    /// Add a `VoteContext` to the queue for the next round, providing a vote ID, `ObjectType` and an initial opinion
+    /// of the context.
+    /// This can fail if there is already a vote ongoing for this ID.
     pub async fn vote(&self, id: String, object_type: ObjectType, initial_opinion: Opinion) -> Result<(), Error> {
         let mut queue_guard = self.queue.write().await;
         let context_guard = self.contexts.read().await;
@@ -206,15 +246,18 @@ where
         Ok(())
     }
 
+    /// Return the most recent opinion on the given ID. If a `VoteContext` with the ID does not exist, returns None.
     pub async fn intermediate_opinion(&self, id: String) -> Option<Opinion> {
         if let Some(context) = self.contexts.read().await.get(&id) {
+            // TODO check this.
             context.last_opinion()
         } else {
             Some(Opinion::Unknown)
         }
     }
 
-    pub async fn enqueue(&self) {
+    /// Add a `VoteContext` to the queue, to participate on the voting for the next round.
+    async fn enqueue(&self) {
         let mut queue_guard = self.queue.write().await;
         let mut context_guard = self.contexts.write().await;
 
@@ -223,7 +266,8 @@ where
         }
     }
 
-    pub async fn form_opinions(&self, rand: f64) {
+    /// Loop through all `VoteContext`s that are participating, and have them form an opinion on the voting object.
+    async fn form_opinions(&self, rand: f64) {
         let mut context_guard = self.contexts.write().await;
 
         for context in context_guard.values_mut() {
@@ -245,7 +289,9 @@ where
         }
     }
 
-    pub async fn finalize_opinions(&self) -> Result<(), Error> {
+    /// Check if any `VoteContext`s have finalized opinions.
+    /// If a context has finalized on an opinion, send an event down the channel and remove it from the voting pool.
+    async fn finalize_opinions(&self) -> Result<(), Error> {
         let context_guard = self.contexts.read().await;
         let mut to_remove = vec![];
 
@@ -286,6 +332,12 @@ where
         Ok(())
     }
 
+    /// Perform the voting round, with a given threshold (between 0 and 1).
+    /// This threshold is used to generate opinions on the voting object.
+    ///
+    /// For each `VoteContext` in the voting pool, a random number is generated within the range
+    /// given on initialisation of the `Fpc` struct, and compared to the threshold to generate a
+    /// `Like` or `Dislike` opinion.
     pub async fn do_round(&self, rand: f64) -> Result<(), Error> {
         let start = Instant::now();
         self.enqueue().await;
@@ -312,7 +364,8 @@ where
         Ok(())
     }
 
-    pub async fn query_opinions(&self) -> Result<Vec<QueriedOpinions>, Error> {
+    /// Select a number of `OpinionGiver`s and query them for opinions.
+    async fn query_opinions(&self) -> Result<Vec<QueriedOpinions>, Error> {
         let mut rng = thread_rng();
         let query_ids = self.vote_context_ids().await;
 
@@ -391,6 +444,7 @@ where
         Ok(Arc::try_unwrap(all_queried_opinions).unwrap().into_inner())
     }
 
+    /// Run a query on a given `OpinionGiver`, to generate opinions on the voting object.
     async fn do_query(
         query_ids: &QueryIds,
         vote_map: Arc<RwLock<HashMap<String, Opinions>>>,
@@ -455,6 +509,7 @@ where
         all_queried_opinions.write().await.push(queried_opinions);
     }
 
+    /// Get the IDs of all `VoteContext`s currently in the voting pool.
     async fn vote_context_ids(&self) -> QueryIds {
         let context_guard = self.contexts.read().await;
         let mut conflict_ids = vec![];
