@@ -12,7 +12,7 @@ use std::{collections::HashMap, fmt, ops};
 /// Gives `Opinion`s about the given IDs.
 pub trait OpinionGiver {
     /// Queries the `OpinionGiver` for its opinions of given IDs.
-    fn query(&mut self, ids: &QueryIds) -> Result<Opinions, Error>;
+    fn query(&self, ids: &QueryIds) -> Result<Opinions, Error>;
 
     /// The ID of the `OpinionGiver`.
     fn id(&self) -> &str;

@@ -51,4 +51,4 @@ pub use context::ObjectType;
 pub use error::Error;
 pub use events::Event;
 pub use fpc::{Fpc, FpcBuilder};
-pub use opinion::{Opinion, OpinionGiver};
+pub use opinion::{Opinion, Opinions, OpinionGiver};
