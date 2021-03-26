@@ -216,11 +216,11 @@ where
     subsequent_rounds_upper_bound: f64,
     /// Number of `Opinion`s to query on each voting round.
     query_sample_size: u32,
-    /// Number of voting rounds in which a `VoteContext`s opinion must stay constant for. 
+    /// Number of voting rounds in which a `VoteContext`s opinion must stay constant for.
     finalization_threshold: u32,
     /// Number of voting rounds in which to skip any finalization checks.
     cooling_off_period: u32,
-    /// Maximum number of rounds to execute before aborting the vote (if not finalized). 
+    /// Maximum number of rounds to execute before aborting the vote (if not finalized).
     max_rounds_per_vote_context: u32,
     /// Maximum time before aborting a query.
     query_timeout: Duration,

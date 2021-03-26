@@ -4,11 +4,11 @@
 mod mock;
 
 use bee_vote::{
-    ObjectType,
     error::Error,
     events::Event,
     fpc::{self, FpcBuilder},
     opinion::{Opinion, OpinionGiver, Opinions},
+    ObjectType,
 };
 
 #[tokio::test]

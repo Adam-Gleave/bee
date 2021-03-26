@@ -2,21 +2,23 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    Error, 
     opinion::{Opinion, Opinions, QueryIds},
+    Error,
 };
 
 use bee_common::packable::{Packable, Read, Write};
 use bee_message::{
     payload::transaction::{TransactionId, TRANSACTION_ID_LENGTH},
-    MessageId,
-    MESSAGE_ID_LENGTH,
+    MessageId, MESSAGE_ID_LENGTH,
 };
 
 use tokio::sync::RwLock;
 
 use core::str::FromStr;
-use std::{collections::HashMap, time::{Duration, SystemTime, UNIX_EPOCH}};
+use std::{
+    collections::HashMap,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 /// Holds a conflicting transaction ID and its opinion.
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -29,14 +31,14 @@ pub struct Conflict {
 
 impl Packable for Conflict {
     type Error = Error;
-    
+
     fn packed_len(&self) -> usize {
         TRANSACTION_ID_LENGTH + 0u8.packed_len()
     }
 
     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
         self.id.pack(writer)?;
-        self.opinion.pack(writer)?; 
+        self.opinion.pack(writer)?;
 
         Ok(())
     }
@@ -44,7 +46,7 @@ impl Packable for Conflict {
     fn unpack<R: Read + ?Sized>(reader: &mut R) -> Result<Self, Self::Error> {
         let transaction_id = TransactionId::unpack(reader)?;
         let opinion = Opinion::unpack(reader)?;
-        
+
         Ok(Self {
             id: transaction_id,
             opinion,
@@ -63,14 +65,14 @@ pub struct Timestamp {
 
 impl Packable for Timestamp {
     type Error = Error;
-    
+
     fn packed_len(&self) -> usize {
         MESSAGE_ID_LENGTH + 0u8.packed_len()
     }
 
     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
         self.id.pack(writer)?;
-        self.opinion.pack(writer)?; 
+        self.opinion.pack(writer)?;
 
         Ok(())
     }
@@ -78,7 +80,7 @@ impl Packable for Timestamp {
     fn unpack<R: Read + ?Sized>(reader: &mut R) -> Result<Self, Self::Error> {
         let message_id = MessageId::unpack(reader)?;
         let opinion = Opinion::unpack(reader)?;
-        
+
         Ok(Self {
             id: message_id,
             opinion,
@@ -94,7 +96,7 @@ pub struct Entry {
 
 // TODO String -> Node ID
 pub struct View {
-    pub node_id: String, 
+    pub node_id: String,
     pub conflicts: RwLock<HashMap<TransactionId, Entry>>,
     pub timestamps: RwLock<HashMap<MessageId, Entry>>,
 }
@@ -119,13 +121,13 @@ impl View {
         if conflicts_guard.contains_key(&conflict.id) {
             conflicts_guard.insert(
                 conflict.id,
-                Entry { 
-                    opinions: Opinions::new(vec![conflict.opinion]), 
+                Entry {
+                    opinions: Opinions::new(vec![conflict.opinion]),
                     timestamp: SystemTime::now()
                         .duration_since(UNIX_EPOCH)
                         .expect("Clock may have gone backwards")
                         .as_millis() as u64,
-                }
+                },
             );
         } else {
             // This will never fail.
@@ -141,13 +143,13 @@ impl View {
             if conflicts_guard.contains_key(&conflict.id) {
                 conflicts_guard.insert(
                     conflict.id,
-                    Entry { 
-                        opinions: Opinions::new(vec![conflict.opinion]), 
+                    Entry {
+                        opinions: Opinions::new(vec![conflict.opinion]),
                         timestamp: SystemTime::now()
                             .duration_since(UNIX_EPOCH)
                             .expect("Clock may have gone backwards")
                             .as_millis() as u64,
-                    }
+                    },
                 );
             } else {
                 // This will never fail.
@@ -169,13 +171,13 @@ impl View {
                         .duration_since(UNIX_EPOCH)
                         .expect("Clock may have gone backwards")
                         .as_millis() as u64,
-                }
+                },
             );
         } else {
             // This will never fail.
             let entry = timestamps_guard.get_mut(&timestamp.id).unwrap();
             entry.opinions.push(timestamp.opinion);
-        } 
+        }
     }
 
     pub async fn add_timestamps(&self, timestamps: Vec<Timestamp>) {
@@ -191,7 +193,7 @@ impl View {
                             .duration_since(UNIX_EPOCH)
                             .expect("Clock may have gone backwards")
                             .as_millis() as u64,
-                    }
+                    },
                 );
             } else {
                 // This will never fail.
@@ -206,13 +208,17 @@ impl View {
     }
 
     pub async fn get_timestamp_opinions(&self, id: MessageId) -> Option<Opinions> {
-        self.timestamps.read().await.get(&id).map(|entry| entry.opinions.clone()) 
+        self.timestamps
+            .read()
+            .await
+            .get(&id)
+            .map(|entry| entry.opinions.clone())
     }
 
     pub async fn query(&self, query_ids: &QueryIds) -> Result<Opinions, Error> {
         // TODO default empty `Opinions`.
-        let mut opinions = Opinions::new(vec![]); 
-        
+        let mut opinions = Opinions::new(vec![]);
+
         {
             let conflicts_guard = self.conflicts.read().await;
             for id in query_ids.conflict_ids.iter() {
@@ -243,7 +249,7 @@ impl View {
                     opinions.push(Opinion::Unknown);
                 };
             }
-        } 
+        }
 
         Ok(opinions)
     }
@@ -264,19 +270,10 @@ impl Registry {
 
         let guard = self.views.write().await;
         for (_, view) in guard.iter() {
-            let filter = |entry: &Entry| -> bool {
-                now - entry.timestamp < duration.as_millis() as u64
-            };
+            let filter = |entry: &Entry| -> bool { now - entry.timestamp < duration.as_millis() as u64 };
 
-            view.conflicts
-                .write()
-                .await
-                .retain(|_, entry| filter(entry));
-
-            view.timestamps
-                .write()
-                .await
-                .retain(|_, entry| filter(entry));            
+            view.conflicts.write().await.retain(|_, entry| filter(entry));
+            view.timestamps.write().await.retain(|_, entry| filter(entry));
         }
     }
 }

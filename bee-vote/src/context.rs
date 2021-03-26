@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//! Context information for the voting pool. 
+//! Context information for the voting pool.
 
 use crate::{
     error::Error,

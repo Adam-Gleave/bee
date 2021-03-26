@@ -1,9 +1,9 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//! FPC voting components for Bee. For now, this is a relatively straightforward port of `goshimmer`'s FPC 
+//! FPC voting components for Bee. For now, this is a relatively straightforward port of `goshimmer`'s FPC
 //! [package](https://github.com/iotaledger/goshimmer/tree/develop/packages/vote), minus the networking
-//! and GRPC functionality. 
+//! and GRPC functionality.
 //!
 //! Instead, this crate contains a library of all components needed to build FPC voting functionality.
 //!
@@ -12,13 +12,13 @@
 //!
 //! ```
 //! // Imports
-//! use bee_vote::{Event, FpcBuilder, OpinionGiver}; 
+//! use bee_vote::{Event, FpcBuilder, OpinionGiver};
 //! # use tests::MockOpinionGiver;
 //! # use futures::executor::block_on;
 //!
 //! // Create a channel to send voting events through.
 //! let (tx, rx) = flume::unbounded();
-//! 
+//!
 //! // Create a voter (an instance of the `fpc::Fpc` struct)
 //! let voter = FpcBuilder::default()
 //!     .with_tx(tx)
@@ -33,11 +33,11 @@
 //! for _ in 0..5 {
 //!     block_on(voter.do_round(0.5)).unwrap();
 //! }
-//! 
+//!
 //! let iter = rx.try_iter();
 //! while let Some(ev) = iter.next() {
-//!     // Do something with the received event 
-//! } 
+//!     // Do something with the received event
+//! }
 //! ```
 
 pub mod context;
@@ -51,4 +51,4 @@ pub use context::ObjectType;
 pub use error::Error;
 pub use events::Event;
 pub use fpc::{Fpc, FpcBuilder};
-pub use opinion::{Opinion, Opinions, OpinionGiver};
+pub use opinion::{Opinion, OpinionGiver, Opinions};
