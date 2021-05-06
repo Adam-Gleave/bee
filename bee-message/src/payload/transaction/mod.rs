@@ -8,7 +8,7 @@ mod transaction_id;
 
 use crate::{unlock::UnlockBlocks, Error};
 
-pub use essence::{Essence, RegularEssence, RegularEssenceBuilder};
+pub use essence::{TransactionEssence, TransactionEssenceBuilder};
 pub use transaction_id::{TransactionId, TRANSACTION_ID_LENGTH};
 
 use bee_common::packable::{Packable, Read, Write};
@@ -19,7 +19,7 @@ use crypto::hashes::{blake2b::Blake2b256, Digest};
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TransactionPayload {
-    essence: Essence,
+    essence: TransactionEssence,
     unlock_blocks: UnlockBlocks,
 }
 
@@ -43,7 +43,7 @@ impl TransactionPayload {
     }
 
     /// Return the essence of a `TransactionPayload`.
-    pub fn essence(&self) -> &Essence {
+    pub fn essence(&self) -> &TransactionEssence {
         &self.essence
     }
 
@@ -68,7 +68,7 @@ impl Packable for TransactionPayload {
     }
 
     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-        let essence = Essence::unpack_inner::<R, CHECK>(reader)?;
+        let essence = TransactionEssence::unpack_inner::<R, CHECK>(reader)?;
         let unlock_blocks = UnlockBlocks::unpack_inner::<R, CHECK>(reader)?;
 
         Self::builder()
@@ -81,7 +81,7 @@ impl Packable for TransactionPayload {
 /// A builder to build a `TransactionPayload`.
 #[derive(Debug, Default)]
 pub struct TransactionPayloadBuilder {
-    essence: Option<Essence>,
+    essence: Option<TransactionEssence>,
     unlock_blocks: Option<UnlockBlocks>,
 }
 
@@ -92,16 +92,14 @@ impl TransactionPayloadBuilder {
     }
 
     /// Adds an essence to a `TransactionPayloadBuilder`.
-    pub fn with_essence(mut self, essence: Essence) -> Self {
+    pub fn with_essence(mut self, essence: TransactionEssence) -> Self {
         self.essence.replace(essence);
-
         self
     }
 
     /// Adds unlock blocks to a `TransactionPayloadBuilder`.
     pub fn with_unlock_blocks(mut self, unlock_blocks: UnlockBlocks) -> Self {
         self.unlock_blocks.replace(unlock_blocks);
-
         self
     }
 
@@ -110,15 +108,11 @@ impl TransactionPayloadBuilder {
         let essence = self.essence.ok_or(Error::MissingField("essence"))?;
         let unlock_blocks = self.unlock_blocks.ok_or(Error::MissingField("unlock_blocks"))?;
 
-        match essence {
-            Essence::Regular(ref essence) => {
-                if essence.inputs().len() != unlock_blocks.len() {
-                    return Err(Error::InputUnlockBlockCountMismatch(
-                        essence.inputs().len(),
-                        unlock_blocks.len(),
-                    ));
-                }
-            }
+        if essence.inputs().len() != unlock_blocks.len() {
+            return Err(Error::InputUnlockBlockCountMismatch(
+                essence.inputs().len(),
+                unlock_blocks.len(),
+            ));
         }
 
         Ok(TransactionPayload { essence, unlock_blocks })

@@ -22,7 +22,7 @@ pub const PLEDGE_ID_LENGTH: usize = 32;
 /// A transaction regular essence consuming inputs, creating outputs and carrying an optional payload.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct RegularEssence {
+pub struct TransactionEssence {
     /// Transaction essence version number.
     version: u8,
     /// Timestamp of the transaction.
@@ -39,13 +39,10 @@ pub struct RegularEssence {
     payload: Option<Payload>,
 }
 
-impl RegularEssence {
-    /// The essence kind of a `RegularEssence`
-    pub const KIND: u8 = 0;
-
-    /// Create a new `RegularEssenceBuilder` to build a `RegularEssence`.
-    pub fn builder() -> RegularEssenceBuilder {
-        RegularEssenceBuilder::new()
+impl TransactionEssence {
+    /// Create a new `TransactionEssenceBuilder` to build a `TransactionEssence`.
+    pub fn builder() -> TransactionEssenceBuilder {
+        TransactionEssenceBuilder::new()
     }
 
     /// Return the version number of a Transaction Essence.
@@ -68,23 +65,23 @@ impl RegularEssence {
         &self.consensus_pledge_id
     }
 
-    /// Return the inputs of a `RegularEssence`.
+    /// Return the inputs of a `TransactionEssence`.
     pub fn inputs(&self) -> &[Input] {
         &self.inputs
     }
 
-    /// Return the outputs of a `RegularEssence`.
+    /// Return the outputs of a `TransactionEssence`.
     pub fn outputs(&self) -> &[Output] {
         &self.outputs
     }
 
-    /// Return the optional payload of a `RegularEssence`.
+    /// Return the optional payload of a `TransactionEssence`.
     pub fn payload(&self) -> &Option<Payload> {
         &self.payload
     }
 }
 
-impl Packable for RegularEssence {
+impl Packable for TransactionEssence {
     type Error = Error;
 
     fn packed_len(&self) -> usize {
@@ -162,9 +159,9 @@ impl Packable for RegularEssence {
     }
 }
 
-/// A builder to build a `RegularEssence`.
+/// A builder to build a `TransactionEssence`.
 #[derive(Debug, Default)]
-pub struct RegularEssenceBuilder {
+pub struct TransactionEssenceBuilder {
     version: Option<u8>,
     timestamp: Option<u64>,
     access_pledge_id: Option<[u8; PLEDGE_ID_LENGTH]>,
@@ -174,68 +171,68 @@ pub struct RegularEssenceBuilder {
     payload: Option<Payload>,
 }
 
-impl RegularEssenceBuilder {
-    /// Creates a new `RegularEssenceBuilder`.
+impl TransactionEssenceBuilder {
+    /// Creates a new `TransactionEssenceBuilder`.
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Adds a version number to a `RegularEssenceBuilder`.
+    /// Adds a version number to a `TransactionEssenceBuilder`.
     pub fn with_version(mut self, version: u8) -> Self {
         self.version = Some(version);
         self
     }
 
-    /// Adds a timestamp to a `RegularEssenceBuilder`.
+    /// Adds a timestamp to a `TransactionEssenceBuilder`.
     pub fn with_timestamp(mut self, timestamp: u64) -> Self {
         self.timestamp = Some(timestamp);
         self
     }
 
-    /// Adds an access pledge ID to a `RegularEssenceBuilder`.
+    /// Adds an access pledge ID to a `TransactionEssenceBuilder`.
     pub fn with_access_pledge_id(mut self, access_pledge_id: [u8; PLEDGE_ID_LENGTH]) -> Self {
         self.access_pledge_id = Some(access_pledge_id);
         self
     }
 
-    /// Adds a consensus pledge ID to a `RegularEssenceBuilder`.
+    /// Adds a consensus pledge ID to a `TransactionEssenceBuilder`.
     pub fn with_consensus_pledge_id(mut self, consensus_pledge_id: [u8; PLEDGE_ID_LENGTH]) -> Self {
         self.consensus_pledge_id = Some(consensus_pledge_id);
         self
     }
 
-    /// Adds inputs to a `RegularEssenceBuilder`
+    /// Adds inputs to a `TransactionEssenceBuilder`
     pub fn with_inputs(mut self, inputs: Vec<Input>) -> Self {
         self.inputs = inputs;
         self
     }
 
-    /// Add an input to a `RegularEssenceBuilder`.
+    /// Add an input to a `TransactionEssenceBuilder`.
     pub fn add_input(mut self, input: Input) -> Self {
         self.inputs.push(input);
         self
     }
 
-    /// Add outputs to a `RegularEssenceBuilder`.
+    /// Add outputs to a `TransactionEssenceBuilder`.
     pub fn with_outputs(mut self, outputs: Vec<Output>) -> Self {
         self.outputs = outputs;
         self
     }
 
-    /// Add an output to a `RegularEssenceBuilder`.
+    /// Add an output to a `TransactionEssenceBuilder`.
     pub fn add_output(mut self, output: Output) -> Self {
         self.outputs.push(output);
         self
     }
 
-    /// Add a payload to a `RegularEssenceBuilder`.
+    /// Add a payload to a `TransactionEssenceBuilder`.
     pub fn with_payload(mut self, payload: Payload) -> Self {
         self.payload = Some(payload);
         self
     }
 
-    /// Finishes a `RegularEssenceBuilder` into a `RegularEssence`.
-    pub fn finish(self) -> Result<RegularEssence, Error> {
+    /// Finishes a `TransactionEssenceBuilder` into a `TransactionEssence`.
+    pub fn finish(self) -> Result<TransactionEssence, Error> {
         let version = self.version.ok_or(Error::MissingField("version"))?;
         let timestamp = self.timestamp.ok_or(Error::MissingField("timestamp"))?;
         let access_pledge_id = self.access_pledge_id.ok_or(Error::MissingField("access_pledge_id"))?;
@@ -322,7 +319,7 @@ impl RegularEssenceBuilder {
             return Err(Error::TransactionOutputsNotSorted);
         }
 
-        Ok(RegularEssence {
+        Ok(TransactionEssence {
             version,
             timestamp,
             access_pledge_id,
