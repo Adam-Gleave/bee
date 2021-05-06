@@ -258,7 +258,6 @@ impl TransactionEssenceBuilder {
                         return Err(Error::DuplicateUtxo(u.clone()));
                     }
                 }
-                _ => return Err(Error::InvalidInputKind(input.kind())),
             }
         }
 
@@ -305,7 +304,6 @@ impl TransactionEssenceBuilder {
                         Error::InvalidAccumulatedOutput(total as u128 + dust_allowance.amount() as u128)
                     })?;
                 }
-                _ => return Err(Error::InvalidOutputKind(output.kind())),
             }
 
             // Accumulated output balance must not exceed the total supply of tokens.

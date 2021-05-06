@@ -4,14 +4,12 @@
 mod output_id;
 mod signature_locked_dust_allowance;
 mod signature_locked_single;
-mod treasury;
 
 pub use output_id::{OutputId, OUTPUT_ID_LENGTH};
 pub use signature_locked_dust_allowance::{
     SignatureLockedDustAllowanceOutput, DUST_THRESHOLD, SIGNATURE_LOCKED_DUST_ALLOWANCE_OUTPUT_AMOUNT,
 };
 pub use signature_locked_single::{SignatureLockedSingleOutput, SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT};
-pub use treasury::{TreasuryOutput, TREASURY_OUTPUT_AMOUNT};
 
 use crate::Error;
 
@@ -30,8 +28,6 @@ pub enum Output {
     SignatureLockedSingle(SignatureLockedSingleOutput),
     /// A signature locked dust allowance output.
     SignatureLockedDustAllowance(SignatureLockedDustAllowanceOutput),
-    /// A treasury output.
-    Treasury(TreasuryOutput),
 }
 
 impl Output {
@@ -40,7 +36,6 @@ impl Output {
         match self {
             Self::SignatureLockedSingle(_) => SignatureLockedSingleOutput::KIND,
             Self::SignatureLockedDustAllowance(_) => SignatureLockedDustAllowanceOutput::KIND,
-            Self::Treasury(_) => TreasuryOutput::KIND,
         }
     }
 }
@@ -57,12 +52,6 @@ impl From<SignatureLockedDustAllowanceOutput> for Output {
     }
 }
 
-impl From<TreasuryOutput> for Output {
-    fn from(output: TreasuryOutput) -> Self {
-        Self::Treasury(output)
-    }
-}
-
 impl Packable for Output {
     type Error = Error;
 
@@ -72,7 +61,6 @@ impl Packable for Output {
             Self::SignatureLockedDustAllowance(output) => {
                 SignatureLockedDustAllowanceOutput::KIND.packed_len() + output.packed_len()
             }
-            Self::Treasury(output) => TreasuryOutput::KIND.packed_len() + output.packed_len(),
         }
     }
 
@@ -86,10 +74,6 @@ impl Packable for Output {
                 SignatureLockedDustAllowanceOutput::KIND.pack(writer)?;
                 output.pack(writer)?;
             }
-            Self::Treasury(output) => {
-                TreasuryOutput::KIND.pack(writer)?;
-                output.pack(writer)?;
-            }
         }
 
         Ok(())
@@ -101,7 +85,6 @@ impl Packable for Output {
             SignatureLockedDustAllowanceOutput::KIND => {
                 SignatureLockedDustAllowanceOutput::unpack_inner::<R, CHECK>(reader)?.into()
             }
-            TreasuryOutput::KIND => TreasuryOutput::unpack_inner::<R, CHECK>(reader)?.into(),
             k => return Err(Self::Error::InvalidOutputKind(k)),
         })
     }
