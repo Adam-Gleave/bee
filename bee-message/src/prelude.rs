@@ -19,7 +19,7 @@ pub use crate::{
         },
         receipt::{MigratedFundsEntry, ReceiptPayload, TailTransactionHash, TAIL_TRANSACTION_HASH_LEN},
         transaction::{
-            Essence, RegularEssence, RegularEssenceBuilder, TransactionId, TransactionPayload,
+            TransactionEssence, TransactionEssenceBuilder, TransactionId, TransactionPayload,
             TransactionPayloadBuilder, TRANSACTION_ID_LENGTH,
         },
         treasury::TreasuryTransactionPayload,
