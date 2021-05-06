@@ -176,7 +176,7 @@ impl Packable for Message {
         if CHECK
             && !matches!(
                 payload,
-                None | Some(Payload::Transaction(_)) | Some(Payload::Milestone(_)) | Some(Payload::Indexation(_))
+                None | Some(Payload::Transaction(_)) | Some(Payload::Indexation(_))
             )
         {
             // Safe to unwrap, since it's known not to be None.
@@ -322,7 +322,7 @@ impl<P: NonceProvider> MessageBuilder<P> {
         // FIXME payload types
         if !matches!(
             self.payload,
-            None | Some(Payload::Transaction(_)) | Some(Payload::Milestone(_)) | Some(Payload::Indexation(_))
+            None | Some(Payload::Transaction(_)) | Some(Payload::Indexation(_))
         ) {
             // Safe to unwrap here, since it's known not to be None.
             return Err(Error::InvalidPayloadKind(self.payload.unwrap().kind()));

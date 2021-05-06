@@ -4,25 +4,18 @@
 pub use crate::{
     address::{Address, Ed25519Address, ED25519_ADDRESS_LENGTH},
     constants::IOTA_SUPPLY,
-    input::{Input, TreasuryInput, UtxoInput},
-    milestone::MilestoneIndex,
+    input::{Input, UtxoInput},
     output::{
-        Output, OutputId, SignatureLockedDustAllowanceOutput, SignatureLockedSingleOutput, TreasuryOutput,
+        Output, OutputId, SignatureLockedDustAllowanceOutput, SignatureLockedSingleOutput,
         OUTPUT_ID_LENGTH,
     },
     parents::{Parents, MESSAGE_PARENTS_RANGE},
     payload::{
         indexation::{IndexationPayload, PaddedIndex},
-        milestone::{
-            MilestoneId, MilestonePayload, MilestonePayloadEssence, MILESTONE_ID_LENGTH, MILESTONE_MERKLE_PROOF_LENGTH,
-            MILESTONE_PUBLIC_KEY_LENGTH, MILESTONE_SIGNATURE_LENGTH,
-        },
-        receipt::{MigratedFundsEntry, ReceiptPayload, TailTransactionHash, TAIL_TRANSACTION_HASH_LEN},
         transaction::{
             TransactionEssence, TransactionEssenceBuilder, TransactionId, TransactionPayload,
             TransactionPayloadBuilder, TRANSACTION_ID_LENGTH,
         },
-        treasury::TreasuryTransactionPayload,
         Payload,
     },
     signature::{Ed25519Signature, SignatureUnlock},
