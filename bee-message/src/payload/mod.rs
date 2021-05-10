@@ -3,9 +3,11 @@
 
 //! The payload module defines the core data types for representing message payloads.
 
+pub mod fpc;
 pub mod indexation;
 pub mod transaction;
 
+use fpc::FpcPayload;
 use indexation::IndexationPayload;
 use transaction::TransactionPayload;
 
@@ -28,6 +30,8 @@ pub enum Payload {
     Transaction(Box<TransactionPayload>),
     /// An indexation payload.
     Indexation(Box<IndexationPayload>),
+    /// An FPC payload.
+    Fpc(Box<FpcPayload>),
 }
 
 impl Payload {
@@ -36,6 +40,7 @@ impl Payload {
         match self {
             Self::Transaction(_) => TransactionPayload::KIND,
             Self::Indexation(_) => IndexationPayload::KIND,
+            Self::Fpc(_) => FpcPayload::KIND,
         }
     }
 }
@@ -52,6 +57,12 @@ impl From<IndexationPayload> for Payload {
     }
 }
 
+impl From<FpcPayload> for Payload {
+    fn from(payload: FpcPayload) -> Self {
+        Self::Fpc(Box::new(payload))
+    }
+}
+
 impl Packable for Payload {
     type Error = Error;
 
@@ -59,6 +70,7 @@ impl Packable for Payload {
         match self {
             Self::Transaction(payload) => TransactionPayload::KIND.packed_len() + payload.packed_len(),
             Self::Indexation(payload) => IndexationPayload::KIND.packed_len() + payload.packed_len(),
+            Self::Fpc(payload) => FpcPayload::KIND.packed_len() + payload.packed_len(),
         }
     }
 
@@ -72,6 +84,10 @@ impl Packable for Payload {
                 IndexationPayload::KIND.pack(writer)?;
                 payload.pack(writer)?;
             }
+            Self::Fpc(payload) => {
+                FpcPayload::KIND.pack(writer)?;
+                payload.pack(writer)?;
+            }
         }
 
         Ok(())
@@ -81,6 +97,7 @@ impl Packable for Payload {
         Ok(match u32::unpack_inner::<R, CHECK>(reader)? {
             TransactionPayload::KIND => TransactionPayload::unpack_inner::<R, CHECK>(reader)?.into(),
             IndexationPayload::KIND => IndexationPayload::unpack_inner::<R, CHECK>(reader)?.into(),
+            FpcPayload::KIND => FpcPayload::unpack_inner::<R, CHECK>(reader)?.into(),
             k => return Err(Self::Error::InvalidPayloadKind(k)),
         })
     }
