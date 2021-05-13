@@ -51,7 +51,7 @@ pub mod integrated {
         }
 
         async fn start(node: &mut N, config: Self::Config) -> Result<Self, Self::Error> {
-            node.spawn::<Self, _, _>(|shutdown| async move {
+            node.spawn::<Self, _, _>(file!(), line!(), |shutdown| async move {
                 network_host_processor(config, shutdown)
                     .await
                     .expect("network host processor");

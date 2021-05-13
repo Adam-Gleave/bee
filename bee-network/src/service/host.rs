@@ -93,13 +93,13 @@ pub mod integrated {
                 internal_events,
             } = receivers;
 
-            node.spawn::<Self, _, _>(|shutdown| {
+            node.spawn::<Self, _, _>(file!(), line!(), |shutdown| {
                 command_processor(shutdown, commands, senders.clone(), peerlist.clone())
             });
-            node.spawn::<Self, _, _>(|shutdown| {
+            node.spawn::<Self, _, _>(file!(), line!(), |shutdown| {
                 event_processor(shutdown, internal_events, senders.clone(), peerlist.clone())
             });
-            node.spawn::<Self, _, _>(|shutdown| peerstate_checker(shutdown, senders, peerlist));
+            node.spawn::<Self, _, _>(file!(), line!(), |shutdown| peerstate_checker(shutdown, senders, peerlist));
 
             info!("Network service started.");
 

@@ -283,7 +283,7 @@ where
         let mut ledger_index = storage::fetch_ledger_index(&*storage).await?.unwrap();
         let mut receipt_migrated_at = MilestoneIndex(0);
 
-        node.spawn::<Self, _, _>(|shutdown| async move {
+        node.spawn::<Self, _, _>(file!(), line!(), |shutdown| async move {
             info!("Running.");
 
             let mut receiver = ShutdownStream::new(shutdown, UnboundedReceiverStream::new(rx));
