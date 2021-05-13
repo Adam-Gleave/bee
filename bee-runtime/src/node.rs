@@ -36,7 +36,7 @@ pub trait Node: Send + Sized + 'static {
     /// Spawn a new node task associated with the given worker.
     ///
     /// The task will be shut down with the worker to preserve topological worker ordering.
-    fn spawn<W, G, F>(&mut self, g: G)
+    fn spawn<W, G, F>(&mut self, file: &str, line: u32, g: G)
     where
         W: Worker<Self>,
         G: FnOnce(oneshot::Receiver<()>) -> F,
