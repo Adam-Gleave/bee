@@ -4,3 +4,7 @@
 pub mod application_message;
 pub mod beacon;
 pub mod dkg;
+
+pub use application_message::ApplicationMessagePayload;
+pub use beacon::BeaconPayload;
+pub use dkg::DkgPayload;
