@@ -8,6 +8,7 @@ pub mod fpc;
 pub mod indexation;
 pub mod transaction;
 
+use drng::{ApplicationMessagePayload, BeaconPayload, DkgPayload};
 use fpc::FpcPayload;
 use indexation::IndexationPayload;
 use transaction::TransactionPayload;
@@ -27,6 +28,12 @@ use alloc::boxed::Box;
     serde(tag = "type", content = "data")
 )]
 pub enum Payload {
+    /// A dRNG application message payload.
+    ApplicationMessage(Box<ApplicationMessagePayload>),
+    /// A dRNG beacon payload.
+    Beacon(Box<BeaconPayload>),
+    /// A dRNG DKG payload.
+    Dkg(Box<DkgPayload>),
     /// A transaction payload.
     Transaction(Box<TransactionPayload>),
     /// An indexation payload.
@@ -38,11 +45,32 @@ pub enum Payload {
 impl Payload {
     /// Returns the payload kind of a `Payload`.
     pub fn kind(&self) -> u32 {
-        match self {
+        match *self {
+            Self::ApplicationMessage(_) => ApplicationMessagePayload::KIND,
+            Self::Beacon(_) => BeaconPayload::KIND,
+            Self::Dkg(_) => DkgPayload::KIND,
             Self::Transaction(_) => TransactionPayload::KIND,
             Self::Indexation(_) => IndexationPayload::KIND,
             Self::Fpc(_) => FpcPayload::KIND,
         }
+    }
+}
+
+impl From<ApplicationMessagePayload> for Payload {
+    fn from(payload: ApplicationMessagePayload) -> Self {
+        Self::ApplicationMessage(Box::new(payload))
+    }
+}
+
+impl From<BeaconPayload> for Payload {
+    fn from(payload: BeaconPayload) -> Self {
+        Self::Beacon(Box::new(payload))
+    }
+}
+
+impl From<DkgPayload> for Payload {
+    fn from(payload: DkgPayload) -> Self {
+        Self::Dkg(Box::new(payload))
     }
 }
 
@@ -68,10 +96,10 @@ impl Packable for Payload {
     type Error = Error;
 
     fn packed_len(&self) -> usize {
-        match self {
-            Self::Transaction(payload) => TransactionPayload::KIND.packed_len() + payload.packed_len(),
-            Self::Indexation(payload) => IndexationPayload::KIND.packed_len() + payload.packed_len(),
-            Self::Fpc(payload) => FpcPayload::KIND.packed_len() + payload.packed_len(),
+        match *self {
+            Self::Transaction(ref payload) => TransactionPayload::KIND.packed_len() + payload.packed_len(),
+            Self::Indexation(ref payload) => IndexationPayload::KIND.packed_len() + payload.packed_len(),
+            Self::Fpc(ref payload) => FpcPayload::KIND.packed_len() + payload.packed_len(),
         }
     }
 
