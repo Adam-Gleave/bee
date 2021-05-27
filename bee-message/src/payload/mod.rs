@@ -3,6 +3,7 @@
 
 //! The payload module defines the core data types for representing message payloads.
 
+pub mod drng;
 pub mod fpc;
 pub mod indexation;
 pub mod transaction;
