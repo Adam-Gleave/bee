@@ -7,7 +7,7 @@ use crate::{
     Error,
 };
 
-use bee_common::packable::{Packable, Read, Write};
+// use bee_common::packable::{Packable, Read, Write};
 
 use core::{
     convert::{From, TryFrom, TryInto},
@@ -93,24 +93,24 @@ impl core::fmt::Debug for OutputId {
     }
 }
 
-impl Packable for OutputId {
-    type Error = Error;
+// impl Packable for OutputId {
+//     type Error = Error;
 
-    fn packed_len(&self) -> usize {
-        self.transaction_id.packed_len() + self.index.packed_len()
-    }
+//     fn packed_len(&self) -> usize {
+//         self.transaction_id.packed_len() + self.index.packed_len()
+//     }
 
-    fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-        self.transaction_id.pack(writer)?;
-        self.index.pack(writer)?;
+//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
+//         self.transaction_id.pack(writer)?;
+//         self.index.pack(writer)?;
 
-        Ok(())
-    }
+//         Ok(())
+//     }
 
-    fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-        let transaction_id = TransactionId::unpack_inner::<R, CHECK>(reader)?;
-        let index = u16::unpack_inner::<R, CHECK>(reader)?;
+//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
+//         let transaction_id = TransactionId::unpack_inner::<R, CHECK>(reader)?;
+//         let index = u16::unpack_inner::<R, CHECK>(reader)?;
 
-        Self::new(transaction_id, index)
-    }
-}
+//         Self::new(transaction_id, index)
+//     }
+// }

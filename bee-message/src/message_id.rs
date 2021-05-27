@@ -3,7 +3,7 @@
 
 use crate::Error;
 
-use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::{Packable, Packer, Unpacker};
 
 use core::{convert::TryInto, str::FromStr};
 
@@ -12,7 +12,7 @@ pub const MESSAGE_ID_LENGTH: usize = 32;
 
 /// A message identifier, the BLAKE2b-256 hash of the message bytes.
 /// See <https://www.blake2.net/> for more information.
-#[derive(Clone, Copy, Eq, Hash, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Copy, Eq, Hash, PartialEq, Ord, PartialOrd, Packable)]
 pub struct MessageId([u8; MESSAGE_ID_LENGTH]);
 
 impl MessageId {
@@ -67,20 +67,20 @@ impl core::fmt::Debug for MessageId {
     }
 }
 
-impl Packable for MessageId {
-    type Error = Error;
+// impl Packable for MessageId {
+//     type Error = Error;
 
-    fn packed_len(&self) -> usize {
-        MESSAGE_ID_LENGTH
-    }
+//     fn packed_len(&self) -> usize {
+//         MESSAGE_ID_LENGTH
+//     }
 
-    fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-        self.0.pack(writer)?;
+//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
+//         self.0.pack(writer)?;
 
-        Ok(())
-    }
+//         Ok(())
+//     }
 
-    fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-        Ok(Self::new(<[u8; MESSAGE_ID_LENGTH]>::unpack_inner::<R, CHECK>(reader)?))
-    }
-}
+//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
+//         Ok(Self::new(<[u8; MESSAGE_ID_LENGTH]>::unpack_inner::<R, CHECK>(reader)?))
+//     }
+// }

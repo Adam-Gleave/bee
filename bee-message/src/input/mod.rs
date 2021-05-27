@@ -7,7 +7,7 @@ pub use utxo::UtxoInput;
 
 use crate::Error;
 
-use bee_common::packable::{Packable, Read, Write};
+// use bee_common::packable::{Packable, Read, Write};
 
 /// A generic input supporting different input kinds.
 #[non_exhaustive]
@@ -37,30 +37,30 @@ impl From<UtxoInput> for Input {
     }
 }
 
-impl Packable for Input {
-    type Error = Error;
+// impl Packable for Input {
+//     type Error = Error;
 
-    fn packed_len(&self) -> usize {
-        match self {
-            Self::Utxo(input) => UtxoInput::KIND.packed_len() + input.packed_len(),
-        }
-    }
+//     fn packed_len(&self) -> usize {
+//         match self {
+//             Self::Utxo(input) => UtxoInput::KIND.packed_len() + input.packed_len(),
+//         }
+//     }
 
-    fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-        match self {
-            Self::Utxo(input) => {
-                UtxoInput::KIND.pack(writer)?;
-                input.pack(writer)?;
-            }
-        }
+//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
+//         match self {
+//             Self::Utxo(input) => {
+//                 UtxoInput::KIND.pack(writer)?;
+//                 input.pack(writer)?;
+//             }
+//         }
 
-        Ok(())
-    }
+//         Ok(())
+//     }
 
-    fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-        Ok(match u8::unpack_inner::<R, CHECK>(reader)? {
-            UtxoInput::KIND => UtxoInput::unpack_inner::<R, CHECK>(reader)?.into(),
-            k => return Err(Self::Error::InvalidInputKind(k)),
-        })
-    }
-}
+//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
+//         Ok(match u8::unpack_inner::<R, CHECK>(reader)? {
+//             UtxoInput::KIND => UtxoInput::unpack_inner::<R, CHECK>(reader)?.into(),
+//             k => return Err(Self::Error::InvalidInputKind(k)),
+//         })
+//     }
+// }

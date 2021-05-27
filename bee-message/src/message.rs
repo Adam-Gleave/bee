@@ -3,11 +3,12 @@
 
 use crate::{
     parents::Parents,
-    payload::{option_payload_pack, option_payload_packed_len, option_payload_unpack, Payload},
+    // payload::{option_payload_pack, option_payload_packed_len, option_payload_unpack, Payload},
+    payload::Payload,
     Error, MessageId,
 };
 
-use bee_common::packable::{Packable, Read, Write};
+// use bee_common::packable::{Packable, Read, Write};
 use bee_pow::providers::{miner::Miner, NonceProvider, NonceProviderBuilder};
 
 use crypto::{hashes::{blake2b::Blake2b256, Digest}, signatures::ed25519};
@@ -59,13 +60,13 @@ impl Message {
         MessageBuilder::new()
     }
 
-    /// Computes the identifier of the message.
-    pub fn id(&self) -> (MessageId, Vec<u8>) {
-        let bytes = self.pack_new();
-        let id = Blake2b256::digest(&bytes);
+    // /// Computes the identifier of the message.
+    // pub fn id(&self) -> (MessageId, Vec<u8>) {
+    //     let bytes = self.pack_new();
+    //     let id = Blake2b256::digest(&bytes);
 
-        (MessageId::new(id.into()), bytes)
-    }
+    //     (MessageId::new(id.into()), bytes)
+    // }
 
     /// Returns the version of a `Message`.
     pub fn version(&self) -> u8 {
@@ -107,13 +108,13 @@ impl Message {
         &self.signature
     }
 
-    /// Hashes the `Message` contents, excluding the signature.
-    pub fn hash(&self) -> [u8; 32] {
-        let mut message_bytes = self.pack_new();
-        message_bytes = message_bytes[..message_bytes.len() - core::mem::size_of::<u64>()].to_vec();
+    // /// Hashes the `Message` contents, excluding the signature.
+    // pub fn hash(&self) -> [u8; 32] {
+    //     let mut message_bytes = self.pack_new();
+    //     message_bytes = message_bytes[..message_bytes.len() - core::mem::size_of::<u64>()].to_vec();
 
-        Blake2b256::digest(&message_bytes).into()
-    }
+    //     Blake2b256::digest(&message_bytes).into()
+    // }
 
     /// Verifies the `Message` signature against the contents of the `Message`.
     pub fn verify(&self) -> Result<(), Error> {
@@ -123,103 +124,103 @@ impl Message {
         // Unwrapping is okay here, since the length of the signature is already known to be correct.
         let ed25519_signature = ed25519::Signature::from_bytes(self.signature);
 
-        let hash = self.hash();
+        // let hash = self.hash();
 
-        if !ed25519_public_key.verify(&ed25519_signature, &hash) {
-            Err(Error::InvalidSignature)      
-        } else {
-            Ok(())
-        }
-    }
-}
-
-impl Packable for Message {
-    type Error = Error;
-
-    fn packed_len(&self) -> usize {
-        self.version.packed_len()
-            + self.strong_parents.packed_len()
-            + self.weak_parents.packed_len()
-            + MESSAGE_PUBLIC_KEY_LENGTH
-            + self.issue_timestamp.packed_len()
-            + self.sequence_number.packed_len()
-            + option_payload_packed_len(self.payload.as_ref())
-            + self.nonce.packed_len()
-            + MESSAGE_SIGNATURE_LENGTH
-    }
-
-    fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-        // FIXME Strong/weak parents length encoding
-        self.version.pack(writer)?;
-        self.strong_parents.pack(writer)?;
-        self.weak_parents.pack(writer)?;
-        self.issuer_public_key.pack(writer)?;
-        self.issue_timestamp.pack(writer)?;
-        self.sequence_number.pack(writer)?;
-        option_payload_pack(writer, self.payload.as_ref())?;
-        self.nonce.pack(writer)?;
-        self.signature.pack(writer)?;
-
+        // if !ed25519_public_key.verify(&ed25519_signature, &hash) {
+        //     Err(Error::InvalidSignature)      
+        // } else {
         Ok(())
-    }
-
-    fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-        // FIXME Strong/weak parents length encoding
-        let version = u8::unpack_inner::<R, CHECK>(reader)?;
-        let strong_parents = Parents::unpack_inner::<R, CHECK>(reader)?;
-        let weak_parents = Parents::unpack_inner::<R, CHECK>(reader)?;
-        let issuer_public_key = <[u8; MESSAGE_PUBLIC_KEY_LENGTH]>::unpack_inner::<R, CHECK>(reader)?;
-        let issue_timestamp = u64::unpack_inner::<R, CHECK>(reader)?;
-        let sequence_number = u32::unpack_inner::<R, CHECK>(reader)?;
-        let (payload_len, payload) = option_payload_unpack::<R, CHECK>(reader)?;
-
-        if CHECK
-            && !matches!(
-                payload,
-                None | Some(Payload::Transaction(_)) | Some(Payload::Indexation(_))
-            )
-        {
-            // Safe to unwrap, since it's known not to be None.
-            return Err(Error::InvalidPayloadKind(payload.unwrap().kind()));
-        }
-
-        let nonce = u64::unpack_inner::<R, CHECK>(reader)?;
-        let signature = <[u8; MESSAGE_SIGNATURE_LENGTH]>::unpack_inner::<R, CHECK>(reader)?;
-
-        // Computed instead of calling `packed_len` on Self because `payload_len` is already known, and it may be
-        // expensive to call `payload.packed_len()` twice.
-        let message_len = version.packed_len()
-            + strong_parents.packed_len()
-            + weak_parents.packed_len()
-            + MESSAGE_PUBLIC_KEY_LENGTH
-            + issue_timestamp.packed_len()
-            + sequence_number.packed_len()
-            + payload_len
-            + nonce.packed_len()
-            + MESSAGE_SIGNATURE_LENGTH;
-        
-        if CHECK && message_len > MESSAGE_LENGTH_MAX {
-            return Err(Error::InvalidMessageLength(message_len));
-        }
-
-        // When parsing the message is complete, there should not be any trailing bytes left that were not parsed.
-        if CHECK && reader.bytes().next().is_some() {
-            return Err(Error::RemainingBytesAfterMessage);
-        }
-
-        Ok(Self {
-            version,
-            strong_parents,
-            weak_parents,
-            issuer_public_key,
-            issue_timestamp,
-            sequence_number,
-            payload,
-            nonce,
-            signature,
-        })
+        // }
     }
 }
+
+// impl Packable for Message {
+//     type Error = Error;
+
+//     fn packed_len(&self) -> usize {
+//         self.version.packed_len()
+//             + self.strong_parents.packed_len()
+//             + self.weak_parents.packed_len()
+//             + MESSAGE_PUBLIC_KEY_LENGTH
+//             + self.issue_timestamp.packed_len()
+//             + self.sequence_number.packed_len()
+//             + option_payload_packed_len(self.payload.as_ref())
+//             + self.nonce.packed_len()
+//             + MESSAGE_SIGNATURE_LENGTH
+//     }
+
+//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
+//         // FIXME Strong/weak parents length encoding
+//         self.version.pack(writer)?;
+//         self.strong_parents.pack(writer)?;
+//         self.weak_parents.pack(writer)?;
+//         self.issuer_public_key.pack(writer)?;
+//         self.issue_timestamp.pack(writer)?;
+//         self.sequence_number.pack(writer)?;
+//         option_payload_pack(writer, self.payload.as_ref())?;
+//         self.nonce.pack(writer)?;
+//         self.signature.pack(writer)?;
+
+//         Ok(())
+//     }
+
+//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
+//         // FIXME Strong/weak parents length encoding
+//         let version = u8::unpack_inner::<R, CHECK>(reader)?;
+//         let strong_parents = Parents::unpack_inner::<R, CHECK>(reader)?;
+//         let weak_parents = Parents::unpack_inner::<R, CHECK>(reader)?;
+//         let issuer_public_key = <[u8; MESSAGE_PUBLIC_KEY_LENGTH]>::unpack_inner::<R, CHECK>(reader)?;
+//         let issue_timestamp = u64::unpack_inner::<R, CHECK>(reader)?;
+//         let sequence_number = u32::unpack_inner::<R, CHECK>(reader)?;
+//         let (payload_len, payload) = option_payload_unpack::<R, CHECK>(reader)?;
+
+//         if CHECK
+//             && !matches!(
+//                 payload,
+//                 None | Some(Payload::Transaction(_)) | Some(Payload::Indexation(_))
+//             )
+//         {
+//             // Safe to unwrap, since it's known not to be None.
+//             return Err(Error::InvalidPayloadKind(payload.unwrap().kind()));
+//         }
+
+//         let nonce = u64::unpack_inner::<R, CHECK>(reader)?;
+//         let signature = <[u8; MESSAGE_SIGNATURE_LENGTH]>::unpack_inner::<R, CHECK>(reader)?;
+
+//         // Computed instead of calling `packed_len` on Self because `payload_len` is already known, and it may be
+//         // expensive to call `payload.packed_len()` twice.
+//         let message_len = version.packed_len()
+//             + strong_parents.packed_len()
+//             + weak_parents.packed_len()
+//             + MESSAGE_PUBLIC_KEY_LENGTH
+//             + issue_timestamp.packed_len()
+//             + sequence_number.packed_len()
+//             + payload_len
+//             + nonce.packed_len()
+//             + MESSAGE_SIGNATURE_LENGTH;
+        
+//         if CHECK && message_len > MESSAGE_LENGTH_MAX {
+//             return Err(Error::InvalidMessageLength(message_len));
+//         }
+
+//         // When parsing the message is complete, there should not be any trailing bytes left that were not parsed.
+//         if CHECK && reader.bytes().next().is_some() {
+//             return Err(Error::RemainingBytesAfterMessage);
+//         }
+
+//         Ok(Self {
+//             version,
+//             strong_parents,
+//             weak_parents,
+//             issuer_public_key,
+//             issue_timestamp,
+//             sequence_number,
+//             payload,
+//             nonce,
+//             signature,
+//         })
+//     }
+// }
 
 /// A builder to build a `Message`.
 pub struct MessageBuilder<P: NonceProvider = Miner> {
@@ -342,22 +343,24 @@ impl<P: NonceProvider> MessageBuilder<P> {
             signature,
         };
 
-        let message_bytes = message.pack_new();
+        // let message_bytes = message.pack_new();
 
-        if message_bytes.len() > MESSAGE_LENGTH_MAX {
-            return Err(Error::InvalidMessageLength(message_bytes.len()));
-        }
+        // if message_bytes.len() > MESSAGE_LENGTH_MAX {
+        //     return Err(Error::InvalidMessageLength(message_bytes.len()));
+        // }
 
-        let (nonce_provider, target_score) = self
+        let (nonce_provider, _target_score) = self
             .nonce_provider
             .unwrap_or((P::Builder::new().finish(), DEFAULT_POW_SCORE));
 
-        message.nonce = nonce_provider
-            .nonce(
-                &message_bytes[..message_bytes.len() - (core::mem::size_of::<u64>() + MESSAGE_SIGNATURE_LENGTH)],
-                target_score,
-            )
-            .unwrap_or(DEFAULT_NONCE);
+        message.nonce = DEFAULT_NONCE;
+
+        // message.nonce = nonce_provider
+        //     .nonce(
+        //         &message_bytes[..message_bytes.len() - (core::mem::size_of::<u64>() + MESSAGE_SIGNATURE_LENGTH)],
+        //         target_score,
+        //     )
+        //     .unwrap_or(DEFAULT_NONCE);
 
         Ok(message)
     }

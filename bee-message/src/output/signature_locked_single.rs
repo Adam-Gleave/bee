@@ -3,7 +3,7 @@
 
 use crate::{address::Address, constants::IOTA_SUPPLY, Error};
 
-use bee_common::packable::{Packable, Read, Write};
+// use bee_common::packable::{Packable, Read, Write};
 
 use core::ops::RangeInclusive;
 
@@ -42,24 +42,24 @@ impl SignatureLockedSingleOutput {
     }
 }
 
-impl Packable for SignatureLockedSingleOutput {
-    type Error = Error;
+// impl Packable for SignatureLockedSingleOutput {
+//     type Error = Error;
 
-    fn packed_len(&self) -> usize {
-        self.address.packed_len() + self.amount.packed_len()
-    }
+//     fn packed_len(&self) -> usize {
+//         self.address.packed_len() + self.amount.packed_len()
+//     }
 
-    fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-        self.address.pack(writer)?;
-        self.amount.pack(writer)?;
+//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
+//         self.address.pack(writer)?;
+//         self.amount.pack(writer)?;
 
-        Ok(())
-    }
+//         Ok(())
+//     }
 
-    fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-        let address = Address::unpack_inner::<R, CHECK>(reader)?;
-        let amount = u64::unpack_inner::<R, CHECK>(reader)?;
+//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
+//         let address = Address::unpack_inner::<R, CHECK>(reader)?;
+//         let amount = u64::unpack_inner::<R, CHECK>(reader)?;
 
-        Self::new(address, amount)
-    }
-}
+//         Self::new(address, amount)
+//     }
+// }

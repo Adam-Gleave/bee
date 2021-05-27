@@ -3,7 +3,7 @@
 
 use crate::{constants::INPUT_OUTPUT_INDEX_RANGE, Error};
 
-use bee_common::packable::{Packable, Read, Write};
+// use bee_common::packable::{Packable, Read, Write};
 
 use core::convert::TryFrom;
 
@@ -39,20 +39,20 @@ impl TryFrom<u16> for ReferenceUnlock {
     }
 }
 
-impl Packable for ReferenceUnlock {
-    type Error = Error;
+// impl Packable for ReferenceUnlock {
+//     type Error = Error;
 
-    fn packed_len(&self) -> usize {
-        0u16.packed_len()
-    }
+//     fn packed_len(&self) -> usize {
+//         0u16.packed_len()
+//     }
 
-    fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-        self.0.pack(writer)?;
+//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
+//         self.0.pack(writer)?;
 
-        Ok(())
-    }
+//         Ok(())
+//     }
 
-    fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-        Self::new(u16::unpack_inner::<R, CHECK>(reader)?)
-    }
-}
+//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
+//         Self::new(u16::unpack_inner::<R, CHECK>(reader)?)
+//     }
+// }

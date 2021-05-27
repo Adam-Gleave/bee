@@ -5,13 +5,13 @@ use crate::{
     constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY},
     input::Input,
     output::Output,
-    payload::{option_payload_pack, option_payload_packed_len, option_payload_unpack, Payload},
+    payload::Payload,
     Error,
 };
 
 use bee_common::{
-    ord::is_sorted,
-    packable::{Packable, Read, Write},
+    // ord::is_sorted,
+    // packable::{Packable, Read, Write},
 };
 
 use alloc::{boxed::Box, vec::Vec};
@@ -81,83 +81,83 @@ impl TransactionEssence {
     }
 }
 
-impl Packable for TransactionEssence {
-    type Error = Error;
+// impl Packable for TransactionEssence {
+//     type Error = Error;
 
-    fn packed_len(&self) -> usize {
-        self.version.packed_len()
-            + self.timestamp.packed_len()
-            + PLEDGE_ID_LENGTH
-            + PLEDGE_ID_LENGTH
-            + 0u16.packed_len()
-            + self.inputs.iter().map(Packable::packed_len).sum::<usize>()
-            + 0u16.packed_len()
-            + self.outputs.iter().map(Packable::packed_len).sum::<usize>()
-            + option_payload_packed_len(self.payload.as_ref())
-    }
+//     fn packed_len(&self) -> usize {
+//         self.version.packed_len()
+//             + self.timestamp.packed_len()
+//             + PLEDGE_ID_LENGTH
+//             + PLEDGE_ID_LENGTH
+//             + 0u16.packed_len()
+//             + self.inputs.iter().map(Packable::packed_len).sum::<usize>()
+//             + 0u16.packed_len()
+//             + self.outputs.iter().map(Packable::packed_len).sum::<usize>()
+//             + option_payload_packed_len(self.payload.as_ref())
+//     }
 
-    fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-        self.version.pack(writer)?;
-        self.timestamp.pack(writer)?;
-        self.access_pledge_id.pack(writer)?;
-        self.consensus_pledge_id.pack(writer)?;
+//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
+//         self.version.pack(writer)?;
+//         self.timestamp.pack(writer)?;
+//         self.access_pledge_id.pack(writer)?;
+//         self.consensus_pledge_id.pack(writer)?;
 
-        (self.inputs.len() as u16).pack(writer)?;
-        for input in self.inputs.iter() {
-            input.pack(writer)?;
-        }
-        (self.outputs.len() as u16).pack(writer)?;
-        for output in self.outputs.iter() {
-            output.pack(writer)?;
-        }
-        option_payload_pack(writer, self.payload.as_ref())?;
+//         (self.inputs.len() as u16).pack(writer)?;
+//         for input in self.inputs.iter() {
+//             input.pack(writer)?;
+//         }
+//         (self.outputs.len() as u16).pack(writer)?;
+//         for output in self.outputs.iter() {
+//             output.pack(writer)?;
+//         }
+//         option_payload_pack(writer, self.payload.as_ref())?;
 
-        Ok(())
-    }
+//         Ok(())
+//     }
 
-    fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-        let version = u8::unpack_inner::<R, CHECK>(reader)?;
-        let timestamp = u64::unpack_inner::<R, CHECK>(reader)?;
-        let access_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack_inner::<R, CHECK>(reader)?;
-        let consensus_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack_inner::<R, CHECK>(reader)?;
+//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
+//         let version = u8::unpack_inner::<R, CHECK>(reader)?;
+//         let timestamp = u64::unpack_inner::<R, CHECK>(reader)?;
+//         let access_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack_inner::<R, CHECK>(reader)?;
+//         let consensus_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack_inner::<R, CHECK>(reader)?;
 
-        let inputs_len = u16::unpack_inner::<R, CHECK>(reader)? as usize;
+//         let inputs_len = u16::unpack_inner::<R, CHECK>(reader)? as usize;
 
-        if CHECK && !INPUT_OUTPUT_COUNT_RANGE.contains(&inputs_len) {
-            return Err(Error::InvalidInputOutputCount(inputs_len));
-        }
+//         if CHECK && !INPUT_OUTPUT_COUNT_RANGE.contains(&inputs_len) {
+//             return Err(Error::InvalidInputOutputCount(inputs_len));
+//         }
 
-        let mut inputs = Vec::with_capacity(inputs_len);
-        for _ in 0..inputs_len {
-            inputs.push(Input::unpack_inner::<R, CHECK>(reader)?);
-        }
+//         let mut inputs = Vec::with_capacity(inputs_len);
+//         for _ in 0..inputs_len {
+//             inputs.push(Input::unpack_inner::<R, CHECK>(reader)?);
+//         }
 
-        let outputs_len = u16::unpack_inner::<R, CHECK>(reader)? as usize;
+//         let outputs_len = u16::unpack_inner::<R, CHECK>(reader)? as usize;
 
-        if CHECK && !INPUT_OUTPUT_COUNT_RANGE.contains(&outputs_len) {
-            return Err(Error::InvalidInputOutputCount(outputs_len));
-        }
+//         if CHECK && !INPUT_OUTPUT_COUNT_RANGE.contains(&outputs_len) {
+//             return Err(Error::InvalidInputOutputCount(outputs_len));
+//         }
 
-        let mut outputs = Vec::with_capacity(outputs_len);
-        for _ in 0..outputs_len {
-            outputs.push(Output::unpack_inner::<R, CHECK>(reader)?);
-        }
+//         let mut outputs = Vec::with_capacity(outputs_len);
+//         for _ in 0..outputs_len {
+//             outputs.push(Output::unpack_inner::<R, CHECK>(reader)?);
+//         }
 
-        let mut builder = Self::builder()
-            .with_version(version)
-            .with_timestamp(timestamp)
-            .with_access_pledge_id(access_pledge_id)
-            .with_consensus_pledge_id(consensus_pledge_id)
-            .with_inputs(inputs)
-            .with_outputs(outputs);
+//         let mut builder = Self::builder()
+//             .with_version(version)
+//             .with_timestamp(timestamp)
+//             .with_access_pledge_id(access_pledge_id)
+//             .with_consensus_pledge_id(consensus_pledge_id)
+//             .with_inputs(inputs)
+//             .with_outputs(outputs);
 
-        if let (_, Some(payload)) = option_payload_unpack::<R, CHECK>(reader)? {
-            builder = builder.with_payload(payload);
-        }
+//         if let (_, Some(payload)) = option_payload_unpack::<R, CHECK>(reader)? {
+//             builder = builder.with_payload(payload);
+//         }
 
-        builder.finish()
-    }
-}
+//         builder.finish()
+//     }
+// }
 
 /// A builder to build a `TransactionEssence`.
 #[derive(Debug, Default)]
@@ -261,10 +261,10 @@ impl TransactionEssenceBuilder {
             }
         }
 
-        // Inputs must be lexicographically sorted in their serialised forms.
-        if !is_sorted(self.inputs.iter().map(Packable::pack_new)) {
-            return Err(Error::TransactionInputsNotSorted);
-        }
+        // // Inputs must be lexicographically sorted in their serialised forms.
+        // if !is_sorted(self.inputs.iter().map(Packable::pack_new)) {
+        //     return Err(Error::TransactionInputsNotSorted);
+        // }
 
         let mut total: u64 = 0;
 
@@ -312,10 +312,10 @@ impl TransactionEssenceBuilder {
             }
         }
 
-        // Outputs must be lexicographically sorted in their serialised forms.
-        if !is_sorted(self.outputs.iter().map(Packable::pack_new)) {
-            return Err(Error::TransactionOutputsNotSorted);
-        }
+        // // Outputs must be lexicographically sorted in their serialised forms.
+        // if !is_sorted(self.outputs.iter().map(Packable::pack_new)) {
+        //     return Err(Error::TransactionOutputsNotSorted);
+        // }
 
         Ok(TransactionEssence {
             version,

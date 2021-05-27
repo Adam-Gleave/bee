@@ -11,7 +11,7 @@ pub use timestamps::{Timestamp, Timestamps};
 
 use crate::Error;
 
-use bee_common::packable::{Packable, Read, Write};
+// use bee_common::packable::{Packable, Read, Write};
 
 /// Payload describing opinions on conflicts and timestamps of messages.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -35,35 +35,35 @@ impl FpcPayload {
     }
 }
 
-impl Packable for FpcPayload {
-    type Error = Error;
+// impl Packable for FpcPayload {
+//     type Error = Error;
 
-    fn packed_len(&self) -> usize {
-        self.version.packed_len()
-            + self.conflicts.packed_len()
-            + self.timestamps.packed_len()
-    }
+//     fn packed_len(&self) -> usize {
+//         self.version.packed_len()
+//             + self.conflicts.packed_len()
+//             + self.timestamps.packed_len()
+//     }
 
-    fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-        self.version.pack(writer)?;
-        self.conflicts.pack(writer)?;
-        self.timestamps.pack(writer)?;
+//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
+//         self.version.pack(writer)?;
+//         self.conflicts.pack(writer)?;
+//         self.timestamps.pack(writer)?;
 
-        Ok(())
-    }
+//         Ok(())
+//     }
 
-    fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-        let version = u8::unpack_inner::<R, CHECK>(reader)?;
-        let conflicts = Conflicts::unpack_inner::<R, CHECK>(reader)?;
-        let timestamps = Timestamps::unpack_inner::<R, CHECK>(reader)?;
+//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
+//         let version = u8::unpack_inner::<R, CHECK>(reader)?;
+//         let conflicts = Conflicts::unpack_inner::<R, CHECK>(reader)?;
+//         let timestamps = Timestamps::unpack_inner::<R, CHECK>(reader)?;
 
-        Ok(Self {
-            version,
-            conflicts,
-            timestamps,
-        })
-    }
-}
+//         Ok(Self {
+//             version,
+//             conflicts,
+//             timestamps,
+//         })
+//     }
+// }
 
 /// A builder to build an `FpcPayload`.
 pub struct FpcPayloadBuilder {

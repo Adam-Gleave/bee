@@ -13,7 +13,7 @@ pub use signature_locked_single::{SignatureLockedSingleOutput, SIGNATURE_LOCKED_
 
 use crate::Error;
 
-use bee_common::packable::{Packable, Read, Write};
+// use bee_common::packable::{Packable, Read, Write};
 
 /// A generic output that can represent different types defining the deposit of funds.
 #[non_exhaustive]
@@ -52,40 +52,40 @@ impl From<SignatureLockedDustAllowanceOutput> for Output {
     }
 }
 
-impl Packable for Output {
-    type Error = Error;
+// impl Packable for Output {
+//     type Error = Error;
 
-    fn packed_len(&self) -> usize {
-        match self {
-            Self::SignatureLockedSingle(output) => SignatureLockedSingleOutput::KIND.packed_len() + output.packed_len(),
-            Self::SignatureLockedDustAllowance(output) => {
-                SignatureLockedDustAllowanceOutput::KIND.packed_len() + output.packed_len()
-            }
-        }
-    }
+//     fn packed_len(&self) -> usize {
+//         match self {
+//             Self::SignatureLockedSingle(output) => SignatureLockedSingleOutput::KIND.packed_len() + output.packed_len(),
+//             Self::SignatureLockedDustAllowance(output) => {
+//                 SignatureLockedDustAllowanceOutput::KIND.packed_len() + output.packed_len()
+//             }
+//         }
+//     }
 
-    fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-        match self {
-            Self::SignatureLockedSingle(output) => {
-                SignatureLockedSingleOutput::KIND.pack(writer)?;
-                output.pack(writer)?;
-            }
-            Self::SignatureLockedDustAllowance(output) => {
-                SignatureLockedDustAllowanceOutput::KIND.pack(writer)?;
-                output.pack(writer)?;
-            }
-        }
+//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
+//         match self {
+//             Self::SignatureLockedSingle(output) => {
+//                 SignatureLockedSingleOutput::KIND.pack(writer)?;
+//                 output.pack(writer)?;
+//             }
+//             Self::SignatureLockedDustAllowance(output) => {
+//                 SignatureLockedDustAllowanceOutput::KIND.pack(writer)?;
+//                 output.pack(writer)?;
+//             }
+//         }
 
-        Ok(())
-    }
+//         Ok(())
+//     }
 
-    fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-        Ok(match u8::unpack_inner::<R, CHECK>(reader)? {
-            SignatureLockedSingleOutput::KIND => SignatureLockedSingleOutput::unpack_inner::<R, CHECK>(reader)?.into(),
-            SignatureLockedDustAllowanceOutput::KIND => {
-                SignatureLockedDustAllowanceOutput::unpack_inner::<R, CHECK>(reader)?.into()
-            }
-            k => return Err(Self::Error::InvalidOutputKind(k)),
-        })
-    }
-}
+//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
+//         Ok(match u8::unpack_inner::<R, CHECK>(reader)? {
+//             SignatureLockedSingleOutput::KIND => SignatureLockedSingleOutput::unpack_inner::<R, CHECK>(reader)?.into(),
+//             SignatureLockedDustAllowanceOutput::KIND => {
+//                 SignatureLockedDustAllowanceOutput::unpack_inner::<R, CHECK>(reader)?.into()
+//             }
+//             k => return Err(Self::Error::InvalidOutputKind(k)),
+//         })
+//     }
+// }

@@ -9,7 +9,7 @@ use crate::{Error, MESSAGE_LENGTH_MAX};
 
 pub use padded::{PaddedIndex, INDEXATION_PADDED_INDEX_LENGTH};
 
-use bee_common::packable::{Packable, Read, Write};
+// use bee_common::packable::{Packable, Read, Write};
 
 use alloc::boxed::Box;
 use core::ops::RangeInclusive;
@@ -63,45 +63,45 @@ impl IndexationPayload {
     }
 }
 
-impl Packable for IndexationPayload {
-    type Error = Error;
+// impl Packable for IndexationPayload {
+//     type Error = Error;
 
-    fn packed_len(&self) -> usize {
-        0u16.packed_len() + self.index.len() + 0u32.packed_len() + self.data.len()
-    }
+//     fn packed_len(&self) -> usize {
+//         0u16.packed_len() + self.index.len() + 0u32.packed_len() + self.data.len()
+//     }
 
-    fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-        (self.index.len() as u16).pack(writer)?;
-        writer.write_all(&self.index)?;
+//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
+//         (self.index.len() as u16).pack(writer)?;
+//         writer.write_all(&self.index)?;
 
-        (self.data.len() as u32).pack(writer)?;
-        writer.write_all(&self.data)?;
+//         (self.data.len() as u32).pack(writer)?;
+//         writer.write_all(&self.data)?;
 
-        Ok(())
-    }
+//         Ok(())
+//     }
 
-    fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-        let index_len = u16::unpack_inner::<R, CHECK>(reader)? as usize;
+//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
+//         let index_len = u16::unpack_inner::<R, CHECK>(reader)? as usize;
 
-        if CHECK && !INDEXATION_INDEX_LENGTH_RANGE.contains(&index_len) {
-            return Err(Error::InvalidIndexationIndexLength(index_len));
-        }
+//         if CHECK && !INDEXATION_INDEX_LENGTH_RANGE.contains(&index_len) {
+//             return Err(Error::InvalidIndexationIndexLength(index_len));
+//         }
 
-        let mut index = vec![0u8; index_len];
-        reader.read_exact(&mut index)?;
+//         let mut index = vec![0u8; index_len];
+//         reader.read_exact(&mut index)?;
 
-        let data_len = u32::unpack_inner::<R, CHECK>(reader)? as usize;
+//         let data_len = u32::unpack_inner::<R, CHECK>(reader)? as usize;
 
-        if CHECK && data_len > MESSAGE_LENGTH_MAX {
-            return Err(Error::InvalidIndexationDataLength(data_len));
-        }
+//         if CHECK && data_len > MESSAGE_LENGTH_MAX {
+//             return Err(Error::InvalidIndexationDataLength(data_len));
+//         }
 
-        let mut data = vec![0u8; data_len];
-        reader.read_exact(&mut data)?;
+//         let mut data = vec![0u8; data_len];
+//         reader.read_exact(&mut data)?;
 
-        Ok(Self {
-            index: index.into(),
-            data: data.into(),
-        })
-    }
-}
+//         Ok(Self {
+//             index: index.into(),
+//             data: data.into(),
+//         })
+//     }
+// }

@@ -3,7 +3,7 @@
 
 use crate::{signature::Ed25519Signature, Error};
 
-use bee_common::packable::{Packable, Read, Write};
+// use bee_common::packable::{Packable, Read, Write};
 
 use crypto::{
     hashes::{blake2b::Blake2b256, Digest},
@@ -97,22 +97,22 @@ impl core::fmt::Debug for Ed25519Address {
     }
 }
 
-impl Packable for Ed25519Address {
-    type Error = Error;
+// impl Packable for Ed25519Address {
+//     type Error = Error;
 
-    fn packed_len(&self) -> usize {
-        ED25519_ADDRESS_LENGTH
-    }
+//     fn packed_len(&self) -> usize {
+//         ED25519_ADDRESS_LENGTH
+//     }
 
-    fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-        self.0.pack(writer)?;
+//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
+//         self.0.pack(writer)?;
 
-        Ok(())
-    }
+//         Ok(())
+//     }
 
-    fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-        Ok(Self::new(<[u8; ED25519_ADDRESS_LENGTH]>::unpack_inner::<R, CHECK>(
-            reader,
-        )?))
-    }
-}
+//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
+//         Ok(Self::new(<[u8; ED25519_ADDRESS_LENGTH]>::unpack_inner::<R, CHECK>(
+//             reader,
+//         )?))
+//     }
+// }

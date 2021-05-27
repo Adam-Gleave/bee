@@ -3,7 +3,7 @@
 
 use crate::Error;
 
-use bee_common::packable::{Packable, Read, Write};
+// use bee_common::packable::{Packable, Read, Write};
 
 use alloc::boxed::Box;
 
@@ -41,24 +41,24 @@ impl Ed25519Signature {
     }
 }
 
-impl Packable for Ed25519Signature {
-    type Error = Error;
+// impl Packable for Ed25519Signature {
+//     type Error = Error;
 
-    fn packed_len(&self) -> usize {
-        ED25519_PUBLIC_KEY_LENGTH + ED25519_SIGNATURE_LENGTH
-    }
+//     fn packed_len(&self) -> usize {
+//         ED25519_PUBLIC_KEY_LENGTH + ED25519_SIGNATURE_LENGTH
+//     }
 
-    fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-        self.public_key.pack(writer)?;
-        writer.write_all(&self.signature)?;
+//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
+//         self.public_key.pack(writer)?;
+//         writer.write_all(&self.signature)?;
 
-        Ok(())
-    }
+//         Ok(())
+//     }
 
-    fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-        let public_key = <[u8; ED25519_PUBLIC_KEY_LENGTH]>::unpack_inner::<R, CHECK>(reader)?;
-        let signature = <[u8; ED25519_SIGNATURE_LENGTH]>::unpack_inner::<R, CHECK>(reader)?;
+//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
+//         let public_key = <[u8; ED25519_PUBLIC_KEY_LENGTH]>::unpack_inner::<R, CHECK>(reader)?;
+//         let signature = <[u8; ED25519_SIGNATURE_LENGTH]>::unpack_inner::<R, CHECK>(reader)?;
 
-        Ok(Self::new(public_key, signature))
-    }
-}
+//         Ok(Self::new(public_key, signature))
+//     }
+// }
