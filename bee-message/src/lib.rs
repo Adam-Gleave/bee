@@ -3,7 +3,7 @@
 
 //! Core data types for messages in the tangle.
 
-#![deny(missing_docs, warnings)]
+//#![deny(missing_docs, warnings)]
 
 extern crate alloc;
 
