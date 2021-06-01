@@ -3,7 +3,7 @@
 
 use crate::Error;
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::Packable;
 
 use alloc::boxed::Box;
 
@@ -11,7 +11,7 @@ const ED25519_PUBLIC_KEY_LENGTH: usize = 32;
 const ED25519_SIGNATURE_LENGTH: usize = 64;
 
 /// An Ed25519 signature.
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Ed25519Signature {
     public_key: [u8; ED25519_PUBLIC_KEY_LENGTH],

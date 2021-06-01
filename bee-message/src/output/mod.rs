@@ -13,20 +13,23 @@ pub use signature_locked_single::{SignatureLockedSingleOutput, SIGNATURE_LOCKED_
 
 use crate::Error;
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::{Packable};
 
 /// A generic output that can represent different types defining the deposit of funds.
 #[non_exhaustive]
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Packable)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
     serde(tag = "type", content = "data")
 )]
+#[packable(tag_type = u8)]
 pub enum Output {
     /// A signature locked single output.
+    #[packable(tag = 0)]
     SignatureLockedSingle(SignatureLockedSingleOutput),
     /// A signature locked dust allowance output.
+    #[packable(tag = 1)]
     SignatureLockedDustAllowance(SignatureLockedDustAllowanceOutput),
 }
 
@@ -51,41 +54,3 @@ impl From<SignatureLockedDustAllowanceOutput> for Output {
         Self::SignatureLockedDustAllowance(output)
     }
 }
-
-// impl Packable for Output {
-//     type Error = Error;
-
-//     fn packed_len(&self) -> usize {
-//         match self {
-//             Self::SignatureLockedSingle(output) => SignatureLockedSingleOutput::KIND.packed_len() + output.packed_len(),
-//             Self::SignatureLockedDustAllowance(output) => {
-//                 SignatureLockedDustAllowanceOutput::KIND.packed_len() + output.packed_len()
-//             }
-//         }
-//     }
-
-//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-//         match self {
-//             Self::SignatureLockedSingle(output) => {
-//                 SignatureLockedSingleOutput::KIND.pack(writer)?;
-//                 output.pack(writer)?;
-//             }
-//             Self::SignatureLockedDustAllowance(output) => {
-//                 SignatureLockedDustAllowanceOutput::KIND.pack(writer)?;
-//                 output.pack(writer)?;
-//             }
-//         }
-
-//         Ok(())
-//     }
-
-//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-//         Ok(match u8::unpack_inner::<R, CHECK>(reader)? {
-//             SignatureLockedSingleOutput::KIND => SignatureLockedSingleOutput::unpack_inner::<R, CHECK>(reader)?.into(),
-//             SignatureLockedDustAllowanceOutput::KIND => {
-//                 SignatureLockedDustAllowanceOutput::unpack_inner::<R, CHECK>(reader)?.into()
-//             }
-//             k => return Err(Self::Error::InvalidOutputKind(k)),
-//         })
-//     }
-// }

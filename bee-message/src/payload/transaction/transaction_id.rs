@@ -3,7 +3,7 @@
 
 use crate::Error;
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::Packable;
 
 use core::{convert::TryInto, str::FromStr};
 
@@ -12,7 +12,7 @@ pub const TRANSACTION_ID_LENGTH: usize = 32;
 
 /// A transaction identifier, the BLAKE2b-256 hash of the transaction bytes.
 /// See <https://www.blake2.net/> for more information.
-#[derive(Clone, Copy, Eq, Hash, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Copy, Eq, Hash, PartialEq, Ord, PartialOrd, Packable)]
 pub struct TransactionId([u8; TRANSACTION_ID_LENGTH]);
 
 impl TransactionId {

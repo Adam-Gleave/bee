@@ -3,13 +3,9 @@
 
 use crate::Error;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum Deal {
-    Encrypted(EncryptedDeal),
-}
+use bee_common::packable::Packable;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EncryptedDeal {
     dh_key: Box<[u8]>,
@@ -41,19 +37,19 @@ impl EncryptedDeal {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DkgPayload {
     version: u8,
     instance_id: u32,
     from_index: u32,
     to_index: u32,
-    deal: Deal,
+    deal: EncryptedDeal,
 }
 
 impl DkgPayload {
     // TODO verify values with goshimmer.
-    pub const KIND: u32 = 6;
+    pub const KIND: u32 = 7;
 
     pub fn builder() -> DkgPayloadBuilder {
         DkgPayloadBuilder::new()
@@ -75,7 +71,7 @@ impl DkgPayload {
         self.to_index
     }
 
-    pub fn deal(&self) -> &Deal {
+    pub fn deal(&self) -> &EncryptedDeal {
         &self.deal
     }
 }
@@ -85,7 +81,7 @@ pub struct DkgPayloadBuilder {
     instance_id: Option<u32>,
     from_index: Option<u32>,
     to_index: Option<u32>,
-    deal: Option<Deal>,
+    deal: Option<EncryptedDeal>,
 }
 
 impl DkgPayloadBuilder {
@@ -119,7 +115,7 @@ impl DkgPayloadBuilder {
         self
     }
 
-    pub fn with_deal(mut self, deal: Deal) -> Self {
+    pub fn with_deal(mut self, deal: EncryptedDeal) -> Self {
         self.deal = Some(deal);
         self
     }

@@ -7,18 +7,20 @@ pub use utxo::UtxoInput;
 
 use crate::Error;
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::Packable;
 
 /// A generic input supporting different input kinds.
 #[non_exhaustive]
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd, Packable)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
     serde(tag = "type", content = "data")
 )]
+#[packable(tag_type = u8)]
 pub enum Input {
     /// A UTXO input.
+    #[packable(tag = 0)]
     Utxo(UtxoInput),
 }
 

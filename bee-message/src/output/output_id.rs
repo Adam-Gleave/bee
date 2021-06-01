@@ -7,7 +7,7 @@ use crate::{
     Error,
 };
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::{Packable, Packer, UnknownTagError, Unpacker, UnpackError};
 
 use core::{
     convert::{From, TryFrom, TryInto},
@@ -18,7 +18,7 @@ use core::{
 pub const OUTPUT_ID_LENGTH: usize = TRANSACTION_ID_LENGTH + std::mem::size_of::<u16>();
 
 /// The identifier of an `Output`.
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Packable)]
 pub struct OutputId {
     transaction_id: TransactionId,
     index: u16,
@@ -92,25 +92,3 @@ impl core::fmt::Debug for OutputId {
         write!(f, "OutputId({})", self)
     }
 }
-
-// impl Packable for OutputId {
-//     type Error = Error;
-
-//     fn packed_len(&self) -> usize {
-//         self.transaction_id.packed_len() + self.index.packed_len()
-//     }
-
-//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-//         self.transaction_id.pack(writer)?;
-//         self.index.pack(writer)?;
-
-//         Ok(())
-//     }
-
-//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-//         let transaction_id = TransactionId::unpack_inner::<R, CHECK>(reader)?;
-//         let index = u16::unpack_inner::<R, CHECK>(reader)?;
-
-//         Self::new(transaction_id, index)
-//     }
-// }

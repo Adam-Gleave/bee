@@ -7,7 +7,7 @@ pub use ed25519::{Ed25519Address, ED25519_ADDRESS_LENGTH};
 
 use crate::{signature::SignatureUnlock, Error};
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::{Packable, Packer, UnknownTagError, Unpacker, UnpackError};
 
 use bech32::{self, FromBase32, ToBase32, Variant};
 
@@ -15,15 +15,16 @@ use alloc::{str::FromStr, string::String};
 use core::convert::TryFrom;
 
 /// A generic address supporting different address kinds.
-#[non_exhaustive]
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Packable)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
     serde(tag = "type", content = "data")
 )]
+#[packable(tag_type = u8)]
 pub enum Address {
     /// An Ed25519 address.
+    #[packable(tag = 0)]
     Ed25519(Ed25519Address),
 }
 
@@ -67,46 +68,3 @@ impl From<Ed25519Address> for Address {
         Self::Ed25519(address)
     }
 }
-
-// impl FromStr for Address {
-//     type Err = Error;
-
-//     fn from_str(address: &str) -> Result<Self, Self::Err> {
-//         Address::try_from_bech32(address)
-//     }
-// }
-
-// impl TryFrom<String> for Address {
-//     type Error = Error;
-
-//     fn try_from(address: String) -> Result<Self, Self::Error> {
-//         Address::from_str(&address)
-//     }
-// }
-
-// impl Packable for Address {
-//     type Error = Error;
-
-//     fn packed_len(&self) -> usize {
-//         match self {
-//             Self::Ed25519(address) => Ed25519Address::KIND.packed_len() + address.packed_len(),
-//         }
-//     }
-
-//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-//         match self {
-//             Self::Ed25519(address) => {
-//                 Ed25519Address::KIND.pack(writer)?;
-//                 address.pack(writer)?;
-//             }
-//         }
-//         Ok(())
-//     }
-
-//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-//         Ok(match u8::unpack_inner::<R, CHECK>(reader)? {
-//             Ed25519Address::KIND => Ed25519Address::unpack_inner::<R, CHECK>(reader)?.into(),
-//             k => return Err(Self::Error::InvalidAddressKind(k)),
-//         })
-//     }
-// }

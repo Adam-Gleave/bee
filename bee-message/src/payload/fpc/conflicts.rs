@@ -1,15 +1,15 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{payload::transaction::TransactionId, Error};
+use crate::payload::transaction::TransactionId;
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::Packable;
 
 use core::ops::Deref;
 
 /// Provides a convenient collection of `Conflict`s.
 /// Describes a vote in a given round for a transaction conflict.
-#[derive(Clone, Default, Debug, Eq, PartialEq)]
+#[derive(Clone, Default, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Conflicts(Vec<Conflict>);
 
@@ -21,39 +21,8 @@ impl Deref for Conflicts {
     }
 }
 
-// impl Packable for Conflicts {
-//     type Error = Error;
-
-//     fn packed_len(&self) -> usize {
-//         let conflicts_len = self.len() * self.first().map_or_else(|| 0, |item| item.packed_len());
-
-//         0u32.packed_len() + conflicts_len 
-//     }
-
-//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-//         (self.len() as u32).pack(writer)?;
-
-//         for conflict in self.iter() {
-//             conflict.pack(writer)?;
-//         }
-
-//         Ok(())
-//     }
-
-//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-//         let conflicts_len = u32::unpack_inner::<R, CHECK>(reader)? as usize;
-
-//         let mut inner = Vec::with_capacity(conflicts_len);
-//         for _ in 0..conflicts_len {
-//             inner.push(Conflict::unpack_inner::<R, CHECK>(reader)?);
-//         }
-
-//         Ok(Self(inner))
-//     }
-// }
-
 /// Describes a vote in a given round for a transaction conflict.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Conflict {
     /// ID of the conflicting transaction.
@@ -80,33 +49,3 @@ impl Conflict {
         self.round
     }
 }
-
-// impl Packable for Conflict {
-//     type Error = Error;
-
-//     fn packed_len(&self) -> usize {
-//         self.transaction_id.packed_len()
-//             + self.opinion.packed_len()
-//             + self.round.packed_len()
-//     }
-
-//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-//         self.transaction_id.pack(writer)?;
-//         self.opinion.pack(writer)?;
-//         self.round.pack(writer)?;
-
-//         Ok(())
-//     }
-
-//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-//         let transaction_id = TransactionId::unpack_inner::<R, CHECK>(reader)?;
-//         let opinion = u8::unpack_inner::<R, CHECK>(reader)?;
-//         let round = u8::unpack_inner::<R, CHECK>(reader)?;
-
-//         Ok(Self {
-//             transaction_id,
-//             opinion,
-//             round,
-//         })
-//     }
-// }

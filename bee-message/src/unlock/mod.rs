@@ -7,23 +7,26 @@ pub use reference::ReferenceUnlock;
 
 use crate::{constants::UNLOCK_BLOCK_COUNT_RANGE, signature::SignatureUnlock, Error};
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::{Packable, UnknownTagError};
 
 use core::ops::Deref;
 use std::collections::HashSet;
 
 /// Defines the mechanism by which a transaction input is authorized to be consumed.
 #[non_exhaustive]
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Packable)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
     serde(tag = "type", content = "data")
 )]
+#[packable(tag_type = u8)]
 pub enum UnlockBlock {
     /// A signature unlock block.
+    #[packable(tag = 0)]
     Signature(SignatureUnlock),
     /// A reference unlock block.
+    #[packable(tag = 1)]
     Reference(ReferenceUnlock),
 }
 
@@ -84,8 +87,9 @@ impl From<ReferenceUnlock> for UnlockBlock {
 // }
 
 /// A collection of unlock blocks.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[packable(error = UnknownTagError<u8>)]
 pub struct UnlockBlocks(Box<[UnlockBlock]>);
 
 impl UnlockBlocks {

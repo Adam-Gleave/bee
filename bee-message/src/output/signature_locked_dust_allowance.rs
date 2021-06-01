@@ -3,7 +3,7 @@
 
 use crate::{address::Address, constants::IOTA_SUPPLY, Error};
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::{Packable, UnknownTagError};
 
 use core::ops::RangeInclusive;
 
@@ -14,8 +14,9 @@ pub const SIGNATURE_LOCKED_DUST_ALLOWANCE_OUTPUT_AMOUNT: RangeInclusive<u64> = D
 
 /// A `SignatureLockedDustAllowanceOutput` functions like a `SignatureLockedSingleOutput` but as a special property it
 /// is used to increase the allowance/amount of dust outputs on a given address.
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[packable(error = UnknownTagError<u8>)]
 pub struct SignatureLockedDustAllowanceOutput {
     address: Address,
     amount: u64,
@@ -44,25 +45,3 @@ impl SignatureLockedDustAllowanceOutput {
         self.amount
     }
 }
-
-// impl Packable for SignatureLockedDustAllowanceOutput {
-//     type Error = Error;
-
-//     fn packed_len(&self) -> usize {
-//         self.address.packed_len() + self.amount.packed_len()
-//     }
-
-//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-//         self.address.pack(writer)?;
-//         self.amount.pack(writer)?;
-
-//         Ok(())
-//     }
-
-//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-//         let address = Address::unpack_inner::<R, CHECK>(reader)?;
-//         let amount = u64::unpack_inner::<R, CHECK>(reader)?;
-
-//         Self::new(address, amount)
-//     }
-// }

@@ -9,10 +9,7 @@ use crate::{
     Error,
 };
 
-use bee_common::{
-    // ord::is_sorted,
-    // packable::{Packable, Read, Write},
-};
+use bee_common::packable::{Packable, UnknownTagError};
 
 use alloc::{boxed::Box, vec::Vec};
 
@@ -20,8 +17,9 @@ use alloc::{boxed::Box, vec::Vec};
 pub const PLEDGE_ID_LENGTH: usize = 32;
 
 /// A transaction regular essence consuming inputs, creating outputs and carrying an optional payload.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[packable(error = crate::Error)]
 pub struct TransactionEssence {
     /// Transaction essence version number.
     version: u8,

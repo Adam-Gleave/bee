@@ -8,6 +8,8 @@ pub mod fpc;
 pub mod indexation;
 pub mod transaction;
 
+use std::ops::Index;
+
 // use drng::{ApplicationMessagePayload, BeaconPayload, DkgPayload};
 use fpc::FpcPayload;
 use indexation::IndexationPayload;
@@ -15,7 +17,7 @@ use transaction::TransactionPayload;
 
 use crate::Error;
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::{Packable, Packer, UnknownTagError, Unpacker, UnpackError};
 
 use alloc::boxed::Box;
 
@@ -92,45 +94,42 @@ impl From<FpcPayload> for Payload {
     }
 }
 
-// impl Packable for Payload {
-//     type Error = Error;
+impl Packable for Payload {
+    type Error = Error;
 
-//     fn packed_len(&self) -> usize {
-//         match *self {
-//             Self::Transaction(ref payload) => TransactionPayload::KIND.packed_len() + payload.packed_len(),
-//             Self::Indexation(ref payload) => IndexationPayload::KIND.packed_len() + payload.packed_len(),
-//             Self::Fpc(ref payload) => FpcPayload::KIND.packed_len() + payload.packed_len(),
-//         }
-//     }
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), P::Error> {
+        match *self {
+            Self::Transaction(ref payload) => {
+                TransactionPayload::KIND.pack(packer)?;
+                payload.pack(packer)
+            }
+            Self::Indexation(ref payload) => { 
+                IndexationPayload::KIND.pack(packer)?;
+                payload.pack(packer)
+            }
+            Self::Fpc(ref payload) => {
+                FpcPayload::KIND.pack(packer)?;
+                payload.pack(packer)
+            }
+        }
+    }
 
-//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-//         match self {
-//             Self::Transaction(payload) => {
-//                 TransactionPayload::KIND.pack(writer)?;
-//                 payload.pack(writer)?;
-//             }
-//             Self::Indexation(payload) => {
-//                 IndexationPayload::KIND.pack(writer)?;
-//                 payload.pack(writer)?;
-//             }
-//             Self::Fpc(payload) => {
-//                 FpcPayload::KIND.pack(writer)?;
-//                 payload.pack(writer)?;
-//             }
-//         }
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::Error, U::Error>> {
+        Ok(match u32::unpack(unpacker).map_err(UnpackError::coerce)? {
+            TransactionPayload::KIND => Payload::Transaction(Box::new(TransactionPayload::unpack(unpacker)?)),
+            IndexationPayload::KIND => Payload::Indexation(Box::new(IndexationPayload::unpack(unpacker)?)),
+            FpcPayload::KIND => Payload::Fpc(Box::new(FpcPayload::unpack(unpacker)?)),
+        })
+    }
 
-//         Ok(())
-//     }
-
-//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-//         Ok(match u32::unpack_inner::<R, CHECK>(reader)? {
-//             TransactionPayload::KIND => TransactionPayload::unpack_inner::<R, CHECK>(reader)?.into(),
-//             IndexationPayload::KIND => IndexationPayload::unpack_inner::<R, CHECK>(reader)?.into(),
-//             FpcPayload::KIND => FpcPayload::unpack_inner::<R, CHECK>(reader)?.into(),
-//             k => return Err(Self::Error::InvalidPayloadKind(k)),
-//         })
-//     }
-// }
+    fn packed_len(&self) -> usize {
+        match *self {
+            Self::Transaction(ref payload) => TransactionPayload::KIND.packed_len() + payload.packed_len(),
+            Self::Indexation(ref payload) => IndexationPayload::KIND.packed_len() + payload.packed_len(),
+            Self::Fpc(ref payload) => FpcPayload::KIND.packed_len() + payload.packed_len(),
+        }
+    }
+}
 
 // /// Returns the packed length of an optional payload.
 // pub fn option_payload_packed_len(payload: Option<&Payload>) -> usize {

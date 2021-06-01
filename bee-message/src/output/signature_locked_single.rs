@@ -3,7 +3,7 @@
 
 use crate::{address::Address, constants::IOTA_SUPPLY, Error};
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::{Packable, UnknownTagError};
 
 use core::ops::RangeInclusive;
 
@@ -11,8 +11,9 @@ use core::ops::RangeInclusive;
 pub const SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT: RangeInclusive<u64> = 1..=IOTA_SUPPLY;
 
 /// An output type which can be unlocked via a signature. It deposits onto one single address.
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[packable(error = UnknownTagError<u8>)]
 pub struct SignatureLockedSingleOutput {
     address: Address,
     amount: u64,
@@ -41,25 +42,3 @@ impl SignatureLockedSingleOutput {
         self.amount
     }
 }
-
-// impl Packable for SignatureLockedSingleOutput {
-//     type Error = Error;
-
-//     fn packed_len(&self) -> usize {
-//         self.address.packed_len() + self.amount.packed_len()
-//     }
-
-//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-//         self.address.pack(writer)?;
-//         self.amount.pack(writer)?;
-
-//         Ok(())
-//     }
-
-//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-//         let address = Address::unpack_inner::<R, CHECK>(reader)?;
-//         let amount = u64::unpack_inner::<R, CHECK>(reader)?;
-
-//         Self::new(address, amount)
-//     }
-// }

@@ -3,12 +3,12 @@
 
 use crate::{output::OutputId, payload::transaction::TransactionId, Error};
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::Packable;
 
 use core::{convert::From, str::FromStr};
 
 /// Represents an input referencing an output.
-#[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd, Packable)]
 pub struct UtxoInput(OutputId);
 
 impl UtxoInput {

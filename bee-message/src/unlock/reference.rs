@@ -3,12 +3,12 @@
 
 use crate::{constants::INPUT_OUTPUT_INDEX_RANGE, Error};
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::Packable;
 
 use core::convert::TryFrom;
 
 /// An [`UnlockBlock`](crate::unlock::UnlockBlock) that refers to another unlock block.
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ReferenceUnlock(u16);
 

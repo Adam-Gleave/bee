@@ -11,10 +11,10 @@ pub use timestamps::{Timestamp, Timestamps};
 
 use crate::Error;
 
-// use bee_common::packable::{Packable, Read, Write};
+use bee_common::packable::Packable;
 
 /// Payload describing opinions on conflicts and timestamps of messages.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FpcPayload {
     /// Version of the FPC statement payload.
@@ -34,36 +34,6 @@ impl FpcPayload {
         FpcPayloadBuilder::new()
     }
 }
-
-// impl Packable for FpcPayload {
-//     type Error = Error;
-
-//     fn packed_len(&self) -> usize {
-//         self.version.packed_len()
-//             + self.conflicts.packed_len()
-//             + self.timestamps.packed_len()
-//     }
-
-//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-//         self.version.pack(writer)?;
-//         self.conflicts.pack(writer)?;
-//         self.timestamps.pack(writer)?;
-
-//         Ok(())
-//     }
-
-//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-//         let version = u8::unpack_inner::<R, CHECK>(reader)?;
-//         let conflicts = Conflicts::unpack_inner::<R, CHECK>(reader)?;
-//         let timestamps = Timestamps::unpack_inner::<R, CHECK>(reader)?;
-
-//         Ok(Self {
-//             version,
-//             conflicts,
-//             timestamps,
-//         })
-//     }
-// }
 
 /// A builder to build an `FpcPayload`.
 pub struct FpcPayloadBuilder {
