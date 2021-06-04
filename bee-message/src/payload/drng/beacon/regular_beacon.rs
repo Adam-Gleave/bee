@@ -4,7 +4,7 @@
 use crate::Error;
 use super::{BEACON_PARTIAL_PUBLIC_KEY_LENGTH, BEACON_SIGNATURE_LENGTH};
 
-use bee_common::packable::Packable;
+use bee_packable::Packable;
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BeaconPayload {

@@ -7,7 +7,7 @@ pub use ed25519::{Ed25519Address, ED25519_ADDRESS_LENGTH};
 
 use crate::{signature::SignatureUnlock, Error};
 
-use bee_common::packable::{Packable, Packer, UnknownTagError, Unpacker, UnpackError};
+use bee_packable::{Packable, Packer, UnknownTagError, Unpacker, UnpackError};
 
 use bech32::{self, FromBase32, ToBase32, Variant};
 

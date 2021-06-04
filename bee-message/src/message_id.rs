@@ -3,7 +3,7 @@
 
 use crate::Error;
 
-use bee_common::packable::Packable;
+use bee_packable::Packable;
 
 use core::{convert::TryInto, str::FromStr};
 

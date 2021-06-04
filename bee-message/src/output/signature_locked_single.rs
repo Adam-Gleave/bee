@@ -3,7 +3,7 @@
 
 use crate::{address::Address, constants::IOTA_SUPPLY, Error};
 
-use bee_common::packable::{Packable, UnknownTagError};
+use bee_packable::{Packable, UnknownTagError};
 
 use core::ops::RangeInclusive;
 

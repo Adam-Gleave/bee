@@ -8,7 +8,7 @@ use crate::{
     Error, MessageId,
 };
 
-// use bee_common::packable::{Packable, Read, Write};
+// use bee_packable::{Packable, Read, Write};
 use bee_pow::providers::{miner::Miner, NonceProvider, NonceProviderBuilder};
 
 use crypto::{hashes::{blake2b::Blake2b256, Digest}, signatures::ed25519};

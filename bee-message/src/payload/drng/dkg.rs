@@ -3,7 +3,7 @@
 
 use crate::Error;
 
-use bee_common::packable::Packable;
+use bee_packable::Packable;
 
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

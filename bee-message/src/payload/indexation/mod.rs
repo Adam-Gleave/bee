@@ -9,7 +9,7 @@ use crate::{Error, MESSAGE_LENGTH_MAX};
 
 pub use padded::{PaddedIndex, INDEXATION_PADDED_INDEX_LENGTH};
 
-use bee_common::packable::Packable;
+use bee_packable::Packable;
 
 use alloc::boxed::Box;
 use core::ops::RangeInclusive;

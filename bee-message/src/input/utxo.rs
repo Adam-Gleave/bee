@@ -3,7 +3,7 @@
 
 use crate::{output::OutputId, payload::transaction::TransactionId, Error};
 
-use bee_common::packable::Packable;
+use bee_packable::Packable;
 
 use core::{convert::From, str::FromStr};
 

@@ -3,7 +3,7 @@
 
 use crate::MessageId;
 
-use bee_common::packable::Packable;
+use bee_packable::Packable;
 
 use core::ops::Deref;
 

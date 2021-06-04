@@ -3,7 +3,7 @@
 
 use crate::{constants::INPUT_OUTPUT_INDEX_RANGE, Error};
 
-use bee_common::packable::Packable;
+use bee_packable::Packable;
 
 use core::convert::TryFrom;
 

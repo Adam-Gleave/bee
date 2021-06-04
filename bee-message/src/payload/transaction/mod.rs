@@ -11,7 +11,7 @@ use crate::{unlock::UnlockBlocks, Error};
 pub use essence::{TransactionEssence, TransactionEssenceBuilder};
 pub use transaction_id::{TransactionId, TRANSACTION_ID_LENGTH};
 
-// use bee_common::packable::{Packable, Read, Write};
+// use bee_packable::{Packable, Read, Write};
 
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 

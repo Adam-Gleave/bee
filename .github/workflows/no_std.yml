@@ -9,12 +9,12 @@ on:
       - coordicide
 
 jobs:
-  check:
+  no_std:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         rust: [nightly, beta, stable]
-        crate: ["bee-common/bee-common"]
+        crate: ["bee-common/bee-packable"]
 
     steps:
     - uses: actions/checkout@v2

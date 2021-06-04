@@ -7,7 +7,7 @@ pub use reference::ReferenceUnlock;
 
 use crate::{constants::UNLOCK_BLOCK_COUNT_RANGE, signature::SignatureUnlock, Error};
 
-use bee_common::packable::{Packable, UnknownTagError};
+use bee_packable::{Packable, UnknownTagError};
 
 use core::ops::Deref;
 use std::collections::HashSet;

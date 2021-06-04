@@ -11,7 +11,7 @@ pub use timestamps::{Timestamp, Timestamps};
 
 use crate::Error;
 
-use bee_common::packable::Packable;
+use bee_packable::Packable;
 
 /// Payload describing opinions on conflicts and timestamps of messages.
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]

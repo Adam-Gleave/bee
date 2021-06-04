@@ -9,7 +9,7 @@ use crate::{
     Error,
 };
 
-use bee_common::packable::{Packable, UnknownTagError};
+use bee_packable::{Packable, UnknownTagError};
 
 use alloc::{boxed::Box, vec::Vec};
 
