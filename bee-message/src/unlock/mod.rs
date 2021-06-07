@@ -7,7 +7,7 @@ pub use reference::ReferenceUnlock;
 
 use crate::{constants::UNLOCK_BLOCK_COUNT_RANGE, signature::SignatureUnlock, Error};
 
-use bee_packable::{Packable, UnknownTagError};
+use bee_packable::{Packable, UnknownTagError, VecPrefix};
 
 use core::ops::Deref;
 use std::collections::HashSet;
@@ -56,7 +56,7 @@ impl From<ReferenceUnlock> for UnlockBlock {
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[packable(error = UnknownTagError<u8>)]
-pub struct UnlockBlocks(Box<[UnlockBlock]>);
+pub struct UnlockBlocks(VecPrefix<UnlockBlock, u16>);
 
 impl UnlockBlocks {
     /// Creates a new `UnlockBlocks`.
@@ -85,7 +85,7 @@ impl UnlockBlocks {
             }
         }
 
-        Ok(Self(unlock_blocks.into_boxed_slice()))
+        Ok(Self(unlock_blocks.into()))
     }
 
     /// Gets an `UnlockBlock` from an `UnlockBlocks`.

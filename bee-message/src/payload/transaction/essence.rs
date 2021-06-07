@@ -9,9 +9,9 @@ use crate::{
     Error,
 };
 
-use bee_packable::{Packable, UnknownTagError, UnpackOptionError};
+use bee_packable::{Packable, UnknownTagError, UnpackOptionError, VecPrefix};
 
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{vec::Vec};
 
 use core::convert::Infallible;
 
@@ -55,9 +55,9 @@ pub struct TransactionEssence {
     /// Node ID to which the consensus mana of the transaction is pledged.
     consensus_pledge_id: [u8; PLEDGE_ID_LENGTH],
     /// Collection of transaction [Input]s.
-    inputs: Box<[Input]>,
+    inputs: VecPrefix<Input, u16>,
     /// Collection of transaction [Output]s.
-    outputs: Box<[Output]>,
+    outputs: VecPrefix<Output, u16>,
     /// Optional additional payload.
     payload: Option<Payload>,
 }
@@ -267,8 +267,8 @@ impl TransactionEssenceBuilder {
             timestamp,
             access_pledge_id,
             consensus_pledge_id,
-            inputs: self.inputs.into_boxed_slice(),
-            outputs: self.outputs.into_boxed_slice(),
+            inputs: self.inputs.into(),
+            outputs: self.outputs.into(),
             payload: self.payload,
         })
     }
