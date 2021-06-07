@@ -1,7 +1,7 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{address::Address, input::UtxoInput, payload::transaction};
+use crate::{address::Address, input::UtxoInput, message::MessageUnpackError, payload::transaction::{self, TransactionUnpackError}};
 
 use bee_packable::UnknownTagError;
 use crypto::Error as CryptoError;
@@ -61,7 +61,7 @@ pub enum Error {
     TailTransactionHashNotUnique(usize, usize),
     TransactionInputsNotSorted,
     TransactionOutputsNotSorted,
-    TransactionUnpackError,
+    MessageUnpackError,
     UnknownTagError,
 }
 
@@ -178,8 +178,8 @@ impl fmt::Display for Error {
             Error::TransactionOutputsNotSorted => {
                 write!(f, "Transaction outputs are not sorted.")
             }
-            Error::TransactionUnpackError => {
-                write!(f, "Error unpacking transaction.")
+            Error::MessageUnpackError => {
+                write!(f, "Error unpacking message.")
             }
             Error::UnknownTagError => {
                 write!(f, "Unknown enum variant tag.")
@@ -200,15 +200,21 @@ impl From<CryptoError> for Error {
     }
 }
 
-impl From<transaction::TransactionUnpackError> for Error {
-    fn from(error: transaction::TransactionUnpackError) -> Self {
-        Error::TransactionUnpackError
-    }
-}
-
 impl<T> From<UnknownTagError<T>> for Error {
     fn from(error: UnknownTagError<T>) -> Self {
         Error::UnknownTagError
+    }
+}
+
+impl From<MessageUnpackError> for Error {
+    fn from(error: MessageUnpackError) -> Self {
+        Error::MessageUnpackError
+    }
+}
+
+impl From<TransactionUnpackError> for Error {
+    fn from(error: TransactionUnpackError) -> Self {
+        error.into()
     }
 }
 

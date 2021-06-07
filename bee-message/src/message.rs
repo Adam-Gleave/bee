@@ -1,14 +1,11 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    parents::Parents,
-    // payload::{option_payload_pack, option_payload_packed_len, option_payload_unpack, Payload},
-    payload::Payload,
-    Error, MessageId,
-};
+use std::convert::Infallible;
 
-// use bee_packable::{Packable, Read, Write};
+use crate::{Error, MessageId, parents::Parents, payload::{Payload, transaction::TransactionUnpackError}};
+
+use bee_packable::{Packable, UnpackOptionError};
 use bee_pow::providers::{miner::Miner, NonceProvider, NonceProviderBuilder};
 
 use crypto::{hashes::{blake2b::Blake2b256, Digest}, signatures::ed25519};
@@ -30,9 +27,33 @@ pub const MESSAGE_SIGNATURE_LENGTH: usize = 64;
 const DEFAULT_POW_SCORE: f64 = 4000f64;
 const DEFAULT_NONCE: u64 = 0;
 
+pub enum MessageUnpackError {
+    Transaction(TransactionUnpackError),
+    OptionError,
+}
+
+impl From<TransactionUnpackError> for MessageUnpackError {
+    fn from(inner: TransactionUnpackError) -> Self {
+        Self::Transaction(inner)
+    }
+}
+
+impl<T> From<UnpackOptionError<T>> for MessageUnpackError {
+    fn from(_: UnpackOptionError<T>) -> Self {
+        Self::OptionError
+    }
+}
+
+impl From<Infallible> for MessageUnpackError {
+    fn from(err: Infallible) -> Self {
+        match err {}
+    }
+}
+
 /// Represent the object that nodes gossip around the network.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[packable(error = MessageUnpackError)]
 pub struct Message {
     /// Specifies the version of the message structure.
     version: u8,
@@ -110,6 +131,9 @@ impl Message {
 
     // /// Hashes the `Message` contents, excluding the signature.
     // pub fn hash(&self) -> [u8; 32] {
+    //     // let mut message_bytes = Vec::with_capacity(self.packed_len());
+    //     // self.pack(&mut message_bytes);
+
     //     let mut message_bytes = self.pack_new();
     //     message_bytes = message_bytes[..message_bytes.len() - core::mem::size_of::<u64>()].to_vec();
 

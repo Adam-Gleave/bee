@@ -5,10 +5,8 @@
 
 use crate::{Error, MessageId, MESSAGE_ID_LENGTH};
 
-// use bee_common::{
-    // ord::is_unique_sorted,
-    // packable::{Packable, Read, Write},
-// };
+use bee_packable::Packable;
+// use bee_common::ord::is_unique_sorted;
 
 use core::ops::{Deref, RangeInclusive};
 
@@ -21,7 +19,7 @@ pub const MESSAGE_PARENTS_RANGE: RangeInclusive<usize> = 1..=8;
 /// * in the `MESSAGE_PARENTS_RANGE` range;
 /// * lexicographically sorted;
 /// * unique;
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Parents(Vec<MessageId>);
 
