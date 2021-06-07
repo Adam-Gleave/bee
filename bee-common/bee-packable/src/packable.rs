@@ -266,7 +266,7 @@ impl<T: Packable> Packable for Box<[T]> {
 }
 
 /// Wrapper type for `Vec<T>` where the length prefix is of type `P`.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct VecPrefix<T, P> {
     inner: Vec<T>,
     marker: PhantomData<P>,
