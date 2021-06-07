@@ -11,8 +11,6 @@ pub use signature_locked_dust_allowance::{
 };
 pub use signature_locked_single::{SignatureLockedSingleOutput, SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT};
 
-use crate::Error;
-
 use bee_packable::{Packable};
 
 /// A generic output that can represent different types defining the deposit of funds.

@@ -54,19 +54,3 @@ impl core::fmt::Debug for UtxoInput {
         write!(f, "UtxoInput({})", self.0)
     }
 }
-
-// impl Packable for UtxoInput {
-//     type Error = Error;
-
-//     fn packed_len(&self) -> usize {
-//         self.0.packed_len()
-//     }
-
-//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-//         self.0.pack(writer)
-//     }
-
-//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-//         Ok(OutputId::unpack_inner::<R, CHECK>(reader)?.into())
-//     }
-// }

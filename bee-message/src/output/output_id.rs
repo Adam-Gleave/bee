@@ -7,7 +7,7 @@ use crate::{
     Error,
 };
 
-use bee_packable::{Packable, Packer, UnknownTagError, Unpacker, UnpackError};
+use bee_packable::Packable;
 
 use core::{
     convert::{From, TryFrom, TryInto},

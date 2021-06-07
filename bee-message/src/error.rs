@@ -1,7 +1,12 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{address::Address, input::UtxoInput, message::MessageUnpackError, payload::transaction::{self, TransactionUnpackError}};
+use crate::{
+    address::Address, 
+    input::UtxoInput, 
+    message::MessageUnpackError, 
+    payload::transaction::TransactionUnpackError,
+};
 
 use bee_packable::UnknownTagError;
 use crypto::Error as CryptoError;
@@ -201,13 +206,13 @@ impl From<CryptoError> for Error {
 }
 
 impl<T> From<UnknownTagError<T>> for Error {
-    fn from(error: UnknownTagError<T>) -> Self {
+    fn from(_: UnknownTagError<T>) -> Self {
         Error::UnknownTagError
     }
 }
 
 impl From<MessageUnpackError> for Error {
-    fn from(error: MessageUnpackError) -> Self {
+    fn from(_: MessageUnpackError) -> Self {
         Error::MessageUnpackError
     }
 }
@@ -219,7 +224,7 @@ impl From<TransactionUnpackError> for Error {
 }
 
 impl From<Infallible> for Error {
-    fn from(err: Infallible) -> Self {
-        match err {}
+    fn from(error: Infallible) -> Self {
+        match error {}
     }
 }

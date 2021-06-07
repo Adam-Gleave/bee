@@ -7,12 +7,10 @@ pub use ed25519::{Ed25519Address, ED25519_ADDRESS_LENGTH};
 
 use crate::{signature::SignatureUnlock, Error};
 
-use bee_packable::{Packable, Packer, UnknownTagError, Unpacker, UnpackError};
-
+use bee_packable::{Packable, SliceUnpacker, VecPacker};
 use bech32::{self, FromBase32, ToBase32, Variant};
 
-use alloc::{str::FromStr, string::String};
-use core::convert::TryFrom;
+use core::ops::Deref;
 
 /// A generic address supporting different address kinds.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Packable)]
@@ -36,21 +34,26 @@ impl Address {
         }
     }
 
-    // /// Tries to create an `Address` from a Bech32 encoded string.
-    // pub fn try_from_bech32(addr: &str) -> Result<Self, Error> {
-    //     match bech32::decode(addr) {
-    //         Ok((_hrp, data, _)) => {
-    //             let bytes = Vec::<u8>::from_base32(&data).map_err(|_| Error::InvalidAddress)?;
-    //             Self::unpack(&mut bytes.as_slice()).map_err(|_| Error::InvalidAddress)
-    //         }
-    //         Err(_) => Err(Error::InvalidAddress),
-    //     }
-    // }
+    /// Tries to create an `Address` from a Bech32 encoded string.
+    pub fn try_from_bech32(addr: &str) -> Result<Self, Error> {
+        match bech32::decode(addr) {
+            Ok((_hrp, data, _)) => {
+                let bytes = Vec::<u8>::from_base32(&data).map_err(|_| Error::InvalidAddress)?;
+                let mut unpacker = SliceUnpacker::new(bytes.as_slice());
+                Self::unpack(&mut unpacker).map_err(|_| Error::InvalidAddress)
+            }
+            Err(_) => Err(Error::InvalidAddress),
+        }
+    }
 
-    // /// Encodes this address to a Bech32 string with the hrp (human readable part) argument as prefix.
-    // pub fn to_bech32(&self, hrp: &str) -> String {
-    //     bech32::encode(hrp, self.pack_new().to_base32(), Variant::Bech32).expect("Invalid address.")
-    // }
+    /// Encodes this address to a Bech32 string with the hrp (human readable part) argument as prefix.
+    pub fn to_bech32(&self, hrp: &str) -> String {
+        let mut bytes = VecPacker::new();
+        self.pack(&mut bytes).unwrap();
+        let vec_bytes = bytes.deref().clone();
+
+        bech32::encode(hrp, vec_bytes.to_base32(), Variant::Bech32).expect("Invalid address.")
+    }
 
     /// Verifies a [`SignatureUnlock`] for a message against the [`Address`].
     pub fn verify(&self, msg: &[u8], signature: &SignatureUnlock) -> Result<(), Error> {

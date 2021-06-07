@@ -8,8 +8,6 @@ pub mod fpc;
 pub mod indexation;
 pub mod transaction;
 
-use std::ops::Index;
-
 // use drng::{ApplicationMessagePayload, BeaconPayload, DkgPayload};
 use fpc::FpcPayload;
 use indexation::IndexationPayload;

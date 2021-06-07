@@ -5,8 +5,6 @@ mod utxo;
 
 pub use utxo::UtxoInput;
 
-use crate::Error;
-
 use bee_packable::Packable;
 
 /// A generic input supporting different input kinds.

@@ -3,7 +3,7 @@
 
 //! The parents module defines the core data type for storing the messages directly approved by a message.
 
-use crate::{Error, MessageId, MESSAGE_ID_LENGTH};
+use crate::{Error, MessageId};
 
 use bee_packable::Packable;
 // use bee_common::ord::is_unique_sorted;
@@ -56,36 +56,3 @@ impl Parents {
         self.0.iter()
     }
 }
-
-// impl Packable for Parents {
-//     type Error = Error;
-
-//     fn packed_len(&self) -> usize {
-//         0u8.packed_len() + self.len() * MESSAGE_ID_LENGTH
-//     }
-
-//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-//         (self.len() as u8).pack(writer)?;
-
-//         for parent in self.iter() {
-//             parent.pack(writer)?;
-//         }
-
-//         Ok(())
-//     }
-
-//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-//         let parents_len = u8::unpack_inner::<R, CHECK>(reader)? as usize;
-
-//         if CHECK && !MESSAGE_PARENTS_RANGE.contains(&parents_len) {
-//             return Err(Error::InvalidParentsCount(parents_len));
-//         }
-
-//         let mut inner = Vec::with_capacity(parents_len);
-//         for _ in 0..parents_len {
-//             inner.push(MessageId::unpack_inner::<R, CHECK>(reader)?);
-//         }
-
-//         Self::new(inner)
-//     }
-// }
