@@ -3,7 +3,7 @@
 
 use crate::payload::transaction::TransactionId;
 
-use bee_packable::Packable;
+use bee_packable::{Packable, VecPrefix};
 
 use core::ops::Deref;
 
@@ -11,13 +11,13 @@ use core::ops::Deref;
 /// Describes a vote in a given round for a transaction conflict.
 #[derive(Clone, Default, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Conflicts(Vec<Conflict>);
+pub struct Conflicts(VecPrefix<Conflict, u32>);
 
 impl Deref for Conflicts {
     type Target = [Conflict];
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.0.deref().as_slice()
     }
 }
 

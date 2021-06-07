@@ -3,7 +3,7 @@
 
 use crate::MessageId;
 
-use bee_packable::Packable;
+use bee_packable::{Packable, VecPrefix};
 
 use core::ops::Deref;
 
@@ -11,13 +11,13 @@ use core::ops::Deref;
 /// Describes a vote in a given round for a message timestamp.
 #[derive(Clone, Default, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Timestamps(Vec<Timestamp>);
+pub struct Timestamps(VecPrefix<Timestamp, u32>);
 
 impl Deref for Timestamps {
     type Target = [Timestamp];
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.0.deref().as_slice()
     }
 }
 
