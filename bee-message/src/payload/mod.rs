@@ -3,11 +3,13 @@
 
 //! The payload module defines the core data types for representing message payloads.
 
+pub mod data;
 pub mod drng;
 pub mod fpc;
 pub mod indexation;
 pub mod transaction;
 
+use data::DataPayload;
 use drng::{ApplicationMessagePayload, BeaconPayload, CollectiveBeaconPayload, DkgPayload};
 use fpc::FpcPayload;
 use indexation::IndexationPayload;
@@ -34,6 +36,8 @@ pub enum Payload {
     Beacon(Box<BeaconPayload>),
     /// A dRNG collective beacon payload.
     CollectiveBeacon(Box<CollectiveBeaconPayload>),
+    /// A pure data payload.
+    Data(Box<DataPayload>),
     /// A dRNG DKG payload.
     Dkg(Box<DkgPayload>),
     /// A transaction payload.
@@ -51,6 +55,7 @@ impl Payload {
             Self::ApplicationMessage(_) => ApplicationMessagePayload::KIND,
             Self::Beacon(_) => BeaconPayload::KIND,
             Self::CollectiveBeacon(_) => CollectiveBeaconPayload::KIND,
+            Self::Data(_) => DataPayload::KIND,
             Self::Dkg(_) => DkgPayload::KIND,
             Self::Transaction(_) => TransactionPayload::KIND,
             Self::Indexation(_) => IndexationPayload::KIND,
@@ -118,6 +123,10 @@ impl Packable for Payload {
                 CollectiveBeaconPayload::KIND.pack(packer)?;
                 payload.pack(packer)
             }
+            Self::Data(ref payload) => {
+                DataPayload::KIND.pack(packer)?;
+                payload.pack(packer)
+            }
             Self::Dkg(ref payload) => {
                 DkgPayload::KIND.pack(packer)?;
                 payload.pack(packer)
@@ -142,6 +151,7 @@ impl Packable for Payload {
             ApplicationMessagePayload::KIND => Payload::ApplicationMessage(Box::new(ApplicationMessagePayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
             BeaconPayload::KIND => Payload::Beacon(Box::new(BeaconPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
             CollectiveBeaconPayload::KIND => Payload::CollectiveBeacon(Box::new(CollectiveBeaconPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
+            DataPayload::KIND => Payload::Data(Box::new(DataPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
             DkgPayload::KIND => Payload::Dkg(Box::new(DkgPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
             TransactionPayload::KIND => Payload::Transaction(Box::new(TransactionPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
             IndexationPayload::KIND => Payload::Indexation(Box::new(IndexationPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
@@ -157,6 +167,7 @@ impl Packable for Payload {
             Self::ApplicationMessage(ref payload) => ApplicationMessagePayload::KIND.packed_len() + payload.packed_len(),
             Self::Beacon(ref payload) => BeaconPayload::KIND.packed_len() + payload.packed_len(),
             Self::CollectiveBeacon(ref payload) => CollectiveBeaconPayload::KIND.packed_len() + payload.packed_len(),
+            Self::Data(ref payload) => DataPayload::KIND.packed_len() + payload.packed_len(),
             Self::Dkg(ref payload) => DkgPayload::KIND.packed_len() + payload.packed_len(),
             Self::Transaction(ref payload) => TransactionPayload::KIND.packed_len() + payload.packed_len(),
             Self::Indexation(ref payload) => IndexationPayload::KIND.packed_len() + payload.packed_len(),

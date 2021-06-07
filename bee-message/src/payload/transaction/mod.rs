@@ -27,7 +27,7 @@ pub struct TransactionPayload {
 
 impl TransactionPayload {
     /// The payload kind of a `TransactionPayload`.
-    pub const KIND: u32 = 0;
+    pub const KIND: u32 = 1;
 
     /// Return a new `TransactionPayloadBuilder` to build a `TransactionPayload`.
     pub fn builder() -> TransactionPayloadBuilder {
