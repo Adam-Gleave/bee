@@ -5,7 +5,7 @@ use bee_packable::Packable;
 use bee_message::prelude::*;
 use bee_test::rand::bytes::{rand_bytes, rand_bytes_32};
 
-use std::convert::TryInto;
+use core::convert::Infallible;
 
 #[test]
 fn unlock_kind() {

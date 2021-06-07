@@ -5,7 +5,7 @@ use bee_packable::Packable;
 use bee_message::{milestone::Milestone, prelude::*};
 use bee_test::rand::{milestone::rand_milestone, number::rand_number};
 
-use std::str::FromStr;
+use core::str::FromStr;
 
 const MESSAGE_ID: &str = "9e23e9fccb816af4ad355c27d904b6a6e88618e0bed1b640df3d4c19f4579bc9";
 

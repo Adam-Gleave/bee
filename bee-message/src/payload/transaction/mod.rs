@@ -6,16 +6,15 @@
 mod essence;
 mod transaction_id;
 
-use std::ops::Deref;
-
 use crate::{unlock::UnlockBlocks, Error};
 
 pub use essence::{TransactionEssence, TransactionEssenceBuilder, TransactionUnpackError};
 pub use transaction_id::{TransactionId, TRANSACTION_ID_LENGTH};
 
 use bee_packable::{Packable, VecPacker};
-
 use crypto::hashes::{blake2b::Blake2b256, Digest};
+
+use core::ops::Deref;
 
 /// A transaction to move funds.
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]

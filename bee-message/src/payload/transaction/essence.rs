@@ -1,8 +1,6 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::convert::Infallible;
-
 use crate::{
     constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY},
     input::Input,
@@ -14,6 +12,8 @@ use crate::{
 use bee_packable::{Packable, UnknownTagError, UnpackOptionError};
 
 use alloc::{boxed::Box, vec::Vec};
+
+use core::convert::Infallible;
 
 /// Length (in bytes) of Transaction Essence pledge IDs (node IDs relating to pledge mana).
 pub const PLEDGE_ID_LENGTH: usize = 32;

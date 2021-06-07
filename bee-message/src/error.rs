@@ -11,8 +11,7 @@ use crate::{
 use bee_packable::UnknownTagError;
 use crypto::Error as CryptoError;
 
-use core::fmt;
-use std::convert::Infallible;
+use core::{fmt, convert::Infallible};
 
 /// Error occurring when creating/parsing/validating messages.
 #[derive(Debug)]

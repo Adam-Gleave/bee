@@ -1,14 +1,14 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{convert::Infallible, ops::Deref};
-
 use crate::{Error, MessageId, parents::Parents, payload::{Payload, transaction::TransactionUnpackError}};
 
 use bee_packable::{Packable, UnpackOptionError, VecPacker};
 use bee_pow::providers::{miner::Miner, NonceProvider, NonceProviderBuilder};
 
 use crypto::{hashes::{blake2b::Blake2b256, Digest}, signatures::ed25519};
+
+use core::{convert::Infallible, ops::Deref};
 
 const MESSAGE_VERSION: u8 = 1;
 
