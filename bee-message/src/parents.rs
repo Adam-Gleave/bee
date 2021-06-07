@@ -5,10 +5,10 @@
 
 use crate::{Error, MessageId, MESSAGE_ID_LENGTH};
 
-use bee_common::{
+// use bee_common::{
     // ord::is_unique_sorted,
     // packable::{Packable, Read, Write},
-};
+// };
 
 use core::ops::{Deref, RangeInclusive};
 

@@ -115,11 +115,14 @@ impl Packable for Payload {
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::Error, U::Error>> {
-        Ok(match u32::unpack(unpacker).map_err(UnpackError::coerce)? {
+        let payload = match u32::unpack(unpacker).map_err(UnpackError::coerce)? {
             TransactionPayload::KIND => Payload::Transaction(Box::new(TransactionPayload::unpack(unpacker)?)),
-            IndexationPayload::KIND => Payload::Indexation(Box::new(IndexationPayload::unpack(unpacker)?)),
-            FpcPayload::KIND => Payload::Fpc(Box::new(FpcPayload::unpack(unpacker)?)),
-        })
+            IndexationPayload::KIND => Payload::Indexation(Box::new(IndexationPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
+            FpcPayload::KIND => Payload::Fpc(Box::new(FpcPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
+            tag => Err(UnpackError::Packable(Self::Error::from(UnknownTagError(tag))))?,
+        };
+
+        Ok(payload)
     }
 
     fn packed_len(&self) -> usize {

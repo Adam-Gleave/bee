@@ -8,16 +8,17 @@ mod transaction_id;
 
 use crate::{unlock::UnlockBlocks, Error};
 
-pub use essence::{TransactionEssence, TransactionEssenceBuilder};
+pub use essence::{TransactionEssence, TransactionEssenceBuilder, TransactionUnpackError};
 pub use transaction_id::{TransactionId, TRANSACTION_ID_LENGTH};
 
-// use bee_packable::{Packable, Read, Write};
+use bee_packable::Packable;
 
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 
 /// A transaction to move funds.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[packable(error = crate::Error)]
 pub struct TransactionPayload {
     essence: TransactionEssence,
     unlock_blocks: UnlockBlocks,

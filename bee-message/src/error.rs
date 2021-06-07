@@ -1,11 +1,13 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{address::Address, input::UtxoInput};
+use crate::{address::Address, input::UtxoInput, payload::transaction};
 
+use bee_packable::UnknownTagError;
 use crypto::Error as CryptoError;
 
 use core::fmt;
+use std::convert::Infallible;
 
 /// Error occurring when creating/parsing/validating messages.
 #[derive(Debug)]
@@ -59,6 +61,8 @@ pub enum Error {
     TailTransactionHashNotUnique(usize, usize),
     TransactionInputsNotSorted,
     TransactionOutputsNotSorted,
+    TransactionUnpackError,
+    UnknownTagError,
 }
 
 impl std::error::Error for Error {}
@@ -174,6 +178,12 @@ impl fmt::Display for Error {
             Error::TransactionOutputsNotSorted => {
                 write!(f, "Transaction outputs are not sorted.")
             }
+            Error::TransactionUnpackError => {
+                write!(f, "Error unpacking transaction.")
+            }
+            Error::UnknownTagError => {
+                write!(f, "Unknown enum variant tag.")
+            }
         }
     }
 }
@@ -187,5 +197,23 @@ impl From<std::io::Error> for Error {
 impl From<CryptoError> for Error {
     fn from(error: CryptoError) -> Self {
         Error::CryptoError(error)
+    }
+}
+
+impl From<transaction::TransactionUnpackError> for Error {
+    fn from(error: transaction::TransactionUnpackError) -> Self {
+        Error::TransactionUnpackError
+    }
+}
+
+impl<T> From<UnknownTagError<T>> for Error {
+    fn from(error: UnknownTagError<T>) -> Self {
+        Error::UnknownTagError
+    }
+}
+
+impl From<Infallible> for Error {
+    fn from(err: Infallible) -> Self {
+        match err {}
     }
 }

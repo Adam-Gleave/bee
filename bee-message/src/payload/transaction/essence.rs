@@ -1,6 +1,8 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+use std::convert::Infallible;
+
 use crate::{
     constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY},
     input::Input,
@@ -9,17 +11,40 @@ use crate::{
     Error,
 };
 
-use bee_packable::{Packable, UnknownTagError};
+use bee_packable::{Packable, UnknownTagError, UnpackOptionError};
 
 use alloc::{boxed::Box, vec::Vec};
 
 /// Length (in bytes) of Transaction Essence pledge IDs (node IDs relating to pledge mana).
 pub const PLEDGE_ID_LENGTH: usize = 32;
 
+pub enum TransactionUnpackError {
+    UnknownTagError,
+    OptionError,
+}
+
+impl<T> From<UnknownTagError<T>> for TransactionUnpackError {
+    fn from(_: UnknownTagError<T>) -> Self {
+        Self::UnknownTagError
+    }
+}
+
+impl<T> From<UnpackOptionError<T>> for TransactionUnpackError {
+    fn from(_: UnpackOptionError<T>) -> Self {
+        Self::OptionError
+    }
+}
+
+impl From<Infallible> for TransactionUnpackError {
+    fn from(err: Infallible) -> Self {
+        match err {}
+    }
+}
+
 /// A transaction regular essence consuming inputs, creating outputs and carrying an optional payload.
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[packable(error = crate::Error)]
+#[packable(error = TransactionUnpackError)]
 pub struct TransactionEssence {
     /// Transaction essence version number.
     version: u8,
