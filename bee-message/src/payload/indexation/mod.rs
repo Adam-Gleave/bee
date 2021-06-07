@@ -9,9 +9,8 @@ use crate::{Error, MESSAGE_LENGTH_MAX};
 
 pub use padded::{PaddedIndex, INDEXATION_PADDED_INDEX_LENGTH};
 
-use bee_packable::Packable;
+use bee_packable::{Packable, VecPrefix};
 
-use alloc::boxed::Box;
 use core::ops::RangeInclusive;
 
 /// Valid lengths for an indexation payload index.
@@ -21,8 +20,9 @@ pub const INDEXATION_INDEX_LENGTH_RANGE: RangeInclusive<usize> = 1..=INDEXATION_
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IndexationPayload {
-    index: Box<[u8]>,
-    data: Box<[u8]>,
+    version: u8,
+    index: VecPrefix<u8, u16>,
+    data: VecPrefix<u8, u16>,
 }
 
 impl IndexationPayload {
@@ -30,7 +30,7 @@ impl IndexationPayload {
     pub const KIND: u32 = 8;
 
     /// Creates a new `IndexationPayload`.
-    pub fn new(index: &[u8], data: &[u8]) -> Result<Self, Error> {
+    pub fn new(version: u8, index: Vec<u8>, data: Vec<u8>) -> Result<Self, Error> {
         if !INDEXATION_INDEX_LENGTH_RANGE.contains(&index.len()) {
             return Err(Error::InvalidIndexationIndexLength(index.len()));
         }
@@ -40,6 +40,7 @@ impl IndexationPayload {
         }
 
         Ok(Self {
+            version,
             index: index.into(),
             data: data.into(),
         })
