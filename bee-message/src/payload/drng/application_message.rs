@@ -11,8 +11,7 @@ pub struct ApplicationMessagePayload {
 }
 
 impl ApplicationMessagePayload {
-    // TODO verify values with goshimmer.
-    pub const KIND: u32 = 6;
+    pub const KIND: u32 = 3;
 
     pub fn new(version: u8, instance_id: u32) -> Self {
         Self { version, instance_id } 

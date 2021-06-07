@@ -16,8 +16,7 @@ pub struct BeaconPayload {
 }
 
 impl BeaconPayload {
-    // TODO verify values with goshimmer.
-    pub const KIND: u32 = 4;
+    pub const KIND: u32 = 5;
 
     pub fn builder() -> BeaconPayloadBuilder {
         BeaconPayloadBuilder::new()

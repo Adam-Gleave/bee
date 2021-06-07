@@ -49,7 +49,7 @@ pub struct DkgPayload {
 
 impl DkgPayload {
     // TODO verify values with goshimmer.
-    pub const KIND: u32 = 7;
+    pub const KIND: u32 = 4;
 
     pub fn builder() -> DkgPayloadBuilder {
         DkgPayloadBuilder::new()

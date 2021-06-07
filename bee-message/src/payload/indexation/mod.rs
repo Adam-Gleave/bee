@@ -27,7 +27,7 @@ pub struct IndexationPayload {
 
 impl IndexationPayload {
     /// The payload kind of an `IndexationPayload`.
-    pub const KIND: u32 = 2;
+    pub const KIND: u32 = 8;
 
     /// Creates a new `IndexationPayload`.
     pub fn new(index: &[u8], data: &[u8]) -> Result<Self, Error> {

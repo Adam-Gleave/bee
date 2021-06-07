@@ -27,7 +27,7 @@ pub struct FpcPayload {
 
 impl FpcPayload {
     /// The payload kind of an `FpcPayload` (Using the same type as GoShimmer here).
-    pub const KIND: u32 = 3;
+    pub const KIND: u32 = 2;
 
     /// Returns a new `FpcPayloadBuilder` in order to build an `FpcPayload`.
     pub fn builder() -> FpcPayloadBuilder {

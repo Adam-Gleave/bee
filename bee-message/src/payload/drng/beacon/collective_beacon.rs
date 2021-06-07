@@ -21,7 +21,7 @@ pub struct CollectiveBeaconPayload {
 }
 
 impl CollectiveBeaconPayload {
-    pub const KIND: usize = 5;
+    pub const KIND: usize = 6;
 
     pub fn builder() -> CollectiveBeaconPayloadBuilder {
         CollectiveBeaconPayloadBuilder::default()
