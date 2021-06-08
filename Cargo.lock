@@ -91,6 +91,7 @@ name = "bee-message"
 version = "0.1.3"
 dependencies = [
  "bech32",
+ "bee-ord",
  "bee-packable",
  "bee-packable-derive",
  "bee-pow",

@@ -5,8 +5,8 @@
 
 use crate::{Error, MessageId};
 
+use bee_ord::is_unique_sorted;
 use bee_packable::Packable;
-// use bee_common::ord::is_unique_sorted;
 
 use core::ops::{Deref, RangeInclusive};
 
@@ -39,9 +39,9 @@ impl Parents {
             return Err(Error::InvalidParentsCount(inner.len()));
         }
 
-        // if !is_unique_sorted(inner.iter().map(AsRef::as_ref)) {
-        //     return Err(Error::ParentsNotUniqueSorted);
-        // }
+        if !is_unique_sorted(inner.iter().map(AsRef::as_ref)) {
+            return Err(Error::ParentsNotUniqueSorted);
+        }
 
         Ok(Self(inner))
     }

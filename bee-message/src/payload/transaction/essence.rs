@@ -9,10 +9,11 @@ use crate::{
     Error,
 };
 
-use bee_packable::{Packable, UnknownTagError, UnpackOptionError, VecPrefix};
+use bee_ord::is_sorted;
+use bee_packable::{Packable, UnknownTagError, UnpackOptionError, VecPacker, VecPrefix};
 
 use alloc::{vec::Vec};
-
+use core::ops::Deref;
 use core::convert::Infallible;
 
 /// Length (in bytes) of Transaction Essence pledge IDs (node IDs relating to pledge mana).
@@ -206,10 +207,14 @@ impl TransactionEssenceBuilder {
             }
         }
 
-        // // Inputs must be lexicographically sorted in their serialised forms.
-        // if !is_sorted(self.inputs.iter().map(Packable::pack_new)) {
-        //     return Err(Error::TransactionInputsNotSorted);
-        // }
+        // Inputs must be lexicographically sorted in their serialised forms.
+        if !is_sorted(self.inputs.iter().map(|input: &Input| {
+            let mut message_bytes = VecPacker::new();
+            input.pack(&mut message_bytes).unwrap();
+            message_bytes.deref().clone()
+        })) {
+            return Err(Error::TransactionInputsNotSorted);
+        }
 
         let mut total: u64 = 0;
 
@@ -257,10 +262,14 @@ impl TransactionEssenceBuilder {
             }
         }
 
-        // // Outputs must be lexicographically sorted in their serialised forms.
-        // if !is_sorted(self.outputs.iter().map(Packable::pack_new)) {
-        //     return Err(Error::TransactionOutputsNotSorted);
-        // }
+        // Outputs must be lexicographically sorted in their serialised forms.
+        if !is_sorted(self.outputs.iter().map(|output: &Output| {
+            let mut message_bytes = VecPacker::new();
+            output.pack(&mut message_bytes).unwrap();
+            message_bytes.deref().clone()
+        })) {
+            return Err(Error::TransactionOutputsNotSorted);
+        }
 
         Ok(TransactionEssence {
             version,
