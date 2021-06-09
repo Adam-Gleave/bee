@@ -7,12 +7,14 @@ pub mod data;
 pub mod drng;
 pub mod fpc;
 pub mod indexation;
+pub mod salt_declaration;
 pub mod transaction;
 
 use data::DataPayload;
 use drng::{ApplicationMessagePayload, BeaconPayload, CollectiveBeaconPayload, DkgPayload};
 use fpc::FpcPayload;
 use indexation::IndexationPayload;
+use salt_declaration::SaltDeclarationPayload;
 use transaction::TransactionPayload;
 
 use crate::Error;
@@ -40,12 +42,14 @@ pub enum Payload {
     Data(Box<DataPayload>),
     /// A dRNG DKG payload.
     Dkg(Box<DkgPayload>),
-    /// A transaction payload.
-    Transaction(Box<TransactionPayload>),
-    /// An indexation payload.
-    Indexation(Box<IndexationPayload>),
     /// An FPC payload.
     Fpc(Box<FpcPayload>),
+    /// An indexation payload.
+    Indexation(Box<IndexationPayload>),
+    /// A salt declaration payload.
+    SaltDeclaration(Box<SaltDeclarationPayload>),
+    /// A transaction payload.
+    Transaction(Box<TransactionPayload>),
 }
 
 impl Payload {
@@ -57,9 +61,10 @@ impl Payload {
             Self::CollectiveBeacon(_) => CollectiveBeaconPayload::KIND,
             Self::Data(_) => DataPayload::KIND,
             Self::Dkg(_) => DkgPayload::KIND,
-            Self::Transaction(_) => TransactionPayload::KIND,
-            Self::Indexation(_) => IndexationPayload::KIND,
             Self::Fpc(_) => FpcPayload::KIND,
+            Self::Indexation(_) => IndexationPayload::KIND,
+            Self::SaltDeclaration(_) => SaltDeclarationPayload::KIND,
+            Self::Transaction(_) => TransactionPayload::KIND,
         }
     }
 }
@@ -88,9 +93,9 @@ impl From<DkgPayload> for Payload {
     }
 }
 
-impl From<TransactionPayload> for Payload {
-    fn from(payload: TransactionPayload) -> Self {
-        Self::Transaction(Box::new(payload))
+impl From<FpcPayload> for Payload {
+    fn from(payload: FpcPayload) -> Self {
+        Self::Fpc(Box::new(payload))
     }
 }
 
@@ -100,9 +105,15 @@ impl From<IndexationPayload> for Payload {
     }
 }
 
-impl From<FpcPayload> for Payload {
-    fn from(payload: FpcPayload) -> Self {
-        Self::Fpc(Box::new(payload))
+impl From<SaltDeclarationPayload> for Payload {
+    fn from(payload: SaltDeclarationPayload) -> Self {
+        Self::SaltDeclaration(Box::new(payload))
+    }
+}
+
+impl From<TransactionPayload> for Payload {
+    fn from(payload: TransactionPayload) -> Self {
+        Self::Transaction(Box::new(payload))
     }
 }
 
@@ -131,16 +142,20 @@ impl Packable for Payload {
                 DkgPayload::KIND.pack(packer)?;
                 payload.pack(packer)
             }
-            Self::Transaction(ref payload) => {
-                TransactionPayload::KIND.pack(packer)?;
+            Self::Fpc(ref payload) => {
+                FpcPayload::KIND.pack(packer)?;
                 payload.pack(packer)
             }
             Self::Indexation(ref payload) => { 
                 IndexationPayload::KIND.pack(packer)?;
                 payload.pack(packer)
             }
-            Self::Fpc(ref payload) => {
-                FpcPayload::KIND.pack(packer)?;
+            Self::SaltDeclaration(ref payload) => {
+                SaltDeclarationPayload::KIND.pack(packer)?;
+                payload.pack(packer)
+            }
+            Self::Transaction(ref payload) => {
+                TransactionPayload::KIND.pack(packer)?;
                 payload.pack(packer)
             }
         }
@@ -153,9 +168,10 @@ impl Packable for Payload {
             CollectiveBeaconPayload::KIND => Payload::CollectiveBeacon(Box::new(CollectiveBeaconPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
             DataPayload::KIND => Payload::Data(Box::new(DataPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
             DkgPayload::KIND => Payload::Dkg(Box::new(DkgPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
-            TransactionPayload::KIND => Payload::Transaction(Box::new(TransactionPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
-            IndexationPayload::KIND => Payload::Indexation(Box::new(IndexationPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
             FpcPayload::KIND => Payload::Fpc(Box::new(FpcPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
+            IndexationPayload::KIND => Payload::Indexation(Box::new(IndexationPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
+            SaltDeclarationPayload::KIND => Payload::SaltDeclaration(Box::new(SaltDeclarationPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
+            TransactionPayload::KIND => Payload::Transaction(Box::new(TransactionPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
             tag => Err(UnpackError::Packable(Self::Error::from(UnknownTagError(tag))))?,
         };
 
@@ -169,9 +185,10 @@ impl Packable for Payload {
             Self::CollectiveBeacon(ref payload) => CollectiveBeaconPayload::KIND.packed_len() + payload.packed_len(),
             Self::Data(ref payload) => DataPayload::KIND.packed_len() + payload.packed_len(),
             Self::Dkg(ref payload) => DkgPayload::KIND.packed_len() + payload.packed_len(),
-            Self::Transaction(ref payload) => TransactionPayload::KIND.packed_len() + payload.packed_len(),
-            Self::Indexation(ref payload) => IndexationPayload::KIND.packed_len() + payload.packed_len(),
             Self::Fpc(ref payload) => FpcPayload::KIND.packed_len() + payload.packed_len(),
+            Self::Indexation(ref payload) => IndexationPayload::KIND.packed_len() + payload.packed_len(),
+            Self::SaltDeclaration(ref payload) => SaltDeclarationPayload::KIND.packed_len() + payload.packed_len(),
+            Self::Transaction(ref payload) => TransactionPayload::KIND.packed_len() + payload.packed_len(),
         }
     }
 }

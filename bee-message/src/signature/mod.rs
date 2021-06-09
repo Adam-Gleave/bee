@@ -3,7 +3,7 @@
 
 mod ed25519;
 
-pub use ed25519::Ed25519Signature;
+pub use ed25519::{Ed25519Signature, ED25519_PUBLIC_KEY_LENGTH, ED25519_SIGNATURE_LENGTH};
 
 use bee_packable::Packable;
 

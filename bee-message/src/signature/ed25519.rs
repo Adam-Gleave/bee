@@ -3,8 +3,8 @@
 
 use bee_packable::Packable;
 
-const ED25519_PUBLIC_KEY_LENGTH: usize = 32;
-const ED25519_SIGNATURE_LENGTH: usize = 64;
+pub const ED25519_PUBLIC_KEY_LENGTH: usize = 32;
+pub const ED25519_SIGNATURE_LENGTH: usize = 64;
 
 /// An Ed25519 signature.
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Packable)]
@@ -32,7 +32,7 @@ impl Ed25519Signature {
     }
 
     /// Return the actual signature of an `Ed25519Signature`.
-    pub fn signature(&self) -> &[u8; ED25519_SIGNATURE_LENGTH] {
+    pub fn signature(&self) -> &[u8] {
         &self.signature
     }
 }
