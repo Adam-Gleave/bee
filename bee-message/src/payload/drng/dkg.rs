@@ -3,29 +3,29 @@
 
 use crate::Error;
 
-use bee_packable::Packable;
+use bee_packable::{Packable, VecPrefix};
 
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EncryptedDeal {
-    dh_key: Box<[u8]>,
-    nonce: Box<[u8]>,
-    encrypted_share: Box<[u8]>,
+    dh_key: VecPrefix<u8, u32>,
+    nonce: VecPrefix<u8, u32>,
+    encrypted_share: VecPrefix<u8, u32>,
     threshold: u32,
-    commitments: Box<[u8]>,
+    commitments: VecPrefix<u8, u32>,
 }
 
 impl EncryptedDeal {
     pub fn dh_key(&self) -> &[u8] {
-        &self.dh_key
+        self.dh_key.as_slice()
     } 
 
     pub fn nonce(&self) -> &[u8] {
-        &self.nonce
+        self.nonce.as_slice()
     }
 
     pub fn encrypted_share(&self) -> &[u8] {
-        &self.encrypted_share
+        self.encrypted_share.as_slice()
     }
 
     pub fn threshold(&self) -> u32 {
@@ -33,7 +33,7 @@ impl EncryptedDeal {
     }
 
     pub fn commitments(&self) -> &[u8] {
-        &self.commitments
+        self.commitments.as_slice()
     }
 }
 

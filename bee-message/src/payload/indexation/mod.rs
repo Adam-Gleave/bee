@@ -21,8 +21,8 @@ pub const INDEXATION_INDEX_LENGTH_RANGE: RangeInclusive<usize> = 1..=INDEXATION_
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IndexationPayload {
     version: u8,
-    index: VecPrefix<u8, u16>,
-    data: VecPrefix<u8, u16>,
+    index: VecPrefix<u8, u32>,
+    data: VecPrefix<u8, u32>,
 }
 
 impl IndexationPayload {
