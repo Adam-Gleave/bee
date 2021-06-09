@@ -14,8 +14,6 @@ homepage = "https://www.iota.org"
 bee-ord = { path = "../bee-common/bee-ord" }
 bee-packable = { path = "../bee-common/bee-packable" }
 bee-packable-derive = { path = "../bee-common/bee-packable-derive" }
-bee-pow = { git = "https://github.com/iotaledger/bee.git", branch = "dev" }
-bee-ternary = { git = "https://github.com/iotaledger/bee.git", branch = "dev" }
 
 bech32 = "0.8"
 bytemuck = "1.5"

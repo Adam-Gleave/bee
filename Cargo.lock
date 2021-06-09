@@ -94,8 +94,6 @@ dependencies = [
  "bee-ord",
  "bee-packable",
  "bee-packable-derive",
- "bee-pow",
- "bee-ternary",
  "bee-test",
  "bytemuck",
  "digest",

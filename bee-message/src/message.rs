@@ -4,13 +4,10 @@
 use crate::{Error, MessageId, parents::Parents, payload::{Payload, transaction::TransactionUnpackError}};
 
 use bee_packable::{Packable, UnpackOptionError, VecPacker};
-use bee_pow::providers::{miner::Miner, NonceProvider, NonceProviderBuilder};
 
 use crypto::{hashes::{blake2b::Blake2b256, Digest}, signatures::ed25519};
 
 use core::{convert::Infallible, ops::Deref};
-
-const MESSAGE_VERSION: u8 = 1;
 
 /// The minimum number of bytes in a message.
 pub const MESSAGE_LENGTH_MIN: usize = 53;
@@ -23,9 +20,6 @@ pub const MESSAGE_PUBLIC_KEY_LENGTH: usize = 32;
 
 /// Length (in bytes) of a message signature.
 pub const MESSAGE_SIGNATURE_LENGTH: usize = 64;
-
-const DEFAULT_POW_SCORE: f64 = 4000f64;
-const DEFAULT_NONCE: u64 = 0;
 
 pub enum MessageUnpackError {
     Transaction(TransactionUnpackError),
@@ -55,8 +49,6 @@ impl From<Infallible> for MessageUnpackError {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[packable(error = MessageUnpackError)]
 pub struct Message {
-    /// Specifies the version of the message structure.
-    version: u8,
     /// Message [Parents] in which the past cone is "Liked".
     strong_parents: Parents,
     /// Message [Parents] in which the past cone is "Disliked", but the parents themselves are "Liked".
@@ -90,11 +82,6 @@ impl Message {
         let id = Blake2b256::digest(&vec_bytes);
 
         (MessageId::new(id.into()), vec_bytes)
-    }
-
-    /// Returns the version of a `Message`.
-    pub fn version(&self) -> u8 {
-        self.version
     }
 
     /// Returns the strong parents of a `Message`.
@@ -162,44 +149,22 @@ impl Message {
 }
 
 /// A builder to build a `Message`.
-pub struct MessageBuilder<P: NonceProvider = Miner> {
-    version: u8,
+#[derive(Default)]
+pub struct MessageBuilder {
     strong_parents: Option<Parents>,
     weak_parents: Option<Parents>,
     issuer_public_key: Option<[u8; MESSAGE_PUBLIC_KEY_LENGTH]>,
     issue_timestamp: Option<u64>,
     sequence_number: Option<u32>,
     payload: Option<Payload>,
-    nonce_provider: Option<(P, f64)>,
+    nonce: Option<u64>,
     signature: Option<[u8; MESSAGE_SIGNATURE_LENGTH]>,
 }
 
-impl<P: NonceProvider> Default for MessageBuilder<P> {
-    fn default() -> Self {
-        Self {
-            version: MESSAGE_VERSION, 
-            strong_parents: None,
-            weak_parents: None,
-            issuer_public_key: None,
-            issue_timestamp: None,
-            sequence_number: None,
-            payload: None,
-            nonce_provider: None,
-            signature: None,
-        }
-    }
-}
-
-impl<P: NonceProvider> MessageBuilder<P> {
+impl MessageBuilder {
     /// Creates a new `MessageBuilder`.
     pub fn new() -> Self {
         Default::default()
-    }
-
-    /// Adds a version number to a `MessageBuilder`.
-    pub fn with_version(mut self, version: u8) -> Self {
-        self.version = version;
-        self
     }
 
     /// Adds strong parents to a `MessageBuilder`.
@@ -239,8 +204,8 @@ impl<P: NonceProvider> MessageBuilder<P> {
     }
 
     /// Adds a nonce provider to a `MessageBuilder`.
-    pub fn with_nonce_provider(mut self, nonce_provider: P, target_score: f64) -> Self {
-        self.nonce_provider = Some((nonce_provider, target_score));
+    pub fn with_nonce(mut self, nonce: u64) -> Self {
+        self.nonce = Some(nonce);
         self
     }
 
@@ -252,7 +217,6 @@ impl<P: NonceProvider> MessageBuilder<P> {
 
     /// Finished the `MessageBuilder`, consuming it to build a `Message`.
     pub fn finish(self) -> Result<Message, Error> {
-        let version = self.version;
         let strong_parents = self.strong_parents.ok_or(Error::MissingField("strong_parents"))?;
         let weak_parents = self.weak_parents.ok_or(Error::MissingField("weak_parents"))?;
         let issuer_public_key = self.issuer_public_key.ok_or(Error::MissingField("issuer_public_key"))?;
@@ -268,17 +232,17 @@ impl<P: NonceProvider> MessageBuilder<P> {
             return Err(Error::InvalidPayloadKind(self.payload.unwrap().kind()));
         }
 
+        let nonce = self.nonce.ok_or(Error::MissingField("nonce"))?;
         let signature = self.signature.ok_or(Error::MissingField("signature"))?;
 
-        let mut message = Message {
-            version,
+        let message = Message {
             strong_parents,
             weak_parents,
             issuer_public_key,
             issue_timestamp,
             sequence_number,
             payload: self.payload,
-            nonce: 0,
+            nonce,
             signature,
         };
 
@@ -289,19 +253,6 @@ impl<P: NonceProvider> MessageBuilder<P> {
         if message_bytes.len() > MESSAGE_LENGTH_MAX {
             return Err(Error::InvalidMessageLength(message_bytes.len()));
         }
-
-        let (nonce_provider, target_score) = self
-            .nonce_provider
-            .unwrap_or((P::Builder::new().finish(), DEFAULT_POW_SCORE));
-
-        message.nonce = DEFAULT_NONCE;
-
-        message.nonce = nonce_provider
-            .nonce(
-                &message_bytes[..message_bytes.len() - (core::mem::size_of::<u64>() + MESSAGE_SIGNATURE_LENGTH)],
-                target_score,
-            )
-            .unwrap_or(DEFAULT_NONCE);
 
         Ok(message)
     }
