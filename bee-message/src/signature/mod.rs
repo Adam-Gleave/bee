@@ -42,31 +42,3 @@ impl From<Ed25519Signature> for SignatureUnlock {
         Self::Ed25519(signature)
     }
 }
-
-// impl Packable for SignatureUnlock {
-//     type Error = Error;
-
-//     fn packed_len(&self) -> usize {
-//         match self {
-//             Self::Ed25519(signature) => Ed25519Signature::KIND.packed_len() + signature.packed_len(),
-//         }
-//     }
-
-//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-//         match self {
-//             Self::Ed25519(signature) => {
-//                 Ed25519Signature::KIND.pack(writer)?;
-//                 signature.pack(writer)?;
-//             }
-//         }
-
-//         Ok(())
-//     }
-
-//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-//         Ok(match u8::unpack_inner::<R, CHECK>(reader)? {
-//             Ed25519Signature::KIND => Ed25519Signature::unpack_inner::<R, CHECK>(reader)?.into(),
-//             k => return Err(Self::Error::InvalidSignatureKind(k)),
-//         })
-//     }
-// }

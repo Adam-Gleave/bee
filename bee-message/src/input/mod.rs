@@ -36,31 +36,3 @@ impl From<UtxoInput> for Input {
         Self::Utxo(input)
     }
 }
-
-// impl Packable for Input {
-//     type Error = Error;
-
-//     fn packed_len(&self) -> usize {
-//         match self {
-//             Self::Utxo(input) => UtxoInput::KIND.packed_len() + input.packed_len(),
-//         }
-//     }
-
-//     fn pack<W: Write>(&self, writer: &mut W) -> Result<(), Self::Error> {
-//         match self {
-//             Self::Utxo(input) => {
-//                 UtxoInput::KIND.pack(writer)?;
-//                 input.pack(writer)?;
-//             }
-//         }
-
-//         Ok(())
-//     }
-
-//     fn unpack_inner<R: Read + ?Sized, const CHECK: bool>(reader: &mut R) -> Result<Self, Self::Error> {
-//         Ok(match u8::unpack_inner::<R, CHECK>(reader)? {
-//             UtxoInput::KIND => UtxoInput::unpack_inner::<R, CHECK>(reader)?.into(),
-//             k => return Err(Self::Error::InvalidInputKind(k)),
-//         })
-//     }
-// }
