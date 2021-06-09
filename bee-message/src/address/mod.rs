@@ -10,7 +10,8 @@ use crate::{signature::SignatureUnlock, Error};
 use bee_packable::{Packable, SliceUnpacker, VecPacker};
 use bech32::{self, FromBase32, ToBase32, Variant};
 
-use core::ops::Deref;
+use alloc::{str::FromStr, string::String};
+use core::{convert::TryFrom, ops::Deref};
 
 /// A generic address supporting different address kinds.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Packable)]
@@ -69,5 +70,21 @@ impl Address {
 impl From<Ed25519Address> for Address {
     fn from(address: Ed25519Address) -> Self {
         Self::Ed25519(address)
+    }
+}
+
+impl FromStr for Address {
+    type Err = Error;
+
+    fn from_str(address: &str) -> Result<Self, Self::Err> {
+        Address::try_from_bech32(address)
+    }
+}
+
+impl TryFrom<String> for Address {
+    type Error = Error;
+
+    fn try_from(address: String) -> Result<Self, Self::Error> {
+        Address::from_str(&address)
     }
 }
