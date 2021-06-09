@@ -95,7 +95,6 @@ dependencies = [
  "bee-packable",
  "bee-packable-derive",
  "bee-test",
- "bytemuck",
  "digest",
  "hex",
  "iota-crypto",
