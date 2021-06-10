@@ -3,11 +3,11 @@
 
 use crate::{Error, MessageId, parents::Parents, payload::{Payload, transaction::TransactionUnpackError}};
 
-use bee_packable::{Packable, UnpackOptionError, VecPacker};
+use bee_packable::{Packable, UnpackOptionError};
 
 use crypto::{hashes::{blake2b::Blake2b256, Digest}, signatures::ed25519};
 
-use core::{convert::Infallible, ops::Deref};
+use core::convert::Infallible;
 
 /// The minimum number of bytes in a message.
 pub const MESSAGE_LENGTH_MIN: usize = 53;
@@ -75,13 +75,11 @@ impl Message {
 
     /// Computes the identifier of the message.
     pub fn id(&self) -> (MessageId, Vec<u8>) {
-        let mut message_bytes = VecPacker::new();
-        self.pack(&mut message_bytes).unwrap();
-        let vec_bytes = message_bytes.deref().clone();
+        let bytes = self.pack_new();
 
-        let id = Blake2b256::digest(&vec_bytes);
+        let id = Blake2b256::digest(&bytes);
 
-        (MessageId::new(id.into()), vec_bytes)
+        (MessageId::new(id.into()), bytes)
     }
 
     /// Returns the strong parents of a `Message`.
@@ -121,13 +119,11 @@ impl Message {
 
     /// Hashes the `Message` contents, excluding the signature.
     pub fn hash(&self) -> [u8; 32] {
-        let mut bytes = VecPacker::new();
-        self.pack(&mut bytes).unwrap();
+        let mut bytes = self.pack_new();
 
-        let mut message_bytes = bytes.deref().clone();
-        message_bytes = message_bytes[..message_bytes.len() - core::mem::size_of::<u64>()].to_vec();
+        bytes = bytes[..bytes.len() - core::mem::size_of::<u64>()].to_vec();
 
-        Blake2b256::digest(&message_bytes).into()
+        Blake2b256::digest(&bytes).into()
     }
 
     /// Verifies the `Message` signature against the contents of the `Message`.
@@ -246,12 +242,10 @@ impl MessageBuilder {
             signature,
         };
 
-        let mut bytes = VecPacker::new();
-        message.pack(&mut bytes).unwrap();
-        let message_bytes = bytes.deref().clone();
+        let bytes = message.pack_new();
 
-        if message_bytes.len() > MESSAGE_LENGTH_MAX {
-            return Err(Error::InvalidMessageLength(message_bytes.len()));
+        if bytes.len() > MESSAGE_LENGTH_MAX {
+            return Err(Error::InvalidMessageLength(bytes.len()));
         }
 
         Ok(message)

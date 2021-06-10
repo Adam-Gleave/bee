@@ -11,10 +11,8 @@ use crate::{unlock::UnlockBlocks, Error};
 pub use essence::{TransactionEssence, TransactionEssenceBuilder, TransactionUnpackError};
 pub use transaction_id::{TransactionId, TRANSACTION_ID_LENGTH};
 
-use bee_packable::{Packable, VecPacker};
+use bee_packable::Packable;
 use crypto::hashes::{blake2b::Blake2b256, Digest};
-
-use core::ops::Deref;
 
 /// A transaction to move funds.
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
@@ -39,11 +37,9 @@ impl TransactionPayload {
         let mut hasher = Blake2b256::new();
         hasher.update(Self::KIND.to_le_bytes());
 
-        let mut bytes = VecPacker::new();
-        self.pack(&mut bytes).unwrap();
-        let vec_bytes = bytes.deref().clone();
+        let bytes = self.pack_new();
 
-        hasher.update(vec_bytes);
+        hasher.update(bytes);
 
         TransactionId::new(hasher.finalize().into())
     }

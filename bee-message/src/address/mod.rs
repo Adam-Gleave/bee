@@ -7,11 +7,11 @@ pub use ed25519::{Ed25519Address, ED25519_ADDRESS_LENGTH};
 
 use crate::{signature::SignatureUnlock, Error};
 
-use bee_packable::{Packable, SliceUnpacker, VecPacker};
+use bee_packable::{Packable, SliceUnpacker};
 use bech32::{self, FromBase32, ToBase32, Variant};
 
 use alloc::{str::FromStr, string::String};
-use core::{convert::TryFrom, ops::Deref};
+use core::convert::TryFrom;
 
 /// A generic address supporting different address kinds.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Packable)]
@@ -49,11 +49,9 @@ impl Address {
 
     /// Encodes this address to a Bech32 string with the hrp (human readable part) argument as prefix.
     pub fn to_bech32(&self, hrp: &str) -> String {
-        let mut bytes = VecPacker::new();
-        self.pack(&mut bytes).unwrap();
-        let vec_bytes = bytes.deref().clone();
+        let bytes = self.pack_new();
 
-        bech32::encode(hrp, vec_bytes.to_base32(), Variant::Bech32).expect("Invalid address.")
+        bech32::encode(hrp, bytes.to_base32(), Variant::Bech32).expect("Invalid address.")
     }
 
     /// Verifies a [`SignatureUnlock`] for a message against the [`Address`].
