@@ -9,7 +9,7 @@ use crate::{Error, MESSAGE_LENGTH_MAX};
 
 pub use padded::{PaddedIndex, INDEXATION_PADDED_INDEX_LENGTH};
 
-use bee_packable::{Packable, VecPrefix};
+use bee_packable::Packable;
 
 use core::ops::RangeInclusive;
 
@@ -21,8 +21,10 @@ pub const INDEXATION_INDEX_LENGTH_RANGE: RangeInclusive<usize> = 1..=INDEXATION_
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IndexationPayload {
     version: u8,
-    index: VecPrefix<u8, u32>,
-    data: VecPrefix<u8, u32>,
+    #[packable(prefix = u32)]
+    index: Vec<u8>,
+    #[packable(prefix = u32)]
+    data: Vec<u8>,
 }
 
 impl IndexationPayload {

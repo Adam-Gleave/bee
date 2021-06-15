@@ -3,21 +3,26 @@
 
 use crate::payload::transaction::TransactionId;
 
-use bee_packable::{Packable, VecPrefix};
+use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, VecPrefix,};
 
-use core::ops::Deref;
+use core::{convert::Infallible, ops::Deref};
 
 /// Provides a convenient collection of `Conflict`s.
 /// Describes a vote in a given round for a transaction conflict.
 #[derive(Clone, Default, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Conflicts(VecPrefix<Conflict, u32>);
+#[packable(pack_error = PackPrefixError<Infallible, u32>)]
+#[packable(unpack_error = UnpackPrefixError<Infallible, u32>)]
+pub struct Conflicts {
+    #[packable(wrapper = VecPrefix<Conflict, u32>)] 
+    inner: Vec<Conflict>,
+}
 
 impl Deref for Conflicts {
     type Target = [Conflict];
 
     fn deref(&self) -> &Self::Target {
-        &self.0.deref().as_slice()
+        &self.inner.as_slice()
     }
 }
 

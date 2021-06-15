@@ -8,16 +8,53 @@ mod transaction_id;
 
 use crate::{unlock::UnlockBlocks, Error};
 
-pub use essence::{TransactionEssence, TransactionEssenceBuilder, TransactionUnpackError};
+pub use essence::{TransactionEssence, TransactionEssenceBuilder, TransactionEssencePackError, TransactionEssenceUnpackError};
 pub use transaction_id::{TransactionId, TRANSACTION_ID_LENGTH};
 
-use bee_packable::Packable;
+use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker, error::{PackPrefixError, UnpackPrefixError}};
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 
+use core::convert::Infallible;
+
+#[derive(Debug)]
+pub enum TransactionPackError {
+    TransactionEssence,
+    UnlockBlocks,
+}
+
+impl From<TransactionEssencePackError> for TransactionPackError {
+    fn from(_: TransactionEssencePackError) -> Self {
+        Self::TransactionEssence
+    }
+}
+
+impl From<PackPrefixError<Infallible, u16>> for TransactionPackError {
+    fn from(_: PackPrefixError<Infallible, u16>) -> Self {
+        Self::UnlockBlocks
+    }
+}
+
+#[derive(Debug)]
+pub enum TransactionUnpackError {
+    TransactionEssence,
+    UnlockBlocks,
+}
+
+impl From<TransactionEssenceUnpackError> for TransactionUnpackError {
+    fn from(_: TransactionEssenceUnpackError) -> Self {
+        Self::TransactionEssence 
+    }
+}
+
+impl From<UnpackPrefixError<UnknownTagError<u8>, u16>> for TransactionUnpackError {
+    fn from(_: UnpackPrefixError<UnknownTagError<u8>, u16>) -> Self {
+        Self::UnlockBlocks
+    }
+}
+
 /// A transaction to move funds.
-#[derive(Clone, Debug, Eq, PartialEq, Packable)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[packable(error = crate::Error)]
 pub struct TransactionPayload {
     essence: TransactionEssence,
     unlock_blocks: UnlockBlocks,
@@ -37,7 +74,7 @@ impl TransactionPayload {
         let mut hasher = Blake2b256::new();
         hasher.update(Self::KIND.to_le_bytes());
 
-        let bytes = self.pack_new();
+        let bytes = self.pack_to_vec().unwrap();
 
         hasher.update(bytes);
 
@@ -52,6 +89,32 @@ impl TransactionPayload {
     /// Return unlock blocks of a `TransactionPayload`.
     pub fn unlock_blocks(&self) -> &UnlockBlocks {
         &self.unlock_blocks
+    }
+}
+
+impl Packable for TransactionPayload {
+    type PackError = TransactionPackError;
+    type UnpackError = TransactionUnpackError;
+
+    fn packed_len(&self) -> usize {
+        self.essence.packed_len() + self.unlock_blocks.packed_len()
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        self.essence.pack(packer).map_err(PackError::coerce)?;
+        self.unlock_blocks.pack(packer).map_err(PackError::coerce)?;
+
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let essence = TransactionEssence::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let unlock_blocks = UnlockBlocks::unpack(unpacker).map_err(UnpackError::coerce)?;
+
+        Ok(Self {
+            essence,
+            unlock_blocks,
+        })
     }
 }
 

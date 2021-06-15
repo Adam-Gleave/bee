@@ -1,17 +1,12 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    address::Address, 
-    input::UtxoInput, 
-    message::MessageUnpackError, 
-    payload::transaction::TransactionUnpackError,
-};
+use crate::{address::Address, input::UtxoInput, message::MessageUnpackError, payload::{fpc::{FpcPayloadPackError, FpcPayloadUnpackError}, transaction::{TransactionEssenceUnpackError, TransactionPackError, TransactionUnpackError}}};
 
-use bee_packable::UnknownTagError;
+use bee_packable::{UnknownTagError, UnpackOptionError, error::{PackPrefixError, UnpackPrefixError}};
 use crypto::Error as CryptoError;
 
-use core::{fmt, convert::Infallible};
+use core::{fmt, convert::{Infallible, TryInto}};
 
 /// Error occurring when creating/parsing/validating messages.
 #[derive(Debug)]
@@ -66,6 +61,7 @@ pub enum Error {
     TransactionInputsNotSorted,
     TransactionOutputsNotSorted,
     MessageUnpackError,
+    MessagePackError,
     UnknownTagError,
 }
 
@@ -185,6 +181,9 @@ impl fmt::Display for Error {
             Error::MessageUnpackError => {
                 write!(f, "Error unpacking message.")
             }
+            Error::MessagePackError => {
+                write!(f, "Error packing message.")
+            }
             Error::UnknownTagError => {
                 write!(f, "Unknown enum variant tag.")
             }
@@ -204,21 +203,57 @@ impl From<CryptoError> for Error {
     }
 }
 
-impl<T> From<UnknownTagError<T>> for Error {
-    fn from(_: UnknownTagError<T>) -> Self {
-        Error::UnknownTagError
-    }
-}
-
 impl From<MessageUnpackError> for Error {
     fn from(_: MessageUnpackError) -> Self {
         Error::MessageUnpackError
     }
 }
 
+impl<T> From<UnknownTagError<T>> for Error {
+    fn from(_: UnknownTagError<T>) -> Self {
+        Error::UnknownTagError
+    }
+}
+
+impl From<FpcPayloadUnpackError> for Error {
+    fn from(_: FpcPayloadUnpackError) -> Self {
+        Error::MessageUnpackError
+    }
+}
+
+impl From<FpcPayloadPackError> for Error {
+    fn from(_: FpcPayloadPackError) -> Self {
+        Error::MessagePackError
+    }
+}
+
+impl From<TransactionPackError> for Error {
+    fn from(_: TransactionPackError) -> Self {
+        Error::MessagePackError
+    }
+}
+
+impl From<PackPrefixError<Infallible, u32>> for Error {
+    fn from(_: PackPrefixError<Infallible, u32>) -> Self {
+        Error::MessagePackError
+    }
+}
+
 impl From<TransactionUnpackError> for Error {
-    fn from(error: TransactionUnpackError) -> Self {
-        error.into()
+    fn from(_: TransactionUnpackError) -> Self {
+        Error::MessageUnpackError
+    }
+}
+
+impl From<UnpackPrefixError<Infallible, u32>> for Error {
+    fn from(_: UnpackPrefixError<Infallible, u32>) -> Self {
+        Error::MessagePackError
+    }
+}
+
+impl From<UnpackOptionError<Error>> for Error {
+    fn from(_: UnpackOptionError<Error>) -> Self {
+        Error::MessageUnpackError
     }
 }
 

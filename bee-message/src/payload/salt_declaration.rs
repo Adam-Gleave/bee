@@ -3,12 +3,13 @@
 
 use crate::{signature::ED25519_PUBLIC_KEY_LENGTH, Error};
 
-use bee_packable::{Packable, VecPrefix};
+use bee_packable::Packable;
 
 #[derive(Clone, Debug, PartialEq, Eq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Salt {
-    bytes: VecPrefix<u8, u32>,
+    #[packable(prefix = u32)]
+    bytes: Vec<u8>,
     expiry_time: u64,
 }
 

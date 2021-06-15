@@ -10,41 +10,68 @@ use crate::{
 };
 
 use bee_ord::is_sorted;
-use bee_packable::{Packable, UnknownTagError, UnpackOptionError, VecPrefix};
+use bee_packable::{error::{UnpackPrefixError}, Packable, Packer, PackError,Unpacker, UnpackError, UnpackOptionError, VecPrefix};
 
 use alloc::vec::Vec;
-use core::convert::Infallible;
+use core::convert::{Infallible, TryInto};
 
 /// Length (in bytes) of Transaction Essence pledge IDs (node IDs relating to pledge mana).
 pub const PLEDGE_ID_LENGTH: usize = 32;
 
-pub enum TransactionUnpackError {
-    UnknownTagError,
+#[derive(Debug)]
+pub enum TransactionEssenceUnpackError {
     OptionError,
+    PayloadUnpackError,
+    UnpackPrefixError,
 }
 
-impl<T> From<UnknownTagError<T>> for TransactionUnpackError {
-    fn from(_: UnknownTagError<T>) -> Self {
-        Self::UnknownTagError
+impl<T, P> From<UnpackPrefixError<T, P>> for TransactionEssenceUnpackError
+where
+    P: TryInto<usize> 
+{
+    fn from(_: UnpackPrefixError<T, P>) -> Self {
+        Self::UnpackPrefixError
     }
 }
 
-impl<T> From<UnpackOptionError<T>> for TransactionUnpackError {
+impl<T> From<UnpackOptionError<T>> for TransactionEssenceUnpackError {
     fn from(_: UnpackOptionError<T>) -> Self {
         Self::OptionError
     }
 }
 
-impl From<Infallible> for TransactionUnpackError {
+impl From<crate::Error> for TransactionEssenceUnpackError {
+    fn from(_: crate::Error) -> Self {
+        Self::PayloadUnpackError
+    }
+}
+
+impl From<Infallible> for TransactionEssenceUnpackError {
     fn from(err: Infallible) -> Self {
         match err {}
     }
 }
 
+#[derive(Debug)]
+pub enum TransactionEssencePackError {
+    OptionalPayload,
+}
+
+impl From<crate::Error> for TransactionEssencePackError {
+    fn from(_: crate::Error) -> Self {
+        Self::OptionalPayload
+    }
+}
+
+impl From<Infallible> for TransactionEssencePackError {
+    fn from(error: Infallible) -> Self {
+        match error {}
+    }
+}
+
 /// A transaction regular essence consuming inputs, creating outputs and carrying an optional payload.
-#[derive(Clone, Debug, Eq, PartialEq, Packable)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[packable(error = TransactionUnpackError)]
 pub struct TransactionEssence {
     /// Transaction essence version number.
     version: u8,
@@ -55,9 +82,9 @@ pub struct TransactionEssence {
     /// Node ID to which the consensus mana of the transaction is pledged.
     consensus_pledge_id: [u8; PLEDGE_ID_LENGTH],
     /// Collection of transaction [Input]s.
-    inputs: VecPrefix<Input, u16>,
+    inputs: Vec<Input>,
     /// Collection of transaction [Output]s.
-    outputs: VecPrefix<Output, u16>,
+    outputs: Vec<Output>,
     /// Optional additional payload.
     payload: Option<Payload>,
 }
@@ -101,6 +128,53 @@ impl TransactionEssence {
     /// Return the optional payload of a `TransactionEssence`.
     pub fn payload(&self) -> &Option<Payload> {
         &self.payload
+    }
+}
+
+impl Packable for TransactionEssence {
+    type PackError = TransactionEssencePackError;
+    type UnpackError = TransactionEssenceUnpackError;
+
+    fn packed_len(&self) -> usize {
+        self.version.packed_len()
+            + self.timestamp.packed_len()
+            + self.access_pledge_id.packed_len()
+            + self.consensus_pledge_id.packed_len()
+            + self.inputs.packed_len()
+            + self.outputs.packed_len()
+            + self.payload.packed_len()
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        self.version.pack(packer).map_err(PackError::infallible)?;
+        self.timestamp.pack(packer).map_err(PackError::infallible)?;
+        self.access_pledge_id.pack(packer).map_err(PackError::infallible)?;
+        self.consensus_pledge_id.pack(packer).map_err(PackError::infallible)?;
+        self.inputs.pack(packer).map_err(PackError::coerce)?;
+        self.outputs.pack(packer).map_err(PackError::coerce)?;
+        self.payload.pack(packer).map_err(PackError::coerce)?;
+
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let version = u8::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let timestamp = u64::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let access_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let consensus_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let inputs_prefixed = VecPrefix::<Input, u32>::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let outputs_prefixed = VecPrefix::<Output, u32>::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let payload = Option::<Payload>::unpack(unpacker).map_err(UnpackError::coerce)?;
+
+        Ok(Self {
+            version,
+            timestamp,
+            access_pledge_id,
+            consensus_pledge_id,
+            inputs: inputs_prefixed.into(),
+            outputs: outputs_prefixed.into(),
+            payload,
+        })
     }
 }
 
@@ -207,7 +281,7 @@ impl TransactionEssenceBuilder {
         }
 
         // Inputs must be lexicographically sorted in their serialised forms.
-        if !is_sorted(self.inputs.iter().map(Packable::pack_new)) {
+        if !is_sorted(self.inputs.iter().map(Packable::pack_to_vec)) {
             return Err(Error::TransactionInputsNotSorted);
         }
 
@@ -258,7 +332,7 @@ impl TransactionEssenceBuilder {
         }
 
         // Outputs must be lexicographically sorted in their serialised forms.
-        if !is_sorted(self.outputs.iter().map(Packable::pack_new)) {
+        if !is_sorted(self.outputs.iter().map(Packable::pack_to_vec)) {
             return Err(Error::TransactionOutputsNotSorted);
         }
 

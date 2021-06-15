@@ -11,10 +11,40 @@ pub use timestamps::{Timestamp, Timestamps};
 
 use crate::Error;
 
-use bee_packable::Packable;
+use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, Packer, PackError, Unpacker, UnpackError};
+
+use core::convert::Infallible;
+
+pub struct FpcPayloadPackError {}
+
+impl From<PackPrefixError<Infallible, u32>> for FpcPayloadPackError {
+    fn from(error: PackPrefixError<Infallible, u32>) -> Self {
+        Self {}
+    }
+}
+
+impl From<Infallible> for FpcPayloadPackError {
+    fn from(error: Infallible) -> Self {
+        match error {}
+    }
+}
+
+pub struct FpcPayloadUnpackError {}
+
+impl From<UnpackPrefixError<Infallible, u32>> for FpcPayloadUnpackError {
+    fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
+        Self {}
+    }
+}
+
+impl From<Infallible> for FpcPayloadUnpackError {
+    fn from(error: Infallible) -> Self {
+        match error {}
+    }
+}
 
 /// Payload describing opinions on conflicts and timestamps of messages.
-#[derive(Clone, Debug, Eq, PartialEq, Packable)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FpcPayload {
     /// Version of the FPC statement payload.
@@ -32,6 +62,37 @@ impl FpcPayload {
     /// Returns a new `FpcPayloadBuilder` in order to build an `FpcPayload`.
     pub fn builder() -> FpcPayloadBuilder {
         FpcPayloadBuilder::new()
+    }
+}
+
+impl Packable for FpcPayload {
+    type PackError = FpcPayloadPackError;
+    type UnpackError = FpcPayloadUnpackError;
+
+    fn packed_len(&self) -> usize {
+        self.version.packed_len()
+            + self.conflicts.packed_len()
+            + self.timestamps.packed_len()
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        self.version.pack(packer).map_err(PackError::coerce)?;
+        self.conflicts.pack(packer).map_err(PackError::coerce)?;
+        self.timestamps.pack(packer).map_err(PackError::coerce)?;
+
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let version = u8::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let conflicts = Conflicts::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let timestamps = Timestamps::unpack(unpacker).map_err(UnpackError::coerce)?;
+
+        Ok(Self {
+            version,
+            conflicts,
+            timestamps,
+        })
     }
 }
 

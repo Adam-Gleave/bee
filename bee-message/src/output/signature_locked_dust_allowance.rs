@@ -16,7 +16,7 @@ pub const SIGNATURE_LOCKED_DUST_ALLOWANCE_OUTPUT_AMOUNT: RangeInclusive<u64> = D
 /// is used to increase the allowance/amount of dust outputs on a given address.
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[packable(error = UnknownTagError<u8>)]
+#[packable(unpack_error = UnknownTagError<u8>)]
 pub struct SignatureLockedDustAllowanceOutput {
     address: Address,
     amount: u64,

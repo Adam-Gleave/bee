@@ -6,9 +6,9 @@
 use crate::{Error, MessageId};
 
 use bee_ord::is_unique_sorted;
-use bee_packable::Packable;
+use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, VecPrefix};
 
-use core::ops::{Deref, RangeInclusive};
+use core::{convert::Infallible, ops::{Deref, RangeInclusive}};
 
 /// The range representing the valid number of parents.
 pub const MESSAGE_PARENTS_RANGE: RangeInclusive<usize> = 1..=8;
@@ -21,13 +21,18 @@ pub const MESSAGE_PARENTS_RANGE: RangeInclusive<usize> = 1..=8;
 /// * unique;
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Parents(Vec<MessageId>);
+#[packable(pack_error = PackPrefixError<Infallible, u32>)]
+#[packable(unpack_error = UnpackPrefixError<Infallible, u32>)]
+pub struct Parents {
+    #[packable(wrapper = VecPrefix<MessageId, u32>)]
+    inner: Vec<MessageId>,
+}
 
 impl Deref for Parents {
     type Target = [MessageId];
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.inner.as_slice()
     }
 }
 
@@ -43,16 +48,16 @@ impl Parents {
             return Err(Error::ParentsNotUniqueSorted);
         }
 
-        Ok(Self(inner))
+        Ok(Self { inner })
     }
 
     /// Returns the number of parents.
     pub fn len(&self) -> usize {
-        self.0.len()
+        self.inner.len()
     }
 
     /// Returns an iterator over the parents.
     pub fn iter(&self) -> impl ExactSizeIterator<Item = &MessageId> + '_ {
-        self.0.iter()
+        self.inner.iter()
     }
 }

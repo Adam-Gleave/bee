@@ -7,9 +7,9 @@ pub use reference::ReferenceUnlock;
 
 use crate::{constants::UNLOCK_BLOCK_COUNT_RANGE, signature::SignatureUnlock, Error};
 
-use bee_packable::{Packable, UnknownTagError, VecPrefix};
+use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, UnknownTagError, VecPrefix};
 
-use core::ops::Deref;
+use core::{convert::Infallible, ops::Deref};
 use std::collections::HashSet;
 
 /// Defines the mechanism by which a transaction input is authorized to be consumed.
@@ -55,8 +55,12 @@ impl From<ReferenceUnlock> for UnlockBlock {
 /// A collection of unlock blocks.
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[packable(error = UnknownTagError<u8>)]
-pub struct UnlockBlocks(VecPrefix<UnlockBlock, u16>);
+#[packable(pack_error = PackPrefixError<Infallible, u16>)]
+#[packable(unpack_error = UnpackPrefixError<UnknownTagError<u8>, u16>)]
+pub struct UnlockBlocks {
+    #[packable(wrapper = VecPrefix<UnlockBlock, u16>)]
+    inner: Vec<UnlockBlock>,
+}
 
 impl UnlockBlocks {
     /// Creates a new `UnlockBlocks`.
@@ -85,14 +89,14 @@ impl UnlockBlocks {
             }
         }
 
-        Ok(Self(unlock_blocks.into()))
+        Ok(Self { inner: unlock_blocks.into() })
     }
 
     /// Gets an `UnlockBlock` from an `UnlockBlocks`.
     /// Returns the referenced unlock block if the requested unlock block was a reference.
     pub fn get(&self, index: usize) -> Option<&UnlockBlock> {
-        match self.0.get(index) {
-            Some(UnlockBlock::Reference(reference)) => self.0.get(reference.index() as usize),
+        match self.inner.get(index) {
+            Some(UnlockBlock::Reference(reference)) => self.inner.get(reference.index() as usize),
             Some(unlock_block) => Some(unlock_block),
             None => None,
         }
@@ -103,6 +107,6 @@ impl Deref for UnlockBlocks {
     type Target = [UnlockBlock];
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.inner.as_slice()
     }
 }

@@ -13,7 +13,7 @@ pub const SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT: RangeInclusive<u64> = 1..=IOTA_
 /// An output type which can be unlocked via a signature. It deposits onto one single address.
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[packable(error = UnknownTagError<u8>)]
+#[packable(unpack_error = UnknownTagError<u8>)]
 pub struct SignatureLockedSingleOutput {
     address: Address,
     amount: u64,

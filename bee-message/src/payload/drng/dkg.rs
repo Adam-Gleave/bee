@@ -3,16 +3,20 @@
 
 use crate::Error;
 
-use bee_packable::{Packable, VecPrefix};
+use bee_packable::Packable;
 
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EncryptedDeal {
-    dh_key: VecPrefix<u8, u32>,
-    nonce: VecPrefix<u8, u32>,
-    encrypted_share: VecPrefix<u8, u32>,
+    #[packable(prefix = u32)]
+    dh_key: Vec<u8>,
+    #[packable(prefix = u32)]
+    nonce: Vec<u8>,
+    #[packable(prefix = u32)]
+    encrypted_share: Vec<u8>,
     threshold: u32,
-    commitments: VecPrefix<u8, u32>,
+    #[packable(prefix = u32)]
+    commitments: Vec<u8>,
 }
 
 impl EncryptedDeal {

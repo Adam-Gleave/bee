@@ -1,9 +1,9 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{Error, MessageId, parents::Parents, payload::{Payload, transaction::TransactionUnpackError}};
+use crate::{Error, MessageId, parents::Parents, payload::{Payload, transaction::TransactionEssenceUnpackError}};
 
-use bee_packable::{Packable, UnpackOptionError};
+use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError, UnpackOptionError};
 
 use crypto::{hashes::{blake2b::Blake2b256, Digest}, signatures::ed25519};
 
@@ -22,12 +22,12 @@ pub const MESSAGE_PUBLIC_KEY_LENGTH: usize = 32;
 pub const MESSAGE_SIGNATURE_LENGTH: usize = 64;
 
 pub enum MessageUnpackError {
-    Transaction(TransactionUnpackError),
+    Transaction(TransactionEssenceUnpackError),
     OptionError,
 }
 
-impl From<TransactionUnpackError> for MessageUnpackError {
-    fn from(inner: TransactionUnpackError) -> Self {
+impl From<TransactionEssenceUnpackError> for MessageUnpackError {
+    fn from(inner: TransactionEssenceUnpackError) -> Self {
         Self::Transaction(inner)
     }
 }
@@ -45,9 +45,8 @@ impl From<Infallible> for MessageUnpackError {
 }
 
 /// Represent the object that nodes gossip around the network.
-#[derive(Clone, Debug, Eq, PartialEq, Packable)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[packable(error = MessageUnpackError)]
 pub struct Message {
     /// Message [Parents] in which the past cone is "Liked".
     strong_parents: Parents,
@@ -75,7 +74,7 @@ impl Message {
 
     /// Computes the identifier of the message.
     pub fn id(&self) -> (MessageId, Vec<u8>) {
-        let bytes = self.pack_new();
+        let bytes = self.pack_to_vec().unwrap();
 
         let id = Blake2b256::digest(&bytes);
 
@@ -102,6 +101,11 @@ impl Message {
         self.issue_timestamp
     }
 
+    /// Returns the sequence number of a `Message`.
+    pub fn sequence_number(&self) -> u32 {
+        self.sequence_number
+    }
+
     /// Returns the optional payload of a `Message`.
     pub fn payload(&self) -> &Option<Payload> {
         &self.payload
@@ -119,7 +123,7 @@ impl Message {
 
     /// Hashes the `Message` contents, excluding the signature.
     pub fn hash(&self) -> [u8; 32] {
-        let mut bytes = self.pack_new();
+        let mut bytes = self.pack_to_vec().unwrap();
 
         bytes = bytes[..bytes.len() - core::mem::size_of::<u64>()].to_vec();
 
@@ -141,6 +145,57 @@ impl Message {
         } else {
             Ok(())
         }
+    }
+}
+
+impl Packable for Message {
+    type PackError = crate::Error;
+    type UnpackError = crate::Error;
+
+    fn packed_len(&self) -> usize {
+        self.strong_parents.packed_len()
+            + self.weak_parents.packed_len()
+            + self.issuer_public_key.packed_len()
+            + self.issue_timestamp.packed_len()
+            + self.sequence_number.packed_len()
+            + self.payload.packed_len()
+            + self.nonce.packed_len()
+            + self.signature.packed_len()
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        self.strong_parents.pack(packer).map_err(PackError::coerce)?;
+        self.weak_parents.pack(packer).map_err(PackError::coerce)?;
+        self.issuer_public_key.pack(packer).map_err(PackError::infallible)?;
+        self.issue_timestamp.pack(packer).map_err(PackError::infallible)?;
+        self.sequence_number.pack(packer).map_err(PackError::infallible)?;
+        self.payload.pack(packer).map_err(PackError::coerce)?;
+        self.nonce.pack(packer).map_err(PackError::infallible)?;
+        self.signature.pack(packer).map_err(PackError::infallible)?;
+
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let strong_parents = Parents::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let weak_parents = Parents::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let issuer_public_key = <[u8; MESSAGE_PUBLIC_KEY_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let issue_timestamp = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let sequence_number = u32::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let payload = Option::<Payload>::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let nonce = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let signature = <[u8; MESSAGE_SIGNATURE_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
+
+        Ok(Self {
+            strong_parents,
+            weak_parents,
+            issuer_public_key,
+            issue_timestamp,
+            sequence_number,
+            payload,
+            nonce,
+            signature,
+        })
     }
 }
 
@@ -242,7 +297,7 @@ impl MessageBuilder {
             signature,
         };
 
-        let bytes = message.pack_new();
+        let bytes = message.pack_to_vec().unwrap();
 
         if bytes.len() > MESSAGE_LENGTH_MAX {
             return Err(Error::InvalidMessageLength(bytes.len()));

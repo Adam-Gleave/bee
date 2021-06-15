@@ -1,15 +1,14 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use bee_packable::{Packable, VecPrefix};
-
-use core::ops::Deref;
+use bee_packable::Packable;
 
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DataPayload {
     version: u8,
-    data: VecPrefix<u8, u32>,
+    #[packable(prefix = u32)]
+    data: Vec<u8>,
 }
 
 impl DataPayload {
@@ -24,6 +23,6 @@ impl DataPayload {
     }
 
     pub fn data(&self) -> &[u8] {
-        self.data.deref().as_slice()
+        self.data.as_slice()
     }
 }

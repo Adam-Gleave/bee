@@ -17,9 +17,7 @@ use indexation::IndexationPayload;
 use salt_declaration::SaltDeclarationPayload;
 use transaction::TransactionPayload;
 
-use crate::Error;
-
-use bee_packable::{Packable, Packer, UnknownTagError, UnpackError, Unpacker};
+use bee_packable::{Packable, Packer, PackError, UnknownTagError, UnpackError, Unpacker};
 
 use alloc::boxed::Box;
 
@@ -118,50 +116,51 @@ impl From<TransactionPayload> for Payload {
 }
 
 impl Packable for Payload {
-    type Error = Error;
+    type PackError = crate::Error;
+    type UnpackError = crate::Error;
 
-    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), P::Error> {
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         match *self {
             Self::ApplicationMessage(ref payload) => {
-                ApplicationMessagePayload::KIND.pack(packer)?;
-                payload.pack(packer)
+                ApplicationMessagePayload::KIND.pack(packer).map_err(PackError::coerce)?;
+                payload.pack(packer).map_err(PackError::coerce)
             }
             Self::Beacon(ref payload) => {
-                BeaconPayload::KIND.pack(packer)?;
-                payload.pack(packer) 
+                BeaconPayload::KIND.pack(packer).map_err(PackError::coerce)?;
+                payload.pack(packer).map_err(PackError::coerce) 
             }
             Self::CollectiveBeacon(ref payload) => {
-                CollectiveBeaconPayload::KIND.pack(packer)?;
-                payload.pack(packer)
+                CollectiveBeaconPayload::KIND.pack(packer).map_err(PackError::coerce)?;
+                payload.pack(packer).map_err(PackError::coerce)
             }
             Self::Data(ref payload) => {
-                DataPayload::KIND.pack(packer)?;
-                payload.pack(packer)
+                DataPayload::KIND.pack(packer).map_err(PackError::coerce)?;
+                payload.pack(packer).map_err(PackError::coerce)
             }
             Self::Dkg(ref payload) => {
-                DkgPayload::KIND.pack(packer)?;
-                payload.pack(packer)
+                DkgPayload::KIND.pack(packer).map_err(PackError::coerce)?;
+                payload.pack(packer).map_err(PackError::coerce)
             }
             Self::Fpc(ref payload) => {
-                FpcPayload::KIND.pack(packer)?;
-                payload.pack(packer)
+                FpcPayload::KIND.pack(packer).map_err(PackError::coerce)?;
+                payload.pack(packer).map_err(PackError::coerce)
             }
             Self::Indexation(ref payload) => { 
-                IndexationPayload::KIND.pack(packer)?;
-                payload.pack(packer)
+                IndexationPayload::KIND.pack(packer).map_err(PackError::coerce)?;
+                payload.pack(packer).map_err(PackError::coerce)
             }
             Self::SaltDeclaration(ref payload) => {
-                SaltDeclarationPayload::KIND.pack(packer)?;
-                payload.pack(packer)
+                SaltDeclarationPayload::KIND.pack(packer).map_err(PackError::coerce)?;
+                payload.pack(packer).map_err(PackError::coerce)
             }
             Self::Transaction(ref payload) => {
-                TransactionPayload::KIND.pack(packer)?;
-                payload.pack(packer)
+                TransactionPayload::KIND.pack(packer).map_err(PackError::coerce)?;
+                payload.pack(packer).map_err(PackError::coerce)
             }
         }
     }
 
-    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::Error, U::Error>> {
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
         let payload = match u32::unpack(unpacker).map_err(UnpackError::coerce)? {
             ApplicationMessagePayload::KIND => Payload::ApplicationMessage(Box::new(ApplicationMessagePayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
             BeaconPayload::KIND => Payload::Beacon(Box::new(BeaconPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
@@ -172,7 +171,7 @@ impl Packable for Payload {
             IndexationPayload::KIND => Payload::Indexation(Box::new(IndexationPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
             SaltDeclarationPayload::KIND => Payload::SaltDeclaration(Box::new(SaltDeclarationPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
             TransactionPayload::KIND => Payload::Transaction(Box::new(TransactionPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
-            tag => Err(UnpackError::Packable(Self::Error::from(UnknownTagError(tag))))?,
+            tag => Err(UnpackError::Packable(Self::UnpackError::from(UnknownTagError(tag))))?,
         };
 
         Ok(payload)
