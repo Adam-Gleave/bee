@@ -4,7 +4,7 @@
 use crate::{
     address::Address,
     input::UtxoInput,
-    payload::{fpc::FpcPackError, transaction::TransactionPackError, PayloadUnpackError},
+    payload::{PayloadPackError, PayloadUnpackError},
 };
 
 use bee_packable::{
@@ -13,6 +13,7 @@ use bee_packable::{
 };
 use crypto::Error as CryptoError;
 
+use alloc::string::String;
 use core::{convert::Infallible, fmt};
 
 #[derive(Debug)]
@@ -23,6 +24,9 @@ pub enum ValidationError {
     DuplicateUtxo(UtxoInput),
     InputUnlockBlockCountMismatch(usize, usize),
     InvalidAccumulatedOutput(u128),
+    InvalidAddress,
+    InvalidAmount(u64),
+    InvalidDustAllowanceAmount(u64),
     InvalidHexadecimalChar(String),
     InvalidHexadecimalLength(usize, usize),
     InvalidIndexationDataLength(usize),
@@ -30,6 +34,7 @@ pub enum ValidationError {
     InvalidInputCount(usize),
     InvalidMessageLength(usize),
     InvalidOutputCount(usize),
+    InvalidOutputIndex(u16),
     InvalidParentsCount(usize),
     InvalidPayloadKind(u32),
     InvalidReferenceIndex(u16),
@@ -38,8 +43,70 @@ pub enum ValidationError {
     InvalidUnlockBlockReference(usize),
     MissingField(&'static str),
     ParentsNotUniqueSorted,
+    SignaturePublicKeyMismatch(String, String),
     TransactionInputsNotSorted,
     TransactionOutputsNotSorted,
+}
+
+impl fmt::Display for ValidationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::CryptoError(e) => write!(f, "Cryptographic error: {}.", e),
+            Self::DuplicateAddress(address) => write!(f, "Duplicate address {:?} in outputs.", address),
+            Self::DuplicateSignature(index) => {
+                write!(f, "Duplicate signature at index: {}.", index)
+            }
+            Self::DuplicateUtxo(utxo) => write!(f, "Duplicate UTX {:?} in inputs.", utxo),
+            Self::InputUnlockBlockCountMismatch(input, block) => {
+                write!(
+                    f,
+                    "Input countr and unlock block count mismatch: {} != {}.",
+                    input, block,
+                )
+            }
+            Self::InvalidAccumulatedOutput(value) => write!(f, "Invalid accumulated output balance: {}.", value),
+            Self::InvalidAddress => write!(f, "Invalid address provided."),
+            Self::InvalidAmount(amount) => write!(f, "Invalid amount: {}.", amount),
+            Self::InvalidDustAllowanceAmount(amount) => write!(f, "Invalid dust allowance amount: {}.", amount),
+            Self::InvalidHexadecimalChar(hex) => write!(f, "Invalid hexadecimal character: {}.", hex),
+            Self::InvalidHexadecimalLength(expected, actual) =>  {
+                write!(f, "Invalid hexadecimal length: expected {} got {}.", expected, actual)
+            }
+            Self::InvalidIndexationDataLength(len) => {
+                write!(f, "Invalid indexation data length: {}.", len)
+            }
+            Self::InvalidIndexationIndexLength(len) => {
+                write!(f, "Invalid indexation index length: {}.", len)
+            }
+            Self::InvalidInputCount(count) => write!(f, "Invalid input count: {}.", count),
+            Self::InvalidMessageLength(len) => write!(f, "Invalid message length: {}.", len),
+            Self::InvalidOutputCount(count) => write!(f, "Invalid output count: {}.", count),
+            Self::InvalidOutputIndex(index) => write!(f, "Inavlid output index: {}.", index),
+            Self::InvalidParentsCount(count) => write!(f, "Invalid parents count: {}.", count),
+            Self::InvalidPayloadKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
+            Self::InvalidReferenceIndex(index) => write!(f, "Invalid reference index: {}.", index),
+            Self::InvalidSignature => write!(f, "Invalid signature provided."),
+            Self::InvalidUnlockBlockCount(count) => write!(f, "Invalid unlock block count: {}.", count),
+            Self::InvalidUnlockBlockReference(index) => {
+                write!(f, "Invalid unlock block reference: {}", index)
+            }
+            Self::MissingField(field) => write!(f, "Missing required field: {}.", field),
+            Self::ParentsNotUniqueSorted => write!(f, "Parents not unique and/or sorted."),
+            Self::SignaturePublicKeyMismatch(expected, actual) => {
+                write!(
+                    f,
+                    "Signature public key mismatch: expected {}, got {}.",
+                    expected, actual,
+                )
+            }
+            Self::TransactionInputsNotSorted => {
+                write!(f, "Transaction inputs are not sorted.")
+            }
+            Self::TransactionOutputsNotSorted => {
+                write!(f, "Transaction outputs are not sorted.")
+            }
+        }
+    }
 }
 
 impl From<CryptoError> for ValidationError {
@@ -50,20 +117,16 @@ impl From<CryptoError> for ValidationError {
 
 #[derive(Debug)]
 pub enum MessagePackError {
-    FpcPayload(FpcPackError),
     InvalidParentsLength,
-    TransactionPayload(TransactionPackError),
+    PayloadPackError(PayloadPackError),
 }
 
-impl From<FpcPackError> for MessagePackError {
-    fn from(error: FpcPackError) -> Self {
-        Self::FpcPayload(error)
-    }
-}
-
-impl From<TransactionPackError> for MessagePackError {
-    fn from(error: TransactionPackError) -> Self {
-        Self::TransactionPayload(error)
+impl fmt::Display for MessagePackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidParentsLength => write!(f, "Invalid parents vector length."),
+            Self::PayloadPackError(e) => write!(f, "{}", e),
+        }
     }
 }
 
@@ -76,9 +139,9 @@ impl From<PackPrefixError<Infallible, u32>> for MessagePackError {
     }
 }
 
-impl From<Infallible> for MessagePackError {
-    fn from(error: Infallible) -> Self {
-        match error {}
+impl From<PayloadPackError> for MessagePackError {
+    fn from(error: PayloadPackError) -> Self {
+        Self::PayloadPackError(error)
     }
 }
 
@@ -88,6 +151,17 @@ pub enum MessageUnpackError {
     InvalidParentsLength,
     InvalidOptionTag(u8),
     PayloadUnpackError(PayloadUnpackError),
+}
+
+impl fmt::Display for MessageUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidPayloadKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
+            Self::InvalidParentsLength => write!(f, "Invalid parents vector length."),
+            Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1.", tag),
+            Self::PayloadUnpackError(e) => write!(f, "{}", e),
+        }
+    }
 }
 
 impl From<UnpackPrefixError<Infallible, u32>> for MessageUnpackError {
@@ -128,9 +202,9 @@ impl std::error::Error for Error {}
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::PackError(_) => write!(f, "Pack error"),
-            Self::UnpackError(_) => write!(f, "Unpack error."),
-            Self::ValidationError(_) => write!(f, "Validation error."),
+            Self::PackError(e) => write!(f, "{}", e),
+            Self::UnpackError(e) => write!(f, "{}", e),
+            Self::ValidationError(e) => write!(f, "Validation error: {}", e),
         }
     }
 }

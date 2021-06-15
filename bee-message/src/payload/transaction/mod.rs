@@ -19,41 +19,70 @@ use bee_packable::{
 };
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 
-use core::convert::Infallible;
+use alloc::boxed::Box;
+use core::{convert::Infallible, fmt};
 
 #[derive(Debug)]
 pub enum TransactionPackError {
-    TransactionEssence,
-    UnlockBlocks,
+    InvalidUnlockBlocksPrefix,
+    TransactionEssence(Box<TransactionEssencePackError>),
+}
+
+impl fmt::Display for TransactionPackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidUnlockBlocksPrefix => write!(f, "Invalid unlock block vector prefix"),
+            Self::TransactionEssence(e) => write!(f, "{}", e),
+        }
+    }
 }
 
 impl From<TransactionEssencePackError> for TransactionPackError {
-    fn from(_: TransactionEssencePackError) -> Self {
-        Self::TransactionEssence
+    fn from(error: TransactionEssencePackError) -> Self {
+        Self::TransactionEssence(Box::new(error))
     }
 }
 
 impl From<PackPrefixError<Infallible, u16>> for TransactionPackError {
-    fn from(_: PackPrefixError<Infallible, u16>) -> Self {
-        Self::UnlockBlocks
+    fn from(error: PackPrefixError<Infallible, u16>) -> Self {
+        match error {
+            PackPrefixError::Packable(e) => match e {}
+            PackPrefixError::Prefix(_) => Self::InvalidUnlockBlocksPrefix,
+        }
     }
 }
 
 #[derive(Debug)]
 pub enum TransactionUnpackError {
-    TransactionEssence,
-    UnlockBlocks,
+    InvalidUnlockBlockKind(u8),
+    InvalidUnlockBlocksPrefix,
+    TransactionEssence(Box<TransactionEssenceUnpackError>),
+}
+
+impl fmt::Display for TransactionUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidUnlockBlockKind(kind) => write!(f, "Invalid unlock block kind: {}", kind),
+            Self::InvalidUnlockBlocksPrefix => write!(f, "Invalid unlock block vector prefix"),
+            Self::TransactionEssence(e) => write!(f, "{}", e),
+        }
+    }
 }
 
 impl From<TransactionEssenceUnpackError> for TransactionUnpackError {
-    fn from(_: TransactionEssenceUnpackError) -> Self {
-        Self::TransactionEssence
+    fn from(error: TransactionEssenceUnpackError) -> Self {
+        Self::TransactionEssence(Box::new(error))
     }
 }
 
 impl From<UnpackPrefixError<UnknownTagError<u8>, u16>> for TransactionUnpackError {
-    fn from(_: UnpackPrefixError<UnknownTagError<u8>, u16>) -> Self {
-        Self::UnlockBlocks
+    fn from(error: UnpackPrefixError<UnknownTagError<u8>, u16>) -> Self {
+        match error {
+            UnpackPrefixError::Packable(error) => match error {
+                UnknownTagError(tag) => Self::InvalidUnlockBlockKind(tag),
+            }
+            UnpackPrefixError::Prefix(_) => Self::InvalidUnlockBlocksPrefix,
+        }
     }
 }
 

@@ -5,7 +5,7 @@ mod ed25519;
 
 pub use ed25519::{Ed25519Address, ED25519_ADDRESS_LENGTH};
 
-use crate::{signature::SignatureUnlock, Error};
+use crate::{error::ValidationError, signature::SignatureUnlock};
 
 use bech32::{self, FromBase32, ToBase32, Variant};
 use bee_packable::{Packable, SliceUnpacker};
@@ -36,14 +36,14 @@ impl Address {
     }
 
     /// Tries to create an `Address` from a Bech32 encoded string.
-    pub fn try_from_bech32(addr: &str) -> Result<Self, Error> {
+    pub fn try_from_bech32(addr: &str) -> Result<Self, ValidationError> {
         match bech32::decode(addr) {
             Ok((_hrp, data, _)) => {
-                let bytes = Vec::<u8>::from_base32(&data).map_err(|_| Error::InvalidAddress)?;
+                let bytes = Vec::<u8>::from_base32(&data).map_err(|_| ValidationError::InvalidAddress)?;
                 let mut unpacker = SliceUnpacker::new(bytes.as_slice());
-                Self::unpack(&mut unpacker).map_err(|_| Error::InvalidAddress)
+                Self::unpack(&mut unpacker).map_err(|_| ValidationError::InvalidAddress)
             }
-            Err(_) => Err(Error::InvalidAddress),
+            Err(_) => Err(ValidationError::InvalidAddress),
         }
     }
 
@@ -55,7 +55,7 @@ impl Address {
     }
 
     /// Verifies a [`SignatureUnlock`] for a message against the [`Address`].
-    pub fn verify(&self, msg: &[u8], signature: &SignatureUnlock) -> Result<(), Error> {
+    pub fn verify(&self, msg: &[u8], signature: &SignatureUnlock) -> Result<(), ValidationError> {
         match self {
             Address::Ed25519(address) => {
                 let SignatureUnlock::Ed25519(signature) = signature;
@@ -72,7 +72,7 @@ impl From<Ed25519Address> for Address {
 }
 
 impl FromStr for Address {
-    type Err = Error;
+    type Err = ValidationError;
 
     fn from_str(address: &str) -> Result<Self, Self::Err> {
         Address::try_from_bech32(address)
@@ -80,7 +80,7 @@ impl FromStr for Address {
 }
 
 impl TryFrom<String> for Address {
-    type Error = Error;
+    type Error = ValidationError;
 
     fn try_from(address: String) -> Result<Self, Self::Error> {
         Address::from_str(&address)

@@ -14,20 +14,64 @@ use std::convert::Infallible;
 
 use data::DataPayload;
 use drng::{ApplicationMessagePayload, BeaconPayload, CollectiveBeaconPayload, DkgPayload};
-use fpc::{FpcPayload, FpcUnpackError};
+use fpc::{FpcPayload, FpcPackError, FpcUnpackError};
 use indexation::IndexationPayload;
 use salt_declaration::SaltDeclarationPayload;
-use transaction::{TransactionPayload, TransactionUnpackError};
+use transaction::{TransactionPayload, TransactionPackError, TransactionUnpackError};
 
 use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker};
 
 use alloc::boxed::Box;
+use core::fmt;
+
+#[derive(Debug)]
+pub enum PayloadPackError {
+    Fpc(FpcPackError),
+    Transaction(TransactionPackError),
+}
+
+impl fmt::Display for PayloadPackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Fpc(e) => write!(f, "Error packing FPC payload: {}.", e),
+            Self::Transaction(e) => write!(f, "Error packing transaction payload: {}", e),
+        }
+    }
+}
+
+impl From<FpcPackError> for PayloadPackError {
+    fn from(error: FpcPackError) -> Self {
+        Self::Fpc(error)
+    }
+}
+
+impl From<TransactionPackError> for PayloadPackError {
+    fn from(error: TransactionPackError) -> Self {
+        Self::Transaction(error)
+    }
+}
+
+impl From<Infallible> for PayloadPackError {
+    fn from(error: Infallible) -> Self {
+        match error {}
+    }
+}
 
 #[derive(Debug)]
 pub enum PayloadUnpackError {
     Fpc(FpcUnpackError),
     InvalidKind(u32),
     Transaction(TransactionUnpackError),
+}
+
+impl fmt::Display for PayloadUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Fpc(e) => write!(f, "Error unpacking FPC payload: {}.", e),
+            Self::InvalidKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
+            Self::Transaction(e) => write!(f, "Error unpacking transaction payload: {}", e),
+        }
+    }
 }
 
 impl From<FpcUnpackError> for PayloadUnpackError {
@@ -151,7 +195,7 @@ impl From<TransactionPayload> for Payload {
 }
 
 impl Packable for Payload {
-    type PackError = crate::error::MessagePackError;
+    type PackError = PayloadPackError;
     type UnpackError = PayloadUnpackError;
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {

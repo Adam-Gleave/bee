@@ -3,10 +3,10 @@
 
 use crate::{
     constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY},
-    error::{MessagePackError, ValidationError},
+    error::ValidationError,
     input::Input,
     output::Output,
-    payload::{Payload, PayloadUnpackError},
+    payload::{Payload, PayloadPackError, PayloadUnpackError},
 };
 
 use bee_ord::is_sorted;
@@ -16,18 +16,26 @@ use bee_packable::{
 };
 
 use alloc::vec::Vec;
-use core::convert::Infallible;
+use core::{convert::Infallible, fmt};
 
 /// Length (in bytes) of Transaction Essence pledge IDs (node IDs relating to pledge mana).
 pub const PLEDGE_ID_LENGTH: usize = 32;
 
 #[derive(Debug)]
 pub enum TransactionEssencePackError {
-    OptionalPayload(MessagePackError),
+    OptionalPayload(PayloadPackError),
 }
 
-impl From<MessagePackError> for TransactionEssencePackError {
-    fn from(error: MessagePackError) -> Self {
+impl fmt::Display for TransactionEssencePackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::OptionalPayload(e) => write!(f, "Error packing payload: {}", e),
+        }
+    }
+}
+
+impl From<PayloadPackError> for TransactionEssencePackError {
+    fn from(error: PayloadPackError) -> Self {
         Self::OptionalPayload(error)
     }
 }
@@ -40,14 +48,31 @@ impl From<Infallible> for TransactionEssencePackError {
 
 #[derive(Debug)]
 pub enum TransactionEssenceUnpackError {
-    InputOutput,
-    OptionalPayloadTag(usize),
+    InvalidInputOutputKind(u8),
+    InvalidInputOutputPrefix,
+    InvalidOptionTag(u8),
     OptionalPayload(PayloadUnpackError),
 }
 
+impl fmt::Display for TransactionEssenceUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidInputOutputKind(kind) => write!(f, "Invalid input/output kind: {}", kind),
+            Self::InvalidInputOutputPrefix => write!(f, "Invalid input/output prefix"),
+            Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1.", tag),
+            Self::OptionalPayload(e) => write!(f, "Error unpacking payload: {}", e),
+        }
+    }
+}
+
 impl From<UnpackPrefixError<UnknownTagError<u8>, u32>> for TransactionEssenceUnpackError {
-    fn from(_: UnpackPrefixError<UnknownTagError<u8>, u32>) -> Self {
-        Self::InputOutput
+    fn from(error: UnpackPrefixError<UnknownTagError<u8>, u32>) -> Self {
+        match error {
+            UnpackPrefixError::Packable(error) => match error {
+                UnknownTagError(tag) => Self::InvalidInputOutputKind(tag),
+            }
+            UnpackPrefixError::Prefix(_) => Self::InvalidInputOutputPrefix, 
+        }
     }
 }
 
@@ -61,7 +86,7 @@ impl From<UnpackOptionError<PayloadUnpackError>> for TransactionEssenceUnpackErr
     fn from(error: UnpackOptionError<PayloadUnpackError>) -> Self {
         match error {
             UnpackOptionError::Inner(error) => Self::OptionalPayload(error),
-            UnpackOptionError::UnknownTag(tag) => Self::OptionalPayloadTag(tag as usize),
+            UnpackOptionError::UnknownTag(tag) => Self::InvalidOptionTag(tag),
         }
     }
 }

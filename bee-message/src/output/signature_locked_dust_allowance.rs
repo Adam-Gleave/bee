@@ -1,7 +1,7 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{address::Address, constants::IOTA_SUPPLY, Error};
+use crate::{address::Address, constants::IOTA_SUPPLY, error::ValidationError};
 
 use bee_packable::{Packable, UnknownTagError};
 
@@ -27,9 +27,9 @@ impl SignatureLockedDustAllowanceOutput {
     pub const KIND: u8 = 1;
 
     /// Creates a new `SignatureLockedDustAllowanceOutput`.
-    pub fn new(address: Address, amount: u64) -> Result<Self, Error> {
+    pub fn new(address: Address, amount: u64) -> Result<Self, ValidationError> {
         if !SIGNATURE_LOCKED_DUST_ALLOWANCE_OUTPUT_AMOUNT.contains(&amount) {
-            return Err(Error::InvalidDustAllowanceAmount(amount));
+            return Err(ValidationError::InvalidDustAllowanceAmount(amount));
         }
 
         Ok(Self { address, amount })

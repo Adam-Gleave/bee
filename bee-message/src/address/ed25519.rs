@@ -1,7 +1,7 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{signature::Ed25519Signature, Error};
+use crate::{error::ValidationError, signature::Ed25519Signature};
 
 use bee_packable::Packable;
 
@@ -36,11 +36,11 @@ impl Ed25519Address {
     }
 
     /// Verifies a [`Ed25519Signature`] for a message against the [`Ed25519Address`].
-    pub fn verify(&self, msg: &[u8], signature: &Ed25519Signature) -> Result<(), Error> {
+    pub fn verify(&self, msg: &[u8], signature: &Ed25519Signature) -> Result<(), ValidationError> {
         let address = Blake2b256::digest(signature.public_key());
 
         if self.0 != *address {
-            return Err(Error::SignaturePublicKeyMismatch(
+            return Err(ValidationError::SignaturePublicKeyMismatch(
                 hex::encode(self.0),
                 hex::encode(address),
             ));
@@ -50,7 +50,7 @@ impl Ed25519Address {
             // This unwrap is fine as the length of the signature has already been verified at construction.
             .verify(&Signature::from_bytes(signature.signature().try_into().unwrap()), msg)
         {
-            return Err(Error::InvalidSignature);
+            return Err(ValidationError::InvalidSignature);
         }
 
         Ok(())
@@ -67,7 +67,7 @@ impl From<[u8; ED25519_ADDRESS_LENGTH]> for Ed25519Address {
 }
 
 impl FromStr for Ed25519Address {
-    type Err = Error;
+    type Err = ValidationError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let bytes: [u8; ED25519_ADDRESS_LENGTH] = hex::decode(s)

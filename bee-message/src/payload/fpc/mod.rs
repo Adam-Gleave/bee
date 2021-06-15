@@ -16,14 +16,27 @@ use bee_packable::{
     PackError, Packable, Packer, UnpackError, Unpacker,
 };
 
-use core::convert::Infallible;
+use core::{convert::Infallible, fmt};
 
 #[derive(Debug)]
-pub struct FpcPackError {}
+pub enum FpcPackError {
+    InvalidPrefixLength,
+}
 
 impl From<PackPrefixError<Infallible, u32>> for FpcPackError {
     fn from(error: PackPrefixError<Infallible, u32>) -> Self {
-        Self {}
+        match error {
+            PackPrefixError::Packable(e) => match e {},
+            PackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
+        }
+    }
+}
+
+impl fmt::Display for FpcPackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for conflicts/timestamps"),
+        }
     }
 }
 
@@ -34,11 +47,24 @@ impl From<Infallible> for FpcPackError {
 }
 
 #[derive(Debug)]
-pub struct FpcUnpackError {}
+pub enum FpcUnpackError {
+    InvalidPrefixLength,
+}
+
+impl fmt::Display for FpcUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for conflicts/timestamps"),
+        }
+    }
+}
 
 impl From<UnpackPrefixError<Infallible, u32>> for FpcUnpackError {
     fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
-        Self {}
+        match error {
+            UnpackPrefixError::Packable(e) => match e {},
+            UnpackPrefixError::Prefix(_) => Self::InvalidPrefixLength, 
+        }
     }
 }
 

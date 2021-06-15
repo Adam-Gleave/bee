@@ -3,8 +3,8 @@
 
 use crate::{
     constants::INPUT_OUTPUT_INDEX_RANGE,
+    error::ValidationError,
     payload::transaction::{TransactionId, TRANSACTION_ID_LENGTH},
-    Error,
 };
 
 use bee_packable::Packable;
@@ -26,9 +26,9 @@ pub struct OutputId {
 
 impl OutputId {
     /// Creates a new `OutputId`.
-    pub fn new(transaction_id: TransactionId, index: u16) -> Result<Self, Error> {
+    pub fn new(transaction_id: TransactionId, index: u16) -> Result<Self, ValidationError> {
         if !INPUT_OUTPUT_INDEX_RANGE.contains(&index) {
-            return Err(Error::InvalidInputOutputIndex(index));
+            return Err(ValidationError::InvalidOutputIndex(index));
         }
 
         Ok(Self { transaction_id, index })
@@ -54,7 +54,7 @@ impl OutputId {
 string_serde_impl!(OutputId);
 
 impl TryFrom<[u8; OUTPUT_ID_LENGTH]> for OutputId {
-    type Error = Error;
+    type Error = ValidationError;
 
     fn try_from(bytes: [u8; OUTPUT_ID_LENGTH]) -> Result<Self, Self::Error> {
         let (transaction_id, index) = bytes.split_at(TRANSACTION_ID_LENGTH);
@@ -69,7 +69,7 @@ impl TryFrom<[u8; OUTPUT_ID_LENGTH]> for OutputId {
 }
 
 impl FromStr for OutputId {
-    type Err = Error;
+    type Err = ValidationError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let bytes: [u8; OUTPUT_ID_LENGTH] = hex::decode(s)
