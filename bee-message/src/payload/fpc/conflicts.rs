@@ -3,7 +3,10 @@
 
 use crate::payload::transaction::TransactionId;
 
-use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, VecPrefix,};
+use bee_packable::{
+    error::{PackPrefixError, UnpackPrefixError},
+    Packable, VecPrefix,
+};
 
 use core::{convert::Infallible, ops::Deref};
 
@@ -14,7 +17,7 @@ use core::{convert::Infallible, ops::Deref};
 #[packable(pack_error = PackPrefixError<Infallible, u32>)]
 #[packable(unpack_error = UnpackPrefixError<Infallible, u32>)]
 pub struct Conflicts {
-    #[packable(wrapper = VecPrefix<Conflict, u32>)] 
+    #[packable(wrapper = VecPrefix<Conflict, u32>)]
     inner: Vec<Conflict>,
 }
 
@@ -39,7 +42,7 @@ pub struct Conflict {
 }
 
 impl Conflict {
-    /// Returns the ID of the conflicting transaction. 
+    /// Returns the ID of the conflicting transaction.
     pub fn transaction_id(&self) -> &TransactionId {
         &self.transaction_id
     }

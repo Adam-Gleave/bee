@@ -1,7 +1,7 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{error::ValidationError, constants::INPUT_OUTPUT_INDEX_RANGE};
+use crate::{constants::INPUT_OUTPUT_INDEX_RANGE, error::ValidationError};
 
 use bee_packable::Packable;
 

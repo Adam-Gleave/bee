@@ -15,7 +15,7 @@ pub struct Salt {
 
 impl Salt {
     pub fn new(bytes: Vec<u8>, expiry_time: u64) -> Self {
-        Self { 
+        Self {
             bytes: bytes.into(),
             expiry_time,
         }
@@ -105,7 +105,7 @@ impl SaltDeclarationPayloadBuilder {
         let salt = self.salt.ok_or(ValidationError::MissingField("salt"))?;
         let timestamp = self.timestamp.ok_or(ValidationError::MissingField("timestamp"))?;
         let signature = self.signature.ok_or(ValidationError::MissingField("signature"))?;
-        
+
         Ok(SaltDeclarationPayload {
             version,
             node_id,

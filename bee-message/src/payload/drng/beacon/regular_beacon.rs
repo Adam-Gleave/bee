@@ -1,8 +1,8 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::error::ValidationError;
 use super::{BEACON_PARTIAL_PUBLIC_KEY_LENGTH, BEACON_SIGNATURE_LENGTH};
+use crate::error::ValidationError;
 
 use bee_packable::Packable;
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
@@ -91,8 +91,12 @@ impl BeaconPayloadBuilder {
         let version = self.version.ok_or(ValidationError::MissingField("version"))?;
         let instance_id = self.instance_id.ok_or(ValidationError::MissingField("instance_id"))?;
         let round = self.round.ok_or(ValidationError::MissingField("round"))?;
-        let partial_public_key = self.partial_public_key.ok_or(ValidationError::MissingField("partial_public_key"))?;
-        let partial_signature = self.partial_signature.ok_or(ValidationError::MissingField("partial_signature"))?;
+        let partial_public_key = self
+            .partial_public_key
+            .ok_or(ValidationError::MissingField("partial_public_key"))?;
+        let partial_signature = self
+            .partial_signature
+            .ok_or(ValidationError::MissingField("partial_signature"))?;
 
         Ok(BeaconPayload {
             version,

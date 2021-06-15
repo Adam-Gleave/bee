@@ -6,9 +6,15 @@
 use crate::{error::ValidationError, MessageId};
 
 use bee_ord::is_unique_sorted;
-use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, VecPrefix};
+use bee_packable::{
+    error::{PackPrefixError, UnpackPrefixError},
+    Packable, VecPrefix,
+};
 
-use core::{convert::Infallible, ops::{Deref, RangeInclusive}};
+use core::{
+    convert::Infallible,
+    ops::{Deref, RangeInclusive},
+};
 
 /// The range representing the valid number of parents.
 pub const MESSAGE_PARENTS_RANGE: RangeInclusive<usize> = 1..=8;

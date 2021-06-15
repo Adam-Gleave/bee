@@ -11,7 +11,7 @@ pub use signature_locked_dust_allowance::{
 };
 pub use signature_locked_single::{SignatureLockedSingleOutput, SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT};
 
-use bee_packable::{Packable};
+use bee_packable::Packable;
 
 /// A generic output that can represent different types defining the deposit of funds.
 #[non_exhaustive]

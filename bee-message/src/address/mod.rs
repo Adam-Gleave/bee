@@ -7,8 +7,8 @@ pub use ed25519::{Ed25519Address, ED25519_ADDRESS_LENGTH};
 
 use crate::{signature::SignatureUnlock, Error};
 
-use bee_packable::{Packable, SliceUnpacker};
 use bech32::{self, FromBase32, ToBase32, Variant};
+use bee_packable::{Packable, SliceUnpacker};
 
 use alloc::{str::FromStr, string::String};
 use core::convert::TryFrom;

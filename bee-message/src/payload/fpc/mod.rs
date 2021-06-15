@@ -11,7 +11,10 @@ pub use timestamps::{Timestamp, Timestamps};
 
 use crate::error::ValidationError;
 
-use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, Packer, PackError, Unpacker, UnpackError};
+use bee_packable::{
+    error::{PackPrefixError, UnpackPrefixError},
+    PackError, Packable, Packer, UnpackError, Unpacker,
+};
 
 use core::convert::Infallible;
 
@@ -72,9 +75,7 @@ impl Packable for FpcPayload {
     type UnpackError = FpcUnpackError;
 
     fn packed_len(&self) -> usize {
-        self.version.packed_len()
-            + self.conflicts.packed_len()
-            + self.timestamps.packed_len()
+        self.version.packed_len() + self.conflicts.packed_len() + self.timestamps.packed_len()
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {

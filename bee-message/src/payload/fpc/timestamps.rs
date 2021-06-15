@@ -3,7 +3,10 @@
 
 use crate::MessageId;
 
-use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, VecPrefix};
+use bee_packable::{
+    error::{PackPrefixError, UnpackPrefixError},
+    Packable, VecPrefix,
+};
 
 use core::{convert::Infallible, ops::Deref};
 
@@ -14,7 +17,7 @@ use core::{convert::Infallible, ops::Deref};
 #[packable(pack_error = PackPrefixError<Infallible, u32>)]
 #[packable(unpack_error = UnpackPrefixError<Infallible, u32>)]
 pub struct Timestamps {
-    #[packable(wrapper = VecPrefix<Timestamp, u32>)] 
+    #[packable(wrapper = VecPrefix<Timestamp, u32>)]
     inner: Vec<Timestamp>,
 }
 
@@ -39,7 +42,7 @@ pub struct Timestamp {
 }
 
 impl Timestamp {
-    /// Returns the ID of message that contains the timestamp. 
+    /// Returns the ID of message that contains the timestamp.
     pub fn message_id(&self) -> &MessageId {
         &self.message_id
     }

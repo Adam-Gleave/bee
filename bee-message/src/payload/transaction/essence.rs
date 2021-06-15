@@ -1,10 +1,19 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY}, error::{MessagePackError, ValidationError}, input::Input, output::Output, payload::{Payload, PayloadUnpackError}};
+use crate::{
+    constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY},
+    error::{MessagePackError, ValidationError},
+    input::Input,
+    output::Output,
+    payload::{Payload, PayloadUnpackError},
+};
 
 use bee_ord::is_sorted;
-use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, UnpackOptionError, Unpacker, VecPrefix, error::{UnpackPrefixError}};
+use bee_packable::{
+    error::UnpackPrefixError, PackError, Packable, Packer, UnknownTagError, UnpackError, UnpackOptionError, Unpacker,
+    VecPrefix,
+};
 
 use alloc::vec::Vec;
 use core::convert::Infallible;
@@ -44,7 +53,7 @@ impl From<UnpackPrefixError<UnknownTagError<u8>, u32>> for TransactionEssenceUnp
 
 impl From<PayloadUnpackError> for TransactionEssenceUnpackError {
     fn from(error: PayloadUnpackError) -> Self {
-        Self::OptionalPayload(error) 
+        Self::OptionalPayload(error)
     }
 }
 
@@ -53,7 +62,7 @@ impl From<UnpackOptionError<PayloadUnpackError>> for TransactionEssenceUnpackErr
         match error {
             UnpackOptionError::Inner(error) => Self::OptionalPayload(error),
             UnpackOptionError::UnknownTag(tag) => Self::OptionalPayloadTag(tag as usize),
-        } 
+        }
     }
 }
 
@@ -248,8 +257,12 @@ impl TransactionEssenceBuilder {
     pub fn finish(self) -> Result<TransactionEssence, ValidationError> {
         let version = self.version.ok_or(ValidationError::MissingField("version"))?;
         let timestamp = self.timestamp.ok_or(ValidationError::MissingField("timestamp"))?;
-        let access_pledge_id = self.access_pledge_id.ok_or(ValidationError::MissingField("access_pledge_id"))?;
-        let consensus_pledge_id = self.consensus_pledge_id.ok_or(ValidationError::MissingField("consensus_pledge_id"))?;
+        let access_pledge_id = self
+            .access_pledge_id
+            .ok_or(ValidationError::MissingField("access_pledge_id"))?;
+        let consensus_pledge_id = self
+            .consensus_pledge_id
+            .ok_or(ValidationError::MissingField("consensus_pledge_id"))?;
 
         if !INPUT_OUTPUT_COUNT_RANGE.contains(&self.inputs.len()) {
             return Err(ValidationError::InvalidInputCount(self.inputs.len()));

@@ -2,19 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    address::Address, 
-    input::UtxoInput, 
-    payload::{
-        fpc::FpcPackError, 
-        transaction::TransactionPackError,
-        PayloadUnpackError,
-    },
+    address::Address,
+    input::UtxoInput,
+    payload::{fpc::FpcPackError, transaction::TransactionPackError, PayloadUnpackError},
 };
 
-use bee_packable::{UnpackOptionError, error::{PackPrefixError, UnpackPrefixError}};
+use bee_packable::{
+    error::{PackPrefixError, UnpackPrefixError},
+    UnpackOptionError,
+};
 use crypto::Error as CryptoError;
 
-use core::{fmt, convert::Infallible};
+use core::{convert::Infallible, fmt};
 
 #[derive(Debug)]
 pub enum ValidationError {

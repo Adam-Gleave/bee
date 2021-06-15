@@ -1,8 +1,8 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use bee_packable::Packable;
 use bee_message::prelude::*;
+use bee_packable::Packable;
 use bee_test::rand::{self, message::rand_message_ids, parents::rand_parents};
 
 #[test]

@@ -14,7 +14,7 @@ impl ApplicationMessagePayload {
     pub const KIND: u32 = 3;
 
     pub fn new(version: u8, instance_id: u32) -> Self {
-        Self { version, instance_id } 
+        Self { version, instance_id }
     }
 
     pub fn version(&self) -> u8 {

@@ -22,7 +22,7 @@ pub struct EncryptedDeal {
 impl EncryptedDeal {
     pub fn dh_key(&self) -> &[u8] {
         self.dh_key.as_slice()
-    } 
+    }
 
     pub fn nonce(&self) -> &[u8] {
         self.nonce.as_slice()

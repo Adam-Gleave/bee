@@ -8,10 +8,15 @@ mod transaction_id;
 
 use crate::{error::ValidationError, unlock::UnlockBlocks};
 
-pub use essence::{TransactionEssence, TransactionEssenceBuilder, TransactionEssencePackError, TransactionEssenceUnpackError};
+pub use essence::{
+    TransactionEssence, TransactionEssenceBuilder, TransactionEssencePackError, TransactionEssenceUnpackError,
+};
 pub use transaction_id::{TransactionId, TRANSACTION_ID_LENGTH};
 
-use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker, error::{PackPrefixError, UnpackPrefixError}};
+use bee_packable::{
+    error::{PackPrefixError, UnpackPrefixError},
+    PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker,
+};
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 
 use core::convert::Infallible;
@@ -42,7 +47,7 @@ pub enum TransactionUnpackError {
 
 impl From<TransactionEssenceUnpackError> for TransactionUnpackError {
     fn from(_: TransactionEssenceUnpackError) -> Self {
-        Self::TransactionEssence 
+        Self::TransactionEssence
     }
 }
 
@@ -111,10 +116,7 @@ impl Packable for TransactionPayload {
         let essence = TransactionEssence::unpack(unpacker).map_err(UnpackError::coerce)?;
         let unlock_blocks = UnlockBlocks::unpack(unpacker).map_err(UnpackError::coerce)?;
 
-        Ok(Self {
-            essence,
-            unlock_blocks,
-        })
+        Ok(Self { essence, unlock_blocks })
     }
 }
 
@@ -146,7 +148,9 @@ impl TransactionPayloadBuilder {
     /// Finishes a `TransactionPayloadBuilder` into a `TransactionPayload`.
     pub fn finish(self) -> Result<TransactionPayload, ValidationError> {
         let essence = self.essence.ok_or(ValidationError::MissingField("essence"))?;
-        let unlock_blocks = self.unlock_blocks.ok_or(ValidationError::MissingField("unlock_blocks"))?;
+        let unlock_blocks = self
+            .unlock_blocks
+            .ok_or(ValidationError::MissingField("unlock_blocks"))?;
 
         if essence.inputs().len() != unlock_blocks.len() {
             return Err(ValidationError::InputUnlockBlockCountMismatch(

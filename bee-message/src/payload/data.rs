@@ -15,7 +15,10 @@ impl DataPayload {
     pub const KIND: u32 = 0;
 
     pub fn new(version: u8, data: Vec<u8>) -> Self {
-        Self { version, data: data.into() } 
+        Self {
+            version,
+            data: data.into(),
+        }
     }
 
     pub fn version(&self) -> u8 {

@@ -7,7 +7,7 @@ mod dkg;
 
 pub use application_message::ApplicationMessagePayload;
 pub use beacon::{
-    regular_beacon::{self, BeaconPayload},
     collective_beacon::{self, CollectiveBeaconPayload},
+    regular_beacon::{self, BeaconPayload},
 };
 pub use dkg::DkgPayload;

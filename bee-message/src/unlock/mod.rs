@@ -7,7 +7,10 @@ pub use reference::ReferenceUnlock;
 
 use crate::{constants::UNLOCK_BLOCK_COUNT_RANGE, error::ValidationError, signature::SignatureUnlock};
 
-use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, UnknownTagError, VecPrefix};
+use bee_packable::{
+    error::{PackPrefixError, UnpackPrefixError},
+    Packable, UnknownTagError, VecPrefix,
+};
 
 use core::{convert::Infallible, ops::Deref};
 use std::collections::HashSet;
@@ -89,7 +92,9 @@ impl UnlockBlocks {
             }
         }
 
-        Ok(Self { inner: unlock_blocks.into() })
+        Ok(Self {
+            inner: unlock_blocks.into(),
+        })
     }
 
     /// Gets an `UnlockBlock` from an `UnlockBlocks`.

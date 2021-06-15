@@ -5,7 +5,7 @@
 
 mod padded;
 
-use crate::{MESSAGE_LENGTH_MAX, error::ValidationError};
+use crate::{error::ValidationError, MESSAGE_LENGTH_MAX};
 
 pub use padded::{PaddedIndex, INDEXATION_PADDED_INDEX_LENGTH};
 

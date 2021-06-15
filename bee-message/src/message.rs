@@ -1,11 +1,19 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{error::{MessagePackError, MessageUnpackError, ValidationError}, MessageId, parents::Parents, payload::Payload};
+use crate::{
+    error::{MessagePackError, MessageUnpackError, ValidationError},
+    parents::Parents,
+    payload::Payload,
+    MessageId,
+};
 
-use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
+use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
-use crypto::{hashes::{blake2b::Blake2b256, Digest}, signatures::ed25519};
+use crypto::{
+    hashes::{blake2b::Blake2b256, Digest},
+    signatures::ed25519,
+};
 
 /// The minimum number of bytes in a message.
 pub const MESSAGE_LENGTH_MIN: usize = 53;
@@ -107,8 +115,7 @@ impl Message {
 
     /// Verifies the `Message` signature against the contents of the `Message`.
     pub fn verify(&self) -> Result<(), ValidationError> {
-        let ed25519_public_key =
-            ed25519::PublicKey::from_compressed_bytes(self.issuer_public_key)?;
+        let ed25519_public_key = ed25519::PublicKey::from_compressed_bytes(self.issuer_public_key)?;
 
         // Unwrapping is okay here, since the length of the signature is already known to be correct.
         let ed25519_signature = ed25519::Signature::from_bytes(self.signature);
@@ -116,7 +123,7 @@ impl Message {
         let hash = self.hash();
 
         if !ed25519_public_key.verify(&ed25519_signature, &hash) {
-            Err(ValidationError::InvalidSignature)      
+            Err(ValidationError::InvalidSignature)
         } else {
             Ok(())
         }
@@ -243,11 +250,19 @@ impl MessageBuilder {
 
     /// Finished the `MessageBuilder`, consuming it to build a `Message`.
     pub fn finish(self) -> Result<Message, ValidationError> {
-        let strong_parents = self.strong_parents.ok_or(ValidationError::MissingField("strong_parents"))?;
+        let strong_parents = self
+            .strong_parents
+            .ok_or(ValidationError::MissingField("strong_parents"))?;
         let weak_parents = self.weak_parents.ok_or(ValidationError::MissingField("weak_parents"))?;
-        let issuer_public_key = self.issuer_public_key.ok_or(ValidationError::MissingField("issuer_public_key"))?;
-        let issue_timestamp = self.issue_timestamp.ok_or(ValidationError::MissingField("issue_timestap"))?;
-        let sequence_number = self.sequence_number.ok_or(ValidationError::MissingField("sequence_number"))?;
+        let issuer_public_key = self
+            .issuer_public_key
+            .ok_or(ValidationError::MissingField("issuer_public_key"))?;
+        let issue_timestamp = self
+            .issue_timestamp
+            .ok_or(ValidationError::MissingField("issue_timestap"))?;
+        let sequence_number = self
+            .sequence_number
+            .ok_or(ValidationError::MissingField("sequence_number"))?;
 
         // FIXME payload types
         if !matches!(
