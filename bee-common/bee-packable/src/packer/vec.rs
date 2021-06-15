@@ -44,14 +44,6 @@ impl VecPacker {
     }
 }
 
-impl core::ops::Deref for VecPacker {
-    type Target = Vec<u8>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
 impl Packer for VecPacker {
     type Error = Infallible;
 
