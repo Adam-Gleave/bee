@@ -5,7 +5,7 @@ mod reference;
 
 pub use reference::ReferenceUnlock;
 
-use crate::{constants::UNLOCK_BLOCK_COUNT_RANGE, signature::SignatureUnlock, Error};
+use crate::{constants::UNLOCK_BLOCK_COUNT_RANGE, error::ValidationError, signature::SignatureUnlock};
 
 use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, UnknownTagError, VecPrefix};
 
@@ -64,9 +64,9 @@ pub struct UnlockBlocks {
 
 impl UnlockBlocks {
     /// Creates a new `UnlockBlocks`.
-    pub fn new(unlock_blocks: Vec<UnlockBlock>) -> Result<Self, Error> {
+    pub fn new(unlock_blocks: Vec<UnlockBlock>) -> Result<Self, ValidationError> {
         if !UNLOCK_BLOCK_COUNT_RANGE.contains(&unlock_blocks.len()) {
-            return Err(Error::InvalidUnlockBlockCount(unlock_blocks.len()));
+            return Err(ValidationError::InvalidUnlockBlockCount(unlock_blocks.len()));
         }
 
         let mut seen_signatures = HashSet::new();
@@ -78,12 +78,12 @@ impl UnlockBlocks {
                         || r.index() >= index as u16
                         || matches!(unlock_blocks[r.index() as usize], UnlockBlock::Reference(_))
                     {
-                        return Err(Error::InvalidUnlockBlockReference(index));
+                        return Err(ValidationError::InvalidUnlockBlockReference(index));
                     }
                 }
                 UnlockBlock::Signature(s) => {
                     if !seen_signatures.insert(s) {
-                        return Err(Error::DuplicateSignature(index));
+                        return Err(ValidationError::DuplicateSignature(index));
                     }
                 }
             }

@@ -3,7 +3,7 @@
 
 //! The parents module defines the core data type for storing the messages directly approved by a message.
 
-use crate::{Error, MessageId};
+use crate::{error::ValidationError, MessageId};
 
 use bee_ord::is_unique_sorted;
 use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, VecPrefix};
@@ -39,13 +39,13 @@ impl Deref for Parents {
 #[allow(clippy::len_without_is_empty)]
 impl Parents {
     /// Creates new `Parents`.
-    pub fn new(inner: Vec<MessageId>) -> Result<Self, Error> {
+    pub fn new(inner: Vec<MessageId>) -> Result<Self, ValidationError> {
         if !MESSAGE_PARENTS_RANGE.contains(&inner.len()) {
-            return Err(Error::InvalidParentsCount(inner.len()));
+            return Err(ValidationError::InvalidParentsCount(inner.len()));
         }
 
         if !is_unique_sorted(inner.iter().map(AsRef::as_ref)) {
-            return Err(Error::ParentsNotUniqueSorted);
+            return Err(ValidationError::ParentsNotUniqueSorted);
         }
 
         Ok(Self { inner })

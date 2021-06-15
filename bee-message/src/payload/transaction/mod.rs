@@ -6,7 +6,7 @@
 mod essence;
 mod transaction_id;
 
-use crate::{unlock::UnlockBlocks, Error};
+use crate::{error::ValidationError, unlock::UnlockBlocks};
 
 pub use essence::{TransactionEssence, TransactionEssenceBuilder, TransactionEssencePackError, TransactionEssenceUnpackError};
 pub use transaction_id::{TransactionId, TRANSACTION_ID_LENGTH};
@@ -144,12 +144,12 @@ impl TransactionPayloadBuilder {
     }
 
     /// Finishes a `TransactionPayloadBuilder` into a `TransactionPayload`.
-    pub fn finish(self) -> Result<TransactionPayload, Error> {
-        let essence = self.essence.ok_or(Error::MissingField("essence"))?;
-        let unlock_blocks = self.unlock_blocks.ok_or(Error::MissingField("unlock_blocks"))?;
+    pub fn finish(self) -> Result<TransactionPayload, ValidationError> {
+        let essence = self.essence.ok_or(ValidationError::MissingField("essence"))?;
+        let unlock_blocks = self.unlock_blocks.ok_or(ValidationError::MissingField("unlock_blocks"))?;
 
         if essence.inputs().len() != unlock_blocks.len() {
-            return Err(Error::InputUnlockBlockCountMismatch(
+            return Err(ValidationError::InputUnlockBlockCountMismatch(
                 essence.inputs().len(),
                 unlock_blocks.len(),
             ));

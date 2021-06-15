@@ -1,7 +1,7 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::Error;
+use crate::error::ValidationError;
 
 use bee_packable::Packable;
 
@@ -124,12 +124,12 @@ impl DkgPayloadBuilder {
         self
     }
 
-    pub fn finish(self) -> Result<DkgPayload, Error> {
-        let version = self.version.ok_or(Error::MissingField("version"))?;
-        let instance_id = self.instance_id.ok_or(Error::MissingField("instance_id"))?;
-        let from_index = self.from_index.ok_or(Error::MissingField("from_index"))?;
-        let to_index = self.to_index.ok_or(Error::MissingField("to_index"))?;
-        let deal = self.deal.ok_or(Error::MissingField("deal"))?;
+    pub fn finish(self) -> Result<DkgPayload, ValidationError> {
+        let version = self.version.ok_or(ValidationError::MissingField("version"))?;
+        let instance_id = self.instance_id.ok_or(ValidationError::MissingField("instance_id"))?;
+        let from_index = self.from_index.ok_or(ValidationError::MissingField("from_index"))?;
+        let to_index = self.to_index.ok_or(ValidationError::MissingField("to_index"))?;
+        let deal = self.deal.ok_or(ValidationError::MissingField("deal"))?;
 
         Ok(DkgPayload {
             version,

@@ -9,35 +9,37 @@ mod timestamps;
 pub use conflicts::{Conflict, Conflicts};
 pub use timestamps::{Timestamp, Timestamps};
 
-use crate::Error;
+use crate::error::ValidationError;
 
 use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, Packer, PackError, Unpacker, UnpackError};
 
 use core::convert::Infallible;
 
-pub struct FpcPayloadPackError {}
+#[derive(Debug)]
+pub struct FpcPackError {}
 
-impl From<PackPrefixError<Infallible, u32>> for FpcPayloadPackError {
+impl From<PackPrefixError<Infallible, u32>> for FpcPackError {
     fn from(error: PackPrefixError<Infallible, u32>) -> Self {
         Self {}
     }
 }
 
-impl From<Infallible> for FpcPayloadPackError {
+impl From<Infallible> for FpcPackError {
     fn from(error: Infallible) -> Self {
         match error {}
     }
 }
 
-pub struct FpcPayloadUnpackError {}
+#[derive(Debug)]
+pub struct FpcUnpackError {}
 
-impl From<UnpackPrefixError<Infallible, u32>> for FpcPayloadUnpackError {
+impl From<UnpackPrefixError<Infallible, u32>> for FpcUnpackError {
     fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
         Self {}
     }
 }
 
-impl From<Infallible> for FpcPayloadUnpackError {
+impl From<Infallible> for FpcUnpackError {
     fn from(error: Infallible) -> Self {
         match error {}
     }
@@ -66,8 +68,8 @@ impl FpcPayload {
 }
 
 impl Packable for FpcPayload {
-    type PackError = FpcPayloadPackError;
-    type UnpackError = FpcPayloadUnpackError;
+    type PackError = FpcPackError;
+    type UnpackError = FpcUnpackError;
 
     fn packed_len(&self) -> usize {
         self.version.packed_len()
@@ -132,8 +134,8 @@ impl FpcPayloadBuilder {
     }
 
     /// Finishes an `FpcPayloadBuilder` into an `FpcPayload`.
-    pub fn finish(self) -> Result<FpcPayload, Error> {
-        let version = self.version.ok_or(Error::MissingField("version"))?;
+    pub fn finish(self) -> Result<FpcPayload, ValidationError> {
+        let version = self.version.ok_or(ValidationError::MissingField("version"))?;
 
         Ok(FpcPayload {
             version,

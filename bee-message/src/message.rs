@@ -1,13 +1,11 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{Error, MessageId, parents::Parents, payload::{Payload, transaction::TransactionEssenceUnpackError}};
+use crate::{error::{MessagePackError, MessageUnpackError, ValidationError}, MessageId, parents::Parents, payload::Payload};
 
-use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError, UnpackOptionError};
+use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
 
 use crypto::{hashes::{blake2b::Blake2b256, Digest}, signatures::ed25519};
-
-use core::convert::Infallible;
 
 /// The minimum number of bytes in a message.
 pub const MESSAGE_LENGTH_MIN: usize = 53;
@@ -20,29 +18,6 @@ pub const MESSAGE_PUBLIC_KEY_LENGTH: usize = 32;
 
 /// Length (in bytes) of a message signature.
 pub const MESSAGE_SIGNATURE_LENGTH: usize = 64;
-
-pub enum MessageUnpackError {
-    Transaction(TransactionEssenceUnpackError),
-    OptionError,
-}
-
-impl From<TransactionEssenceUnpackError> for MessageUnpackError {
-    fn from(inner: TransactionEssenceUnpackError) -> Self {
-        Self::Transaction(inner)
-    }
-}
-
-impl<T> From<UnpackOptionError<T>> for MessageUnpackError {
-    fn from(_: UnpackOptionError<T>) -> Self {
-        Self::OptionError
-    }
-}
-
-impl From<Infallible> for MessageUnpackError {
-    fn from(err: Infallible) -> Self {
-        match err {}
-    }
-}
 
 /// Represent the object that nodes gossip around the network.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -131,7 +106,7 @@ impl Message {
     }
 
     /// Verifies the `Message` signature against the contents of the `Message`.
-    pub fn verify(&self) -> Result<(), Error> {
+    pub fn verify(&self) -> Result<(), ValidationError> {
         let ed25519_public_key =
             ed25519::PublicKey::from_compressed_bytes(self.issuer_public_key)?;
 
@@ -141,7 +116,7 @@ impl Message {
         let hash = self.hash();
 
         if !ed25519_public_key.verify(&ed25519_signature, &hash) {
-            Err(Error::InvalidSignature)      
+            Err(ValidationError::InvalidSignature)      
         } else {
             Ok(())
         }
@@ -149,8 +124,8 @@ impl Message {
 }
 
 impl Packable for Message {
-    type PackError = crate::Error;
-    type UnpackError = crate::Error;
+    type PackError = MessagePackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         self.strong_parents.packed_len()
@@ -267,12 +242,12 @@ impl MessageBuilder {
     }
 
     /// Finished the `MessageBuilder`, consuming it to build a `Message`.
-    pub fn finish(self) -> Result<Message, Error> {
-        let strong_parents = self.strong_parents.ok_or(Error::MissingField("strong_parents"))?;
-        let weak_parents = self.weak_parents.ok_or(Error::MissingField("weak_parents"))?;
-        let issuer_public_key = self.issuer_public_key.ok_or(Error::MissingField("issuer_public_key"))?;
-        let issue_timestamp = self.issue_timestamp.ok_or(Error::MissingField("issue_timestap"))?;
-        let sequence_number = self.sequence_number.ok_or(Error::MissingField("sequence_number"))?;
+    pub fn finish(self) -> Result<Message, ValidationError> {
+        let strong_parents = self.strong_parents.ok_or(ValidationError::MissingField("strong_parents"))?;
+        let weak_parents = self.weak_parents.ok_or(ValidationError::MissingField("weak_parents"))?;
+        let issuer_public_key = self.issuer_public_key.ok_or(ValidationError::MissingField("issuer_public_key"))?;
+        let issue_timestamp = self.issue_timestamp.ok_or(ValidationError::MissingField("issue_timestap"))?;
+        let sequence_number = self.sequence_number.ok_or(ValidationError::MissingField("sequence_number"))?;
 
         // FIXME payload types
         if !matches!(
@@ -280,11 +255,11 @@ impl MessageBuilder {
             None | Some(Payload::Transaction(_)) | Some(Payload::Indexation(_))
         ) {
             // Safe to unwrap here, since it's known not to be None.
-            return Err(Error::InvalidPayloadKind(self.payload.unwrap().kind()));
+            return Err(ValidationError::InvalidPayloadKind(self.payload.unwrap().kind()));
         }
 
-        let nonce = self.nonce.ok_or(Error::MissingField("nonce"))?;
-        let signature = self.signature.ok_or(Error::MissingField("signature"))?;
+        let nonce = self.nonce.ok_or(ValidationError::MissingField("nonce"))?;
+        let signature = self.signature.ok_or(ValidationError::MissingField("signature"))?;
 
         let message = Message {
             strong_parents,
@@ -300,7 +275,7 @@ impl MessageBuilder {
         let bytes = message.pack_to_vec().unwrap();
 
         if bytes.len() > MESSAGE_LENGTH_MAX {
-            return Err(Error::InvalidMessageLength(bytes.len()));
+            return Err(ValidationError::InvalidMessageLength(bytes.len()));
         }
 
         Ok(message)

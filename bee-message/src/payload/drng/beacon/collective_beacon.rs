@@ -1,7 +1,7 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::Error;
+use crate::error::ValidationError;
 use super::{
     BEACON_DISTRIBUTED_PUBLIC_KEY_LENGTH, 
     BEACON_SIGNATURE_LENGTH,
@@ -96,13 +96,13 @@ impl CollectiveBeaconPayloadBuilder {
         self
     }
 
-    pub fn finish(self) -> Result<CollectiveBeaconPayload, Error> {
-        let version = self.version.ok_or(Error::MissingField("version"))?;
-        let instance_id = self.instance_id.ok_or(Error::MissingField("instance_id"))?;
-        let round = self.round.ok_or(Error::MissingField("round"))?;
-        let prev_signature = self.prev_signature.ok_or(Error::MissingField("prev_signature"))?;
-        let signature = self.signature.ok_or(Error::MissingField("signature"))?;
-        let distributed_public_key = self.distributed_public_key.ok_or(Error::MissingField("distributed_public_key"))?;
+    pub fn finish(self) -> Result<CollectiveBeaconPayload, ValidationError> {
+        let version = self.version.ok_or(ValidationError::MissingField("version"))?;
+        let instance_id = self.instance_id.ok_or(ValidationError::MissingField("instance_id"))?;
+        let round = self.round.ok_or(ValidationError::MissingField("round"))?;
+        let prev_signature = self.prev_signature.ok_or(ValidationError::MissingField("prev_signature"))?;
+        let signature = self.signature.ok_or(ValidationError::MissingField("signature"))?;
+        let distributed_public_key = self.distributed_public_key.ok_or(ValidationError::MissingField("distributed_public_key"))?;
 
         Ok(CollectiveBeaconPayload {
             version,

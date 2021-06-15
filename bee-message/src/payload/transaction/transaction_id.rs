@@ -1,7 +1,7 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::Error;
+use crate::error::ValidationError;
 
 use bee_packable::Packable;
 
@@ -32,7 +32,7 @@ impl From<[u8; TRANSACTION_ID_LENGTH]> for TransactionId {
 }
 
 impl FromStr for TransactionId {
-    type Err = Error;
+    type Err = ValidationError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let bytes: [u8; TRANSACTION_ID_LENGTH] = hex::decode(s)

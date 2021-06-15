@@ -5,7 +5,7 @@
 
 mod padded;
 
-use crate::{Error, MESSAGE_LENGTH_MAX};
+use crate::{MESSAGE_LENGTH_MAX, error::ValidationError};
 
 pub use padded::{PaddedIndex, INDEXATION_PADDED_INDEX_LENGTH};
 
@@ -32,13 +32,13 @@ impl IndexationPayload {
     pub const KIND: u32 = 8;
 
     /// Creates a new `IndexationPayload`.
-    pub fn new(version: u8, index: Vec<u8>, data: Vec<u8>) -> Result<Self, Error> {
+    pub fn new(version: u8, index: Vec<u8>, data: Vec<u8>) -> Result<Self, ValidationError> {
         if !INDEXATION_INDEX_LENGTH_RANGE.contains(&index.len()) {
-            return Err(Error::InvalidIndexationIndexLength(index.len()));
+            return Err(ValidationError::InvalidIndexationIndexLength(index.len()));
         }
 
         if data.len() > MESSAGE_LENGTH_MAX {
-            return Err(Error::InvalidIndexationDataLength(data.len()));
+            return Err(ValidationError::InvalidIndexationDataLength(data.len()));
         }
 
         Ok(Self {

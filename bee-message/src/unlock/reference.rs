@@ -1,7 +1,7 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{constants::INPUT_OUTPUT_INDEX_RANGE, Error};
+use crate::{error::ValidationError, constants::INPUT_OUTPUT_INDEX_RANGE};
 
 use bee_packable::Packable;
 
@@ -17,9 +17,9 @@ impl ReferenceUnlock {
     pub const KIND: u8 = 1;
 
     /// Creates a new `ReferenceUnlock`.
-    pub fn new(index: u16) -> Result<Self, Error> {
+    pub fn new(index: u16) -> Result<Self, ValidationError> {
         if !INPUT_OUTPUT_INDEX_RANGE.contains(&index) {
-            return Err(Error::InvalidReferenceIndex(index));
+            return Err(ValidationError::InvalidReferenceIndex(index));
         }
 
         Ok(Self(index))
@@ -32,7 +32,7 @@ impl ReferenceUnlock {
 }
 
 impl TryFrom<u16> for ReferenceUnlock {
-    type Error = Error;
+    type Error = ValidationError;
 
     fn try_from(index: u16) -> Result<Self, Self::Error> {
         Self::new(index)

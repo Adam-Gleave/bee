@@ -10,16 +10,51 @@ pub mod indexation;
 pub mod salt_declaration;
 pub mod transaction;
 
+use std::convert::Infallible;
+
 use data::DataPayload;
 use drng::{ApplicationMessagePayload, BeaconPayload, CollectiveBeaconPayload, DkgPayload};
-use fpc::FpcPayload;
+use fpc::{FpcPayload, FpcUnpackError};
 use indexation::IndexationPayload;
 use salt_declaration::SaltDeclarationPayload;
-use transaction::TransactionPayload;
+use transaction::{TransactionPayload, TransactionUnpackError};
 
 use bee_packable::{Packable, Packer, PackError, UnknownTagError, UnpackError, Unpacker};
 
 use alloc::boxed::Box;
+
+#[derive(Debug)]
+pub enum PayloadUnpackError {
+    Fpc(FpcUnpackError),
+    InvalidKind(u32),
+    Transaction(TransactionUnpackError),
+}
+
+impl From<FpcUnpackError> for PayloadUnpackError {
+    fn from(error: FpcUnpackError) -> Self {
+        Self::Fpc(error)
+    }
+}
+
+impl From<TransactionUnpackError> for PayloadUnpackError {
+    fn from(error: TransactionUnpackError) -> Self {
+        Self::Transaction(error)
+    }
+}
+
+impl From<UnknownTagError<u32>> for PayloadUnpackError {
+    fn from(error: UnknownTagError<u32>) -> Self {
+        match error {
+            UnknownTagError(tag) => Self::InvalidKind(tag)
+        }
+    }
+}
+
+impl From<Infallible> for PayloadUnpackError {
+    fn from(error: Infallible) -> Self {
+        match error {}
+    }
+}
 
 /// A generic payload that can represent different types defining message payloads.
 #[non_exhaustive]
@@ -116,8 +151,8 @@ impl From<TransactionPayload> for Payload {
 }
 
 impl Packable for Payload {
-    type PackError = crate::Error;
-    type UnpackError = crate::Error;
+    type PackError = crate::error::MessagePackError;
+    type UnpackError = PayloadUnpackError;
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         match *self {

@@ -1,71 +1,65 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY},
-    input::Input,
-    output::Output,
-    payload::Payload,
-    Error,
-};
+use crate::{constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY}, error::{MessagePackError, ValidationError}, input::Input, output::Output, payload::{Payload, PayloadUnpackError}};
 
 use bee_ord::is_sorted;
-use bee_packable::{error::{UnpackPrefixError}, Packable, Packer, PackError,Unpacker, UnpackError, UnpackOptionError, VecPrefix};
+use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, UnpackOptionError, Unpacker, VecPrefix, error::{UnpackPrefixError}};
 
 use alloc::vec::Vec;
-use core::convert::{Infallible, TryInto};
+use core::convert::Infallible;
 
 /// Length (in bytes) of Transaction Essence pledge IDs (node IDs relating to pledge mana).
 pub const PLEDGE_ID_LENGTH: usize = 32;
 
 #[derive(Debug)]
-pub enum TransactionEssenceUnpackError {
-    OptionError,
-    PayloadUnpackError,
-    UnpackPrefixError,
-}
-
-impl<T, P> From<UnpackPrefixError<T, P>> for TransactionEssenceUnpackError
-where
-    P: TryInto<usize> 
-{
-    fn from(_: UnpackPrefixError<T, P>) -> Self {
-        Self::UnpackPrefixError
-    }
-}
-
-impl<T> From<UnpackOptionError<T>> for TransactionEssenceUnpackError {
-    fn from(_: UnpackOptionError<T>) -> Self {
-        Self::OptionError
-    }
-}
-
-impl From<crate::Error> for TransactionEssenceUnpackError {
-    fn from(_: crate::Error) -> Self {
-        Self::PayloadUnpackError
-    }
-}
-
-impl From<Infallible> for TransactionEssenceUnpackError {
-    fn from(err: Infallible) -> Self {
-        match err {}
-    }
-}
-
-#[derive(Debug)]
 pub enum TransactionEssencePackError {
-    OptionalPayload,
+    OptionalPayload(MessagePackError),
 }
 
-impl From<crate::Error> for TransactionEssencePackError {
-    fn from(_: crate::Error) -> Self {
-        Self::OptionalPayload
+impl From<MessagePackError> for TransactionEssencePackError {
+    fn from(error: MessagePackError) -> Self {
+        Self::OptionalPayload(error)
     }
 }
 
 impl From<Infallible> for TransactionEssencePackError {
     fn from(error: Infallible) -> Self {
         match error {}
+    }
+}
+
+#[derive(Debug)]
+pub enum TransactionEssenceUnpackError {
+    InputOutput,
+    OptionalPayloadTag(usize),
+    OptionalPayload(PayloadUnpackError),
+}
+
+impl From<UnpackPrefixError<UnknownTagError<u8>, u32>> for TransactionEssenceUnpackError {
+    fn from(_: UnpackPrefixError<UnknownTagError<u8>, u32>) -> Self {
+        Self::InputOutput
+    }
+}
+
+impl From<PayloadUnpackError> for TransactionEssenceUnpackError {
+    fn from(error: PayloadUnpackError) -> Self {
+        Self::OptionalPayload(error) 
+    }
+}
+
+impl From<UnpackOptionError<PayloadUnpackError>> for TransactionEssenceUnpackError {
+    fn from(error: UnpackOptionError<PayloadUnpackError>) -> Self {
+        match error {
+            UnpackOptionError::Inner(error) => Self::OptionalPayload(error),
+            UnpackOptionError::UnknownTag(tag) => Self::OptionalPayloadTag(tag as usize),
+        } 
+    }
+}
+
+impl From<Infallible> for TransactionEssenceUnpackError {
+    fn from(err: Infallible) -> Self {
+        match err {}
     }
 }
 
@@ -251,30 +245,30 @@ impl TransactionEssenceBuilder {
     }
 
     /// Finishes a `TransactionEssenceBuilder` into a `TransactionEssence`.
-    pub fn finish(self) -> Result<TransactionEssence, Error> {
-        let version = self.version.ok_or(Error::MissingField("version"))?;
-        let timestamp = self.timestamp.ok_or(Error::MissingField("timestamp"))?;
-        let access_pledge_id = self.access_pledge_id.ok_or(Error::MissingField("access_pledge_id"))?;
-        let consensus_pledge_id = self.consensus_pledge_id.ok_or(Error::MissingField("consensus_pledge_id"))?;
+    pub fn finish(self) -> Result<TransactionEssence, ValidationError> {
+        let version = self.version.ok_or(ValidationError::MissingField("version"))?;
+        let timestamp = self.timestamp.ok_or(ValidationError::MissingField("timestamp"))?;
+        let access_pledge_id = self.access_pledge_id.ok_or(ValidationError::MissingField("access_pledge_id"))?;
+        let consensus_pledge_id = self.consensus_pledge_id.ok_or(ValidationError::MissingField("consensus_pledge_id"))?;
 
         if !INPUT_OUTPUT_COUNT_RANGE.contains(&self.inputs.len()) {
-            return Err(Error::InvalidInputOutputCount(self.inputs.len()));
+            return Err(ValidationError::InvalidInputCount(self.inputs.len()));
         }
 
         if !INPUT_OUTPUT_COUNT_RANGE.contains(&self.outputs.len()) {
-            return Err(Error::InvalidInputOutputCount(self.outputs.len()));
+            return Err(ValidationError::InvalidOutputCount(self.outputs.len()));
         }
 
         if !matches!(self.payload, None | Some(Payload::Indexation(_))) {
             // Unwrap is fine because we just checked that the Option is not None.
-            return Err(Error::InvalidPayloadKind(self.payload.unwrap().kind()));
+            return Err(ValidationError::InvalidPayloadKind(self.payload.unwrap().kind()));
         }
 
         for input in self.inputs.iter() {
             match input {
                 Input::Utxo(u) => {
                     if self.inputs.iter().filter(|i| *i == input).count() > 1 {
-                        return Err(Error::DuplicateUtxo(u.clone()));
+                        return Err(ValidationError::DuplicateUtxo(u.clone()));
                     }
                 }
             }
@@ -282,7 +276,7 @@ impl TransactionEssenceBuilder {
 
         // Inputs must be lexicographically sorted in their serialised forms.
         if !is_sorted(self.inputs.iter().map(Packable::pack_to_vec)) {
-            return Err(Error::TransactionInputsNotSorted);
+            return Err(ValidationError::TransactionInputsNotSorted);
         }
 
         let mut total: u64 = 0;
@@ -298,12 +292,12 @@ impl TransactionEssenceBuilder {
                         .count()
                         > 1
                     {
-                        return Err(Error::DuplicateAddress(*single.address()));
+                        return Err(ValidationError::DuplicateAddress(*single.address()));
                     }
 
                     total = total
                         .checked_add(single.amount())
-                        .ok_or_else(|| Error::InvalidAccumulatedOutput((total + single.amount()) as u128))?;
+                        .ok_or_else(|| ValidationError::InvalidAccumulatedOutput((total + single.amount()) as u128))?;
                 }
                 Output::SignatureLockedDustAllowance(dust_allowance) => {
                     // The addresses must be unique in the set of SignatureLockedDustAllowanceOutputs.
@@ -316,24 +310,24 @@ impl TransactionEssenceBuilder {
                         .count()
                         > 1
                     {
-                        return Err(Error::DuplicateAddress(*dust_allowance.address()));
+                        return Err(ValidationError::DuplicateAddress(*dust_allowance.address()));
                     }
 
                     total = total.checked_add(dust_allowance.amount()).ok_or_else(|| {
-                        Error::InvalidAccumulatedOutput(total as u128 + dust_allowance.amount() as u128)
+                        ValidationError::InvalidAccumulatedOutput(total as u128 + dust_allowance.amount() as u128)
                     })?;
                 }
             }
 
             // Accumulated output balance must not exceed the total supply of tokens.
             if total > IOTA_SUPPLY {
-                return Err(Error::InvalidAccumulatedOutput(total as u128));
+                return Err(ValidationError::InvalidAccumulatedOutput(total as u128));
             }
         }
 
         // Outputs must be lexicographically sorted in their serialised forms.
         if !is_sorted(self.outputs.iter().map(Packable::pack_to_vec)) {
-            return Err(Error::TransactionOutputsNotSorted);
+            return Err(ValidationError::TransactionOutputsNotSorted);
         }
 
         Ok(TransactionEssence {

@@ -1,7 +1,7 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::Error;
+use crate::error::ValidationError;
 
 use bee_packable::Packable;
 
@@ -37,13 +37,13 @@ impl From<[u8; MESSAGE_ID_LENGTH]> for MessageId {
 }
 
 impl FromStr for MessageId {
-    type Err = Error;
+    type Err = ValidationError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let bytes: [u8; MESSAGE_ID_LENGTH] = hex::decode(s)
-            .map_err(|_| Self::Err::InvalidHexadecimalChar(s.to_owned()))?
+            .map_err(|_| ValidationError::InvalidHexadecimalChar(s.to_owned()))?
             .try_into()
-            .map_err(|_| Self::Err::InvalidHexadecimalLength(MESSAGE_ID_LENGTH * 2, s.len()))?;
+            .map_err(|_| ValidationError::InvalidHexadecimalLength(MESSAGE_ID_LENGTH * 2, s.len()))?;
 
         Ok(MessageId::from(bytes))
     }

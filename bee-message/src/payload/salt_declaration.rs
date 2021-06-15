@@ -1,7 +1,7 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{signature::ED25519_PUBLIC_KEY_LENGTH, Error};
+use crate::{error::ValidationError, signature::ED25519_PUBLIC_KEY_LENGTH};
 
 use bee_packable::Packable;
 
@@ -99,12 +99,12 @@ impl SaltDeclarationPayloadBuilder {
         self
     }
 
-    pub fn finish(self) -> Result<SaltDeclarationPayload, Error> {
-        let version = self.version.ok_or(Error::MissingField("version"))?;
-        let node_id = self.node_id.ok_or(Error::MissingField("node_id"))?;
-        let salt = self.salt.ok_or(Error::MissingField("salt"))?;
-        let timestamp = self.timestamp.ok_or(Error::MissingField("timestamp"))?;
-        let signature = self.signature.ok_or(Error::MissingField("signature"))?;
+    pub fn finish(self) -> Result<SaltDeclarationPayload, ValidationError> {
+        let version = self.version.ok_or(ValidationError::MissingField("version"))?;
+        let node_id = self.node_id.ok_or(ValidationError::MissingField("node_id"))?;
+        let salt = self.salt.ok_or(ValidationError::MissingField("salt"))?;
+        let timestamp = self.timestamp.ok_or(ValidationError::MissingField("timestamp"))?;
+        let signature = self.signature.ok_or(ValidationError::MissingField("signature"))?;
         
         Ok(SaltDeclarationPayload {
             version,
