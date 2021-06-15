@@ -1,7 +1,7 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{output::OutputId, payload::transaction::TransactionId, Error};
+use crate::{output::OutputId, payload::transaction::TransactionId, ValidationError};
 
 use bee_packable::Packable;
 
@@ -16,7 +16,7 @@ impl UtxoInput {
     pub const KIND: u8 = 0;
 
     /// Creates a new `UtxoInput`.
-    pub fn new(id: TransactionId, index: u16) -> Result<Self, Error> {
+    pub fn new(id: TransactionId, index: u16) -> Result<Self, ValidationError> {
         Ok(Self(OutputId::new(id, index)?))
     }
 
@@ -36,7 +36,7 @@ impl From<OutputId> for UtxoInput {
 }
 
 impl FromStr for UtxoInput {
-    type Err = Error;
+    type Err = ValidationError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(UtxoInput(OutputId::from_str(s)?))

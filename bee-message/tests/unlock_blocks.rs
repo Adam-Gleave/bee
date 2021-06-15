@@ -23,7 +23,7 @@ fn kind() {
 fn new_invalid_first_reference() {
     assert!(matches!(
         UnlockBlocks::new(vec![ReferenceUnlock::new(42).unwrap().into()]),
-        Err(Error::InvalidUnlockBlockReference(0)),
+        Err(ValidationError::InvalidUnlockBlockReference(0)),
     ));
 }
 
@@ -34,7 +34,7 @@ fn new_invalid_self_reference() {
             SignatureUnlock::from(Ed25519Signature::new([0; 32], [0; 64])).into(),
             ReferenceUnlock::new(1).unwrap().into()
         ]),
-        Err(Error::InvalidUnlockBlockReference(1)),
+        Err(ValidationError::InvalidUnlockBlockReference(1)),
     ));
 }
 
@@ -46,7 +46,7 @@ fn new_invalid_future_reference() {
             ReferenceUnlock::new(2).unwrap().into(),
             SignatureUnlock::from(Ed25519Signature::new([1; 32], [1; 64])).into(),
         ]),
-        Err(Error::InvalidUnlockBlockReference(1)),
+        Err(ValidationError::InvalidUnlockBlockReference(1)),
     ));
 }
 
@@ -58,7 +58,7 @@ fn new_invalid_reference_reference() {
             ReferenceUnlock::new(0).unwrap().into(),
             ReferenceUnlock::new(1).unwrap().into()
         ]),
-        Err(Error::InvalidUnlockBlockReference(2)),
+        Err(ValidationError::InvalidUnlockBlockReference(2)),
     ));
 }
 
@@ -75,7 +75,7 @@ fn new_invalid_duplicate_signature() {
             SignatureUnlock::from(Ed25519Signature::new([3; 32], [3; 64])).into(),
             ReferenceUnlock::new(3).unwrap().into()
         ]),
-        Err(Error::DuplicateSignature(5)),
+        Err(ValidationError::DuplicateSignature(5)),
     ));
 }
 
@@ -83,7 +83,7 @@ fn new_invalid_duplicate_signature() {
 fn new_invalid_too_many_blocks() {
     assert!(matches!(
         UnlockBlocks::new(vec![ReferenceUnlock::new(0).unwrap().into(); 300]),
-        Err(Error::InvalidUnlockBlockCount(300)),
+        Err(ValidationError::InvalidUnlockBlockCount(300)),
     ));
 }
 

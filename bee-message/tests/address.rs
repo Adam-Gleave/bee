@@ -46,26 +46,20 @@ fn bech32_string_to_address() {
     let bytes: [u8; 32] = hex::decode(ED25519_ADDRESS).unwrap().try_into().unwrap();
 
     let address = Address::try_from_bech32(&Address::from(Ed25519Address::new(bytes)).to_bech32("iota")).unwrap();
-    if let Address::Ed25519(ed) = address {
-        assert_eq!(ed.to_string(), ED25519_ADDRESS);
-    } else {
-        panic!("Expecting an Ed25519 address");
-    }
+    let Address::Ed25519(ed) = address;
+    assert_eq!(ed.to_string(), ED25519_ADDRESS);
 
     let address = Address::try_from_bech32(&Address::from(Ed25519Address::new(bytes)).to_bech32("atoi")).unwrap();
-    if let Address::Ed25519(ed) = address {
-        assert_eq!(ed.to_string(), ED25519_ADDRESS);
-    } else {
-        panic!("Expecting an Ed25519 address");
-    }
+    let Address::Ed25519(ed) = address; 
+    assert_eq!(ed.to_string(), ED25519_ADDRESS);
 }
 
 #[test]
 fn pack_unpack_valid_ed25519() {
     let bytes: [u8; 32] = hex::decode(ED25519_ADDRESS).unwrap().try_into().unwrap();
     let address = Address::from(Ed25519Address::new(bytes));
-    let address_packed = address.pack_new();
+    let address_packed = address.pack_to_vec().unwrap();
 
     assert_eq!(address_packed.len(), address.packed_len());
-    assert_eq!(address, Packable::unpack(&mut address_packed.as_slice()).unwrap());
+    assert_eq!(address, Address::unpack_from_slice(address_packed).unwrap());
 }
