@@ -3,12 +3,63 @@
 
 use crate::{error::ValidationError, signature::ED25519_PUBLIC_KEY_LENGTH};
 
-use bee_packable::Packable;
+use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, Packer, PackError, Unpacker, UnpackError, VecPrefix};
 
-#[derive(Clone, Debug, PartialEq, Eq, Packable)]
+use core::{fmt, convert::Infallible};
+
+#[derive(Debug)]
+pub enum SaltDeclarationPackError {
+    InvalidPrefixLength,
+}
+
+impl From<PackPrefixError<Infallible, u32>> for SaltDeclarationPackError {
+    fn from(error: PackPrefixError<Infallible, u32>) -> Self {
+        match error {
+            PackPrefixError::Packable(e) => match e {},
+            PackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
+        }
+    }
+}
+
+impl fmt::Display for SaltDeclarationPackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for salt bytes"),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum SaltDeclarationUnpackError {
+    InvalidPrefixLength,
+}
+
+impl From<UnpackPrefixError<Infallible, u32>> for SaltDeclarationUnpackError {
+    fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
+        match error {
+            UnpackPrefixError::Packable(e) => match e {},
+            UnpackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
+        }
+    }
+}
+
+impl From<Infallible> for SaltDeclarationUnpackError {
+    fn from(error: Infallible) -> Self {
+        match error {}
+    }
+}
+
+impl fmt::Display for SaltDeclarationUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for salt bytes"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Salt {
-    #[packable(prefix = u32)]
     bytes: Vec<u8>,
     expiry_time: u64,
 }
@@ -22,7 +73,35 @@ impl Salt {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Packable)]
+impl Packable for Salt {
+    type PackError = SaltDeclarationPackError;
+    type UnpackError = SaltDeclarationUnpackError;
+
+    fn packed_len(&self) -> usize {
+        0u32.packed_len()
+            + self.bytes.packed_len()
+            + self.expiry_time.packed_len()
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        let prefixed_bytes: VecPrefix<u8, u32> = self.bytes.clone().into();
+        prefixed_bytes.pack(packer).map_err(PackError::coerce)?;
+
+        self.expiry_time.pack(packer).map_err(PackError::infallible)?;
+
+
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let bytes = VecPrefix::<u8, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        let expiry_time = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
+
+        Ok(Self { bytes, expiry_time })
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SaltDeclarationPayload {
     version: u8,
@@ -57,6 +136,45 @@ impl SaltDeclarationPayload {
 
     pub fn signature(&self) -> &[u8; ED25519_PUBLIC_KEY_LENGTH] {
         &self.signature
+    }
+}
+
+impl Packable for SaltDeclarationPayload {
+    type PackError = SaltDeclarationPackError;
+    type UnpackError = SaltDeclarationUnpackError;
+
+    fn packed_len(&self) -> usize {
+        self.version.packed_len()
+            + self.node_id.packed_len()
+            + self.salt.packed_len()
+            + self.timestamp.packed_len()
+            + self.signature.packed_len()
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        self.version.pack(packer).map_err(PackError::infallible)?;
+        self.node_id.pack(packer).map_err(PackError::infallible)?;
+        self.salt.pack(packer).map_err(PackError::coerce)?;
+        self.timestamp.pack(packer).map_err(PackError::infallible)?;
+        self.signature.pack(packer).map_err(PackError::infallible)?;
+
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let version = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let node_id = u32::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let salt = Salt::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let timestamp = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let signature = <[u8; ED25519_PUBLIC_KEY_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
+
+        Ok(Self {
+            version,
+            node_id,
+            salt,
+            timestamp,
+            signature,
+        })
     }
 }
 

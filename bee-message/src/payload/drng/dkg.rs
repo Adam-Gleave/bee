@@ -3,19 +3,67 @@
 
 use crate::error::ValidationError;
 
-use bee_packable::Packable;
+use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, Packer, PackError, Unpacker, UnpackError, VecPrefix};
 
-#[derive(Clone, Debug, Eq, PartialEq, Packable)]
+use core::{fmt, convert::Infallible};
+
+#[derive(Debug)]
+pub enum DkgPackError {
+    InvalidPrefixLength,
+}
+
+impl From<PackPrefixError<Infallible, u32>> for DkgPackError {
+    fn from(error: PackPrefixError<Infallible, u32>) -> Self {
+        match error {
+            PackPrefixError::Packable(e) => match e {},
+            PackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
+        }
+    }
+}
+
+impl fmt::Display for DkgPackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for encrypted deal data"),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum DkgUnpackError {
+    InvalidPrefixLength,
+}
+
+impl From<UnpackPrefixError<Infallible, u32>> for DkgUnpackError {
+    fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
+        match error {
+            UnpackPrefixError::Packable(e) => match e {},
+            UnpackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
+        }
+    }
+}
+
+impl From<Infallible> for DkgUnpackError {
+    fn from(error: Infallible) -> Self {
+        match error {}
+    }
+}
+
+impl fmt::Display for DkgUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for salt bytes"),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EncryptedDeal {
-    #[packable(prefix = u32)]
     dh_key: Vec<u8>,
-    #[packable(prefix = u32)]
     nonce: Vec<u8>,
-    #[packable(prefix = u32)]
     encrypted_share: Vec<u8>,
     threshold: u32,
-    #[packable(prefix = u32)]
     commitments: Vec<u8>,
 }
 
@@ -41,7 +89,54 @@ impl EncryptedDeal {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Packable)]
+impl Packable for EncryptedDeal {
+    type PackError = DkgPackError;
+    type UnpackError = DkgUnpackError;
+
+    fn packed_len(&self) -> usize {
+        0u32.packed_len() + self.dh_key.packed_len()
+            + 0u32.packed_len() + self.nonce.packed_len()
+            + 0u32.packed_len() + self.encrypted_share.packed_len()
+            + self.threshold.packed_len()
+            + 0u32.packed_len() + self.commitments.packed_len()
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        let prefixed_dh_key: VecPrefix<u8, u32> = self.dh_key.clone().into();
+        prefixed_dh_key.pack(packer).map_err(PackError::coerce)?;
+
+        let prefixed_nonce: VecPrefix<u8, u32> = self.nonce.clone().into();
+        prefixed_nonce.pack(packer).map_err(PackError::coerce)?;
+
+        let prefixed_encrypted_share: VecPrefix<u8, u32> = self.encrypted_share.clone().into();
+        prefixed_encrypted_share.pack(packer).map_err(PackError::coerce)?;
+
+        self.threshold.pack(packer).map_err(PackError::infallible)?;
+
+        let prefixed_commitments: VecPrefix<u8, u32> = self.commitments.clone().into();
+        prefixed_commitments.pack(packer).map_err(PackError::coerce)?;
+
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let dh_key = VecPrefix::<u8, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        let nonce = VecPrefix::<u8, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        let encrypted_share = VecPrefix::<u8, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        let threshold = u32::unpack(unpacker).map_err(UnpackError::infallible)?.into();
+        let commitments = VecPrefix::<u8, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+
+        Ok(Self {
+            dh_key,
+            nonce,
+            encrypted_share,
+            threshold,
+            commitments,
+        })
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DkgPayload {
     version: u8,
@@ -77,6 +172,45 @@ impl DkgPayload {
 
     pub fn deal(&self) -> &EncryptedDeal {
         &self.deal
+    }
+}
+
+impl Packable for DkgPayload {
+    type PackError = DkgPackError;
+    type UnpackError = DkgUnpackError;
+
+    fn packed_len(&self) -> usize {
+        self.version.packed_len()
+            + self.instance_id.packed_len()
+            + self.from_index.packed_len()
+            + self.to_index.packed_len()
+            + self.deal.packed_len()
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        self.version.pack(packer).map_err(PackError::infallible)?;
+        self.instance_id.pack(packer).map_err(PackError::infallible)?;
+        self.from_index.pack(packer).map_err(PackError::infallible)?;
+        self.to_index.pack(packer).map_err(PackError::infallible)?;
+        self.deal.pack(packer).map_err(PackError::coerce)?;
+
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let version = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let instance_id = u32::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let from_index = u32::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let to_index = u32::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let deal = EncryptedDeal::unpack(unpacker).map_err(UnpackError::coerce)?;
+
+        Ok(Self {
+            version,
+            instance_id,
+            from_index,
+            to_index,
+            deal,
+        })
     }
 }
 

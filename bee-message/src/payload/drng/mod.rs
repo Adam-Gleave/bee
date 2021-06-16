@@ -10,4 +10,4 @@ pub use beacon::{
     collective_beacon::{self, CollectiveBeaconPayload},
     regular_beacon::{self, BeaconPayload},
 };
-pub use dkg::DkgPayload;
+pub use dkg::{DkgPayload, DkgPackError, DkgUnpackError};

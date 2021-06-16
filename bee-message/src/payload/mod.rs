@@ -12,11 +12,11 @@ pub mod transaction;
 
 use std::convert::Infallible;
 
-use data::DataPayload;
-use drng::{ApplicationMessagePayload, BeaconPayload, CollectiveBeaconPayload, DkgPayload};
+use data::{DataPayload, DataPackError, DataUnpackError};
+use drng::{ApplicationMessagePayload, DkgPayload, DkgPackError, DkgUnpackError, BeaconPayload, CollectiveBeaconPayload};
 use fpc::{FpcPayload, FpcPackError, FpcUnpackError};
-use indexation::IndexationPayload;
-use salt_declaration::SaltDeclarationPayload;
+use indexation::{IndexationPayload, IndexationPackError, IndexationUnpackError};
+use salt_declaration::{SaltDeclarationPayload, SaltDeclarationPackError, SaltDeclarationUnpackError};
 use transaction::{TransactionPayload, TransactionPackError, TransactionUnpackError};
 
 use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker};
@@ -26,22 +26,54 @@ use core::fmt;
 
 #[derive(Debug)]
 pub enum PayloadPackError {
+    Data(DataPackError),
+    Dkg(DkgPackError),
     Fpc(FpcPackError),
+    Indexation(IndexationPackError),
+    SaltDeclaration(SaltDeclarationPackError),
     Transaction(TransactionPackError),
 }
 
 impl fmt::Display for PayloadPackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Data(e) => write!(f, "Error packing data payload: {}.", e),
+            Self::Dkg(e) => write!(f, "Error packing DKG payload: {}", e),
             Self::Fpc(e) => write!(f, "Error packing FPC payload: {}.", e),
+            Self::Indexation(e) => write!(f, "Error packing indexation payload: {}", e),
+            Self::SaltDeclaration(e) => write!(f, "Error packing salt declaration payload: {}", e),
             Self::Transaction(e) => write!(f, "Error packing transaction payload: {}", e),
         }
+    }
+}
+
+impl From<DataPackError> for PayloadPackError {
+    fn from(error: DataPackError) -> Self {
+        Self::Data(error)
+    }
+}
+
+impl From<DkgPackError> for PayloadPackError {
+    fn from(error: DkgPackError) -> Self {
+        Self::Dkg(error)
     }
 }
 
 impl From<FpcPackError> for PayloadPackError {
     fn from(error: FpcPackError) -> Self {
         Self::Fpc(error)
+    }
+}
+
+impl From<IndexationPackError> for PayloadPackError {
+    fn from(error: IndexationPackError) -> Self {
+        Self::Indexation(error)
+    }
+}
+
+impl From<SaltDeclarationPackError> for PayloadPackError {
+    fn from(error: SaltDeclarationPackError) -> Self {
+        Self::SaltDeclaration(error)
     }
 }
 
@@ -59,24 +91,56 @@ impl From<Infallible> for PayloadPackError {
 
 #[derive(Debug)]
 pub enum PayloadUnpackError {
+    Data(DataUnpackError),
+    Dkg(DkgUnpackError),
     Fpc(FpcUnpackError),
+    Indexation(IndexationUnpackError),
     InvalidKind(u32),
+    SaltDeclaration(SaltDeclarationUnpackError),
     Transaction(TransactionUnpackError),
 }
 
 impl fmt::Display for PayloadUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Data(e) => write!(f, "Error unpacking data payload: {}", e),
+            Self::Dkg(e) => write!(f, "Error unpacking DKG payload: {}", e),
             Self::Fpc(e) => write!(f, "Error unpacking FPC payload: {}.", e),
+            Self::Indexation(e) => write!(f, "Error unpacking indexation payload: {}.", e),
             Self::InvalidKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
+            Self::SaltDeclaration(e) => write!(f, "Error unpacking salt declaration payload: {}", e),
             Self::Transaction(e) => write!(f, "Error unpacking transaction payload: {}", e),
         }
+    }
+}
+
+impl From<DataUnpackError> for PayloadUnpackError {
+    fn from(error: DataUnpackError) -> Self {
+        Self::Data(error)
+    }
+}
+
+impl From<DkgUnpackError> for PayloadUnpackError {
+    fn from(error: DkgUnpackError) -> Self {
+        Self::Dkg(error)
     }
 }
 
 impl From<FpcUnpackError> for PayloadUnpackError {
     fn from(error: FpcUnpackError) -> Self {
         Self::Fpc(error)
+    }
+}
+
+impl From<IndexationUnpackError> for PayloadUnpackError {
+    fn from(error: IndexationUnpackError) -> Self {
+        Self::Indexation(error)
+    }
+}
+
+impl From<SaltDeclarationUnpackError> for PayloadUnpackError {
+    fn from(error: SaltDeclarationUnpackError) -> Self {
+        Self::SaltDeclaration(error)
     }
 }
 

@@ -9,21 +9,71 @@ use crate::{error::ValidationError, MESSAGE_LENGTH_MAX};
 
 pub use padded::{PaddedIndex, INDEXATION_PADDED_INDEX_LENGTH};
 
-use bee_packable::Packable;
+use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker, VecPrefix, error::{PackPrefixError, UnpackPrefixError}};
 
-use core::ops::RangeInclusive;
+use core::{fmt, convert::Infallible, ops::RangeInclusive};
 
 /// Valid lengths for an indexation payload index.
 pub const INDEXATION_INDEX_LENGTH_RANGE: RangeInclusive<usize> = 1..=INDEXATION_PADDED_INDEX_LENGTH;
 
+#[derive(Debug)]
+pub enum IndexationPackError {
+    InvalidPrefixLength,
+}
+
+impl From<PackPrefixError<Infallible, u32>> for IndexationPackError {
+    fn from(error: PackPrefixError<Infallible, u32>) -> Self {
+        match error {
+            PackPrefixError::Packable(e) => match e {},
+            PackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
+        }
+    }
+}
+
+impl fmt::Display for IndexationPackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for index/data"),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum IndexationUnpackError {
+    InvalidPrefixLength,
+    ValidationError(ValidationError),
+}
+
+impl From<UnpackPrefixError<Infallible, u32>> for IndexationUnpackError {
+    fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
+        match error {
+            UnpackPrefixError::Packable(e) => match e {},
+            UnpackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
+        }
+    }
+}
+
+impl From<ValidationError> for IndexationUnpackError {
+    fn from(error: ValidationError) -> Self {
+        Self::ValidationError(error)
+    }
+}
+
+impl fmt::Display for IndexationUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for index/data"),
+            Self::ValidationError(e) => write!(f, "{}", e),
+        }
+    }
+}
+
 /// A payload which holds an index and associated data.
-#[derive(Clone, Debug, Eq, PartialEq, Packable)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IndexationPayload {
     version: u8,
-    #[packable(prefix = u32)]
     index: Vec<u8>,
-    #[packable(prefix = u32)]
     data: Vec<u8>,
 }
 
@@ -33,18 +83,13 @@ impl IndexationPayload {
 
     /// Creates a new `IndexationPayload`.
     pub fn new(version: u8, index: Vec<u8>, data: Vec<u8>) -> Result<Self, ValidationError> {
-        if !INDEXATION_INDEX_LENGTH_RANGE.contains(&index.len()) {
-            return Err(ValidationError::InvalidIndexationIndexLength(index.len()));
-        }
-
-        if data.len() > MESSAGE_LENGTH_MAX {
-            return Err(ValidationError::InvalidIndexationDataLength(data.len()));
-        }
+        validate_index(&index)?;
+        validate_data(&data)?;
 
         Ok(Self {
             version,
-            index: index.into(),
-            data: data.into(),
+            index,
+            data,
         })
     }
 
@@ -63,5 +108,60 @@ impl IndexationPayload {
     /// Returns the data of an `IndexationPayload`.
     pub fn data(&self) -> &[u8] {
         &self.data
+    }
+}
+
+fn validate_index(index: &Vec<u8>) -> Result<(), ValidationError> {
+    if !INDEXATION_INDEX_LENGTH_RANGE.contains(&index.len()) {
+        Err(ValidationError::InvalidIndexationIndexLength(index.len()))
+    } else {
+        Ok(())
+    }
+}
+
+fn validate_data(data: &Vec<u8>) -> Result<(), ValidationError> {
+    if data.len() > MESSAGE_LENGTH_MAX {
+        Err(ValidationError::InvalidIndexationIndexLength(data.len()))
+    } else {
+        Ok(())
+    }
+}
+
+impl Packable for IndexationPayload {
+    type PackError = IndexationPackError;
+    type UnpackError = IndexationUnpackError;
+
+    fn packed_len(&self) -> usize {
+        self.version.packed_len()
+            + 0u32.packed_len() + self.index.packed_len()
+            + 0u32.packed_len() + self.data.packed_len()
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        self.version.pack(packer).map_err(PackError::infallible)?;
+
+        let prefixed_index: VecPrefix<u8, u32> = self.index.clone().into();
+        prefixed_index.pack(packer).map_err(PackError::coerce)?;
+
+        let prefixed_data: VecPrefix<u8, u32> = self.data.clone().into();
+        prefixed_data.pack(packer).map_err(PackError::coerce)?;
+
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let version = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
+
+        let index = VecPrefix::<u8, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        validate_index(&index).map_err(|e| UnpackError::Packable(e.into()))?;
+
+        let data = VecPrefix::<u8, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        validate_data(&data).map_err(|e| UnpackError::Packable(e.into()))?;
+
+        Ok(Self {
+            version,
+            index,
+            data,
+        })
     }
 }

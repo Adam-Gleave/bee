@@ -168,8 +168,8 @@ impl Packable for TransactionEssence {
             + self.timestamp.packed_len()
             + self.access_pledge_id.packed_len()
             + self.consensus_pledge_id.packed_len()
-            + self.inputs.packed_len()
-            + self.outputs.packed_len()
+            + 0u32.packed_len() + self.inputs.packed_len()
+            + 0u32.packed_len() + self.outputs.packed_len()
             + self.payload.packed_len()
     }
 

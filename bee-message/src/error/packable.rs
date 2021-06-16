@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::payload::{PayloadPackError, PayloadUnpackError};
+use crate::{payload::{PayloadPackError, PayloadUnpackError}, ValidationError};
 
 use bee_packable::{
     error::{PackPrefixError, UnpackPrefixError},
@@ -46,6 +46,16 @@ pub enum MessageUnpackError {
     InvalidParentsLength,
     InvalidOptionTag(u8),
     PayloadUnpackError(PayloadUnpackError),
+    ValidationError(ValidationError),
+}
+
+impl MessageUnpackError {
+    fn validation_error(&self) -> Option<&ValidationError> {
+        match self {
+            Self::ValidationError(e) => Some(e),
+            _ => None,
+        }
+    }
 }
 
 impl fmt::Display for MessageUnpackError {
@@ -55,6 +65,7 @@ impl fmt::Display for MessageUnpackError {
             Self::InvalidParentsLength => write!(f, "Invalid parents vector length."),
             Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1.", tag),
             Self::PayloadUnpackError(e) => write!(f, "{}", e),
+	        Self::ValidationError(e) => write!(f, "{}", e),
         }
     }
 }
@@ -74,6 +85,12 @@ impl From<UnpackOptionError<PayloadUnpackError>> for MessageUnpackError {
             UnpackOptionError::Inner(e) => Self::PayloadUnpackError(e),
             UnpackOptionError::UnknownTag(tag) => Self::InvalidOptionTag(tag),
         }
+    }
+}
+
+impl From<ValidationError> for MessageUnpackError {
+    fn from(error: ValidationError) -> Self {
+        Self::ValidationError(error)
     }
 }
 
