@@ -5,7 +5,7 @@ mod output_id;
 mod signature_locked_dust_allowance;
 mod signature_locked_single;
 
-pub use output_id::{OutputId, OUTPUT_ID_LENGTH};
+pub use output_id::{OutputId, OutputIdUnpackError, OUTPUT_ID_LENGTH};
 pub use signature_locked_dust_allowance::{
     SignatureLockedDustAllowanceOutput, DUST_THRESHOLD, SIGNATURE_LOCKED_DUST_ALLOWANCE_OUTPUT_AMOUNT,
 };

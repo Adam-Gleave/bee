@@ -5,20 +5,42 @@ mod utxo;
 
 pub use utxo::UtxoInput;
 
-use bee_packable::Packable;
+use crate::output::OutputIdUnpackError;
+
+use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
+
+use core::{fmt, convert::Infallible};
+
+#[derive(Debug)]
+pub enum InputUnpackError {
+    OutputId(OutputIdUnpackError),
+    InvalidKind(u8),
+}
+
+impl From<OutputIdUnpackError> for InputUnpackError {
+    fn from(error: OutputIdUnpackError) -> Self {
+        Self::OutputId(error)
+    }
+}
+
+impl fmt::Display for InputUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::OutputId(e) => write!(f, "Error unpacking OutputId: {}", e),
+            Self::InvalidKind(kind) => write!(f, "Invalid input kind: {}", kind),
+        }
+    }
+}
 
 /// A generic input supporting different input kinds.
-#[non_exhaustive]
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd, Packable)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Ord, PartialOrd)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
     serde(tag = "type", content = "data")
 )]
-#[packable(tag_type = u8)]
 pub enum Input {
     /// A UTXO input.
-    #[packable(tag = 0)]
     Utxo(UtxoInput),
 }
 
@@ -28,6 +50,38 @@ impl Input {
         match self {
             Self::Utxo(_) => UtxoInput::KIND,
         }
+    }
+}
+
+impl Packable for Input {
+    type PackError = Infallible;
+    type UnpackError = InputUnpackError;
+
+    fn packed_len(&self) -> usize {
+        self.kind().packed_len() + match self {
+            Self::Utxo(utxo) => utxo.packed_len() 
+        }
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        self.kind().pack(packer).map_err(PackError::infallible)?;
+        
+        match self {
+            Self::Utxo(utxo) => utxo.pack(packer).map_err(PackError::infallible)?
+        }
+
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let kind = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
+
+        let variant = match kind {
+            UtxoInput::KIND => Self::Utxo(UtxoInput::unpack(unpacker).map_err(UnpackError::coerce)?),
+            tag => Err(UnpackError::Packable(InputUnpackError::InvalidKind(tag)))?,
+        };
+
+        Ok(variant)
     }
 }
 

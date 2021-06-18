@@ -1,13 +1,7 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY},
-    error::ValidationError,
-    input::Input,
-    output::Output,
-    payload::{Payload, PayloadPackError, PayloadUnpackError},
-};
+use crate::{constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY}, error::ValidationError, input::{Input, InputUnpackError}, output::Output, payload::{Payload, PayloadPackError, PayloadUnpackError}};
 
 use bee_ord::is_sorted;
 use bee_packable::{
@@ -48,19 +42,23 @@ impl From<Infallible> for TransactionEssencePackError {
 
 #[derive(Debug)]
 pub enum TransactionEssenceUnpackError {
-    InvalidInputOutputKind(u8),
-    InvalidInputOutputPrefix,
+    InputUnpack(InputUnpackError),
+    InvalidInputPrefixLength,
+    InvalidOutputKind(u8),
+    InvalidOutputPrefixLength,
     InvalidOptionTag(u8),
-    OptionalPayload(PayloadUnpackError),
+    OptionalPayloadUnpack(PayloadUnpackError),
 }
 
 impl fmt::Display for TransactionEssenceUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidInputOutputKind(kind) => write!(f, "Invalid input/output kind: {}", kind),
-            Self::InvalidInputOutputPrefix => write!(f, "Invalid input/output prefix"),
-            Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1.", tag),
-            Self::OptionalPayload(e) => write!(f, "Error unpacking payload: {}", e),
+            Self::InputUnpack(e) => write!(f, "Error unpacking input: {}", e),
+            Self::InvalidInputPrefixLength => write!(f, "Invalid input prefix length"),
+            Self::InvalidOutputKind(kind) => write!(f, "Invalid output kind: {}", kind),
+            Self::InvalidOutputPrefixLength => write!(f, "Invalid output prefix length"),
+            Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1", tag),
+            Self::OptionalPayloadUnpack(e) => write!(f, "Error unpacking payload: {}", e),
         }
     }
 }
@@ -69,23 +67,32 @@ impl From<UnpackPrefixError<UnknownTagError<u8>, u32>> for TransactionEssenceUnp
     fn from(error: UnpackPrefixError<UnknownTagError<u8>, u32>) -> Self {
         match error {
             UnpackPrefixError::Packable(error) => match error {
-                UnknownTagError(tag) => Self::InvalidInputOutputKind(tag),
+                UnknownTagError(tag) => Self::InvalidOutputKind(tag),
             }
-            UnpackPrefixError::Prefix(_) => Self::InvalidInputOutputPrefix, 
+            UnpackPrefixError::Prefix(_) => Self::InvalidOutputPrefixLength, 
+        }
+    }
+}
+
+impl From<UnpackPrefixError<InputUnpackError, u32>> for TransactionEssenceUnpackError {
+    fn from(error: UnpackPrefixError<InputUnpackError, u32>) -> Self {
+        match error {
+            UnpackPrefixError::Packable(error) => Self::InputUnpack(error),
+            UnpackPrefixError::Prefix(_) => Self::InvalidInputPrefixLength,
         }
     }
 }
 
 impl From<PayloadUnpackError> for TransactionEssenceUnpackError {
     fn from(error: PayloadUnpackError) -> Self {
-        Self::OptionalPayload(error)
+        Self::OptionalPayloadUnpack(error)
     }
 }
 
 impl From<UnpackOptionError<PayloadUnpackError>> for TransactionEssenceUnpackError {
     fn from(error: UnpackOptionError<PayloadUnpackError>) -> Self {
         match error {
-            UnpackOptionError::Inner(error) => Self::OptionalPayload(error),
+            UnpackOptionError::Inner(error) => Self::OptionalPayloadUnpack(error),
             UnpackOptionError::UnknownTag(tag) => Self::InvalidOptionTag(tag),
         }
     }
@@ -186,12 +193,12 @@ impl Packable for TransactionEssence {
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
-        let version = u8::unpack(unpacker).map_err(UnpackError::coerce)?;
-        let timestamp = u64::unpack(unpacker).map_err(UnpackError::coerce)?;
-        let access_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack(unpacker).map_err(UnpackError::coerce)?;
-        let consensus_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack(unpacker).map_err(UnpackError::coerce)?;
-        let inputs_prefixed = VecPrefix::<Input, u32>::unpack(unpacker).map_err(UnpackError::coerce)?;
-        let outputs_prefixed = VecPrefix::<Output, u32>::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let version = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let timestamp = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let access_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let consensus_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let inputs = VecPrefix::<Input, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        let outputs = VecPrefix::<Output, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
         let payload = Option::<Payload>::unpack(unpacker).map_err(UnpackError::coerce)?;
 
         Ok(Self {
@@ -199,8 +206,8 @@ impl Packable for TransactionEssence {
             timestamp,
             access_pledge_id,
             consensus_pledge_id,
-            inputs: inputs_prefixed.into(),
-            outputs: outputs_prefixed.into(),
+            inputs,
+            outputs,
             payload,
         })
     }

@@ -7,18 +7,38 @@ use crate::{
     payload::transaction::{TransactionId, TRANSACTION_ID_LENGTH},
 };
 
-use bee_packable::Packable;
+use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
 
 use core::{
-    convert::{From, TryFrom, TryInto},
+    fmt,
+    convert::{Infallible, From, TryFrom, TryInto},
     str::FromStr,
 };
+
+#[derive(Debug)]
+pub enum OutputIdUnpackError {
+    ValidationError(ValidationError),
+}
+
+impl From<ValidationError> for OutputIdUnpackError {
+    fn from(error: ValidationError) -> Self {
+        Self::ValidationError(error)
+    }
+}
+
+impl fmt::Display for OutputIdUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ValidationError(e) => write!(f, "{}", e),
+        }
+    }
+}
 
 /// The length of an `OutputId`.
 pub const OUTPUT_ID_LENGTH: usize = TRANSACTION_ID_LENGTH + std::mem::size_of::<u16>();
 
 /// The identifier of an `Output`.
-#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd, Packable)]
+#[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd)]
 pub struct OutputId {
     transaction_id: TransactionId,
     index: u16,
@@ -27,9 +47,7 @@ pub struct OutputId {
 impl OutputId {
     /// Creates a new `OutputId`.
     pub fn new(transaction_id: TransactionId, index: u16) -> Result<Self, ValidationError> {
-        if !INPUT_OUTPUT_INDEX_RANGE.contains(&index) {
-            return Err(ValidationError::InvalidOutputIndex(index));
-        }
+        validate_index(index)?;
 
         Ok(Self { transaction_id, index })
     }
@@ -50,8 +68,30 @@ impl OutputId {
     }
 }
 
-#[cfg(feature = "serde")]
-string_serde_impl!(OutputId);
+impl Packable for OutputId {
+    type PackError = Infallible;
+    type UnpackError = OutputIdUnpackError;
+
+    fn packed_len(&self) -> usize {
+        self.transaction_id.packed_len() + self.index.packed_len()
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        self.transaction_id.pack(packer).map_err(PackError::infallible)?;
+        self.index.pack(packer).map_err(PackError::infallible)?;
+        
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let transaction_id = TransactionId::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let index = u16::unpack(unpacker).map_err(UnpackError::infallible)?;
+
+        validate_index(index).map_err(|e| UnpackError::Packable(e.into()))?;
+
+        Ok(Self { transaction_id, index })
+    }
+}
 
 impl TryFrom<[u8; OUTPUT_ID_LENGTH]> for OutputId {
     type Error = ValidationError;
@@ -90,5 +130,13 @@ impl core::fmt::Display for OutputId {
 impl core::fmt::Debug for OutputId {
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         write!(f, "OutputId({})", self)
+    }
+}
+
+fn validate_index(index: u16) -> Result<(), ValidationError> {
+    if !INPUT_OUTPUT_INDEX_RANGE.contains(&index) {
+        Err(ValidationError::InvalidOutputIndex(index))
+    } else {
+        Ok(())
     }
 }
