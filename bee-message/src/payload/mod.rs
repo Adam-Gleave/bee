@@ -95,7 +95,7 @@ pub enum PayloadUnpackError {
     Dkg(DkgUnpackError),
     Fpc(FpcUnpackError),
     Indexation(IndexationUnpackError),
-    InvalidKind(u32),
+    InvalidPayloadKind(u32),
     SaltDeclaration(SaltDeclarationUnpackError),
     Transaction(TransactionUnpackError),
 }
@@ -107,7 +107,7 @@ impl fmt::Display for PayloadUnpackError {
             Self::Dkg(e) => write!(f, "Error unpacking DKG payload: {}", e),
             Self::Fpc(e) => write!(f, "Error unpacking FPC payload: {}.", e),
             Self::Indexation(e) => write!(f, "Error unpacking indexation payload: {}.", e),
-            Self::InvalidKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
+            Self::InvalidPayloadKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
             Self::SaltDeclaration(e) => write!(f, "Error unpacking salt declaration payload: {}", e),
             Self::Transaction(e) => write!(f, "Error unpacking transaction payload: {}", e),
         }
@@ -153,7 +153,7 @@ impl From<TransactionUnpackError> for PayloadUnpackError {
 impl From<UnknownTagError<u32>> for PayloadUnpackError {
     fn from(error: UnknownTagError<u32>) -> Self {
         match error {
-            UnknownTagError(tag) => Self::InvalidKind(tag),
+            UnknownTagError(tag) => Self::InvalidPayloadKind(tag),
         }
     }
 }

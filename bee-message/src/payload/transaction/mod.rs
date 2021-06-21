@@ -6,7 +6,7 @@
 mod essence;
 mod transaction_id;
 
-use crate::{error::ValidationError, unlock::UnlockBlocks};
+use crate::{error::ValidationError, unlock::{UnlockBlockUnpackError, UnlockBlocks}};
 
 pub use essence::{
     TransactionEssence, TransactionEssenceBuilder, TransactionEssencePackError, TransactionEssenceUnpackError,
@@ -15,7 +15,7 @@ pub use transaction_id::{TransactionId, TRANSACTION_ID_LENGTH};
 
 use bee_packable::{
     error::{PackPrefixError, UnpackPrefixError},
-    PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker,
+    PackError, Packable, Packer, UnpackError, Unpacker,
 };
 use crypto::hashes::{blake2b::Blake2b256, Digest};
 
@@ -54,17 +54,17 @@ impl From<PackPrefixError<Infallible, u16>> for TransactionPackError {
 
 #[derive(Debug)]
 pub enum TransactionUnpackError {
-    InvalidUnlockBlockKind(u8),
     InvalidUnlockBlocksPrefix,
+    UnlockBlockUnpack(UnlockBlockUnpackError),
     TransactionEssence(Box<TransactionEssenceUnpackError>),
 }
 
 impl fmt::Display for TransactionUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidUnlockBlockKind(kind) => write!(f, "Invalid unlock block kind: {}", kind),
             Self::InvalidUnlockBlocksPrefix => write!(f, "Invalid unlock block vector prefix"),
-            Self::TransactionEssence(e) => write!(f, "{}", e),
+            Self::UnlockBlockUnpack(e) => write!(f, "Error unpacking unlock blocks: {}", e),
+            Self::TransactionEssence(e) => write!(f, "Error unpacking transaction essence: {}", e),
         }
     }
 }
@@ -75,12 +75,10 @@ impl From<TransactionEssenceUnpackError> for TransactionUnpackError {
     }
 }
 
-impl From<UnpackPrefixError<UnknownTagError<u8>, u16>> for TransactionUnpackError {
-    fn from(error: UnpackPrefixError<UnknownTagError<u8>, u16>) -> Self {
+impl From<UnpackPrefixError<UnlockBlockUnpackError, u16>> for TransactionUnpackError {
+    fn from(error: UnpackPrefixError<UnlockBlockUnpackError, u16>) -> Self {
         match error {
-            UnpackPrefixError::Packable(error) => match error {
-                UnknownTagError(tag) => Self::InvalidUnlockBlockKind(tag),
-            }
+            UnpackPrefixError::Packable(error) => Self::UnlockBlockUnpack(error),
             UnpackPrefixError::Prefix(_) => Self::InvalidUnlockBlocksPrefix,
         }
     }

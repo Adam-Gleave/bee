@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{payload::{PayloadPackError, PayloadUnpackError}, ValidationError};
+use crate::{ValidationError, parents::{ParentsPackError, ParentsUnpackError}, payload::{PayloadPackError, PayloadUnpackError}};
 
 use bee_packable::{
     error::{PackPrefixError, UnpackPrefixError},
@@ -12,25 +12,22 @@ use core::{convert::Infallible, fmt};
 
 #[derive(Debug)]
 pub enum MessagePackError {
-    InvalidParentsLength,
+    ParentsPackError(ParentsPackError),
     PayloadPackError(PayloadPackError),
 }
 
 impl fmt::Display for MessagePackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidParentsLength => write!(f, "Invalid parents vector length."),
+            Self::ParentsPackError(e) => write!(f, "{}", e),
             Self::PayloadPackError(e) => write!(f, "{}", e),
         }
     }
 }
 
-impl From<PackPrefixError<Infallible, u32>> for MessagePackError {
-    fn from(error: PackPrefixError<Infallible, u32>) -> Self {
-        match error {
-            PackPrefixError::Packable(e) => match e {},
-            PackPrefixError::Prefix(_) => Self::InvalidParentsLength,
-        }
+impl From<ParentsPackError> for MessagePackError {
+    fn from(error: ParentsPackError) -> Self {
+        Self::ParentsPackError(error)
     }
 }
 
@@ -43,8 +40,8 @@ impl From<PayloadPackError> for MessagePackError {
 #[derive(Debug)]
 pub enum MessageUnpackError {
     InvalidPayloadKind(u32),
-    InvalidParentsLength,
     InvalidOptionTag(u8),
+    ParentsUnpackError(ParentsUnpackError),
     PayloadUnpackError(PayloadUnpackError),
     ValidationError(ValidationError),
 }
@@ -62,19 +59,10 @@ impl fmt::Display for MessageUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidPayloadKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
-            Self::InvalidParentsLength => write!(f, "Invalid parents vector length."),
             Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1.", tag),
+            Self::ParentsUnpackError(e) => write!(f, "{}", e),
             Self::PayloadUnpackError(e) => write!(f, "{}", e),
 	        Self::ValidationError(e) => write!(f, "{}", e),
-        }
-    }
-}
-
-impl From<UnpackPrefixError<Infallible, u32>> for MessageUnpackError {
-    fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
-        match error {
-            UnpackPrefixError::Packable(e) => match e {},
-            UnpackPrefixError::Prefix(_) => Self::InvalidParentsLength,
         }
     }
 }
@@ -85,6 +73,12 @@ impl From<UnpackOptionError<PayloadUnpackError>> for MessageUnpackError {
             UnpackOptionError::Inner(e) => Self::PayloadUnpackError(e),
             UnpackOptionError::UnknownTag(tag) => Self::InvalidOptionTag(tag),
         }
+    }
+}
+
+impl From<ParentsUnpackError> for MessageUnpackError {
+    fn from(error: ParentsUnpackError) -> Self {
+        Self::ParentsUnpackError(error)
     }
 }
 

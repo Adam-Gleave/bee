@@ -3,12 +3,31 @@
 
 use crate::{constants::INPUT_OUTPUT_INDEX_RANGE, error::ValidationError};
 
-use bee_packable::Packable;
+use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
 
-use core::convert::TryFrom;
+use core::{fmt, convert::{Infallible, TryFrom}};
+
+#[derive(Debug)]
+pub enum ReferenceUnlockUnpackError {
+    ValidationError(ValidationError),
+}
+
+impl From<ValidationError> for ReferenceUnlockUnpackError {
+    fn from(error: ValidationError) -> Self {
+        Self::ValidationError(error)
+    }
+}
+
+impl fmt::Display for ReferenceUnlockUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ValidationError(e) => write!(f, "{}", e),
+        }
+    }
+}
 
 /// An [`UnlockBlock`](crate::unlock::UnlockBlock) that refers to another unlock block.
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Packable)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ReferenceUnlock(u16);
 
@@ -36,5 +55,26 @@ impl TryFrom<u16> for ReferenceUnlock {
 
     fn try_from(index: u16) -> Result<Self, Self::Error> {
         Self::new(index)
+    }
+}
+
+impl Packable for ReferenceUnlock {
+    type PackError = Infallible;
+    type UnpackError = ReferenceUnlockUnpackError;
+
+    fn packed_len(&self) -> usize {
+        self.0.packed_len()
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        self.0.pack(packer).map_err(PackError::infallible)?;
+
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let index = u16::unpack(unpacker).map_err(UnpackError::infallible)?;
+
+        Ok(ReferenceUnlock::new(index).map_err(|e| UnpackError::Packable(e.into()))?)
     }
 }

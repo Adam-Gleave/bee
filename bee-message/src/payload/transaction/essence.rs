@@ -1,7 +1,7 @@
 // Copyright 2020-2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY}, error::ValidationError, input::{Input, InputUnpackError}, output::Output, payload::{Payload, PayloadPackError, PayloadUnpackError}};
+use crate::{constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY}, error::ValidationError, input::{Input, InputUnpackError}, output::{Output, OutputUnpackError}, payload::{Payload, PayloadPackError, PayloadUnpackError}};
 
 use bee_ord::is_sorted;
 use bee_packable::{
@@ -44,6 +44,7 @@ impl From<Infallible> for TransactionEssencePackError {
 pub enum TransactionEssenceUnpackError {
     InputUnpack(InputUnpackError),
     InvalidInputPrefixLength,
+    OutputUnpack(OutputUnpackError),
     InvalidOutputKind(u8),
     InvalidOutputPrefixLength,
     InvalidOptionTag(u8),
@@ -55,6 +56,7 @@ impl fmt::Display for TransactionEssenceUnpackError {
         match self {
             Self::InputUnpack(e) => write!(f, "Error unpacking input: {}", e),
             Self::InvalidInputPrefixLength => write!(f, "Invalid input prefix length"),
+            Self::OutputUnpack(e) => write!(f, "Error unpacking output: {}", e),
             Self::InvalidOutputKind(kind) => write!(f, "Invalid output kind: {}", kind),
             Self::InvalidOutputPrefixLength => write!(f, "Invalid output prefix length"),
             Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1", tag),
@@ -79,6 +81,15 @@ impl From<UnpackPrefixError<InputUnpackError, u32>> for TransactionEssenceUnpack
         match error {
             UnpackPrefixError::Packable(error) => Self::InputUnpack(error),
             UnpackPrefixError::Prefix(_) => Self::InvalidInputPrefixLength,
+        }
+    }
+}
+
+impl From<UnpackPrefixError<OutputUnpackError, u32>> for TransactionEssenceUnpackError {
+    fn from(error: UnpackPrefixError<OutputUnpackError, u32>) -> Self {
+        match error {
+            UnpackPrefixError::Packable(error) => Self::OutputUnpack(error),
+            UnpackPrefixError::Prefix(_) => Self::InvalidOutputPrefixLength,
         }
     }
 }

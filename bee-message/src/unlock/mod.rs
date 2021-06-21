@@ -5,31 +5,58 @@ mod reference;
 
 pub use reference::ReferenceUnlock;
 
-use crate::{constants::UNLOCK_BLOCK_COUNT_RANGE, error::ValidationError, signature::SignatureUnlock};
-
-use bee_packable::{
-    error::{PackPrefixError, UnpackPrefixError},
-    Packable, UnknownTagError, VecPrefix,
+use crate::{
+    constants::UNLOCK_BLOCK_COUNT_RANGE, 
+    error::ValidationError,
+    signature::SignatureUnlock,
+    unlock::reference::ReferenceUnlockUnpackError,
 };
 
-use core::{convert::Infallible, ops::Deref};
+use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError, UnknownTagError, VecPrefix, error::{PackPrefixError, UnpackPrefixError}};
+
+use core::{fmt, convert::Infallible, ops::Deref};
 use std::collections::HashSet;
 
+#[derive(Debug)]
+pub enum UnlockBlockUnpackError {
+    InvalidUnlockBlockKind(u8),
+    InvalidSignatureUnlockKind(u8),
+    ReferenceUnlock(ReferenceUnlockUnpackError),
+}
+
+impl From<ReferenceUnlockUnpackError> for UnlockBlockUnpackError {
+    fn from(error: ReferenceUnlockUnpackError) -> Self {
+        Self::ReferenceUnlock(error)
+    }
+}
+
+impl From<UnknownTagError<u8>> for UnlockBlockUnpackError {
+    fn from(error: UnknownTagError<u8>) -> Self {
+        Self::InvalidSignatureUnlockKind(error.0)
+    }
+}
+
+impl fmt::Display for UnlockBlockUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidUnlockBlockKind(kind) => write!(f, "Invalid unlock block kind: {}", kind),
+            Self::InvalidSignatureUnlockKind(kind) => write!(f, "Invalid signature unlock kind: {}", kind),
+            Self::ReferenceUnlock(e) => write!(f, "Error unpacking ReferenceUnlock: {}", e),
+        }
+    }
+}
+
 /// Defines the mechanism by which a transaction input is authorized to be consumed.
-#[non_exhaustive]
-#[derive(Clone, Debug, Eq, PartialEq, Hash, Packable)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Serialize, serde::Deserialize),
     serde(tag = "type", content = "data")
 )]
-#[packable(tag_type = u8)]
 pub enum UnlockBlock {
     /// A signature unlock block.
-    #[packable(tag = 0)]
     Signature(SignatureUnlock),
     /// A reference unlock block.
-    #[packable(tag = 1)]
     Reference(ReferenceUnlock),
 }
 
@@ -55,11 +82,46 @@ impl From<ReferenceUnlock> for UnlockBlock {
     }
 }
 
+impl Packable for UnlockBlock {
+    type PackError = Infallible;
+    type UnpackError = UnlockBlockUnpackError;
+
+    fn packed_len(&self) -> usize {
+        0u8.packed_len() + match self {
+            Self::Signature(signature) => signature.packed_len(),
+            Self::Reference(reference) => reference.packed_len(),
+        }
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        self.kind().pack(packer).map_err(PackError::infallible)?;
+
+        match self {
+            Self::Signature(signature) => signature.pack(packer).map_err(PackError::infallible)?,
+            Self::Reference(reference) => reference.pack(packer).map_err(PackError::infallible)?,
+        }
+
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let kind = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
+
+        let variant = match kind {
+            SignatureUnlock::KIND => Self::Signature(SignatureUnlock::unpack(unpacker).map_err(UnpackError::coerce)?),
+            ReferenceUnlock::KIND => Self::Reference(ReferenceUnlock::unpack(unpacker).map_err(UnpackError::coerce)?),
+            tag => Err(UnpackError::Packable(UnlockBlockUnpackError::InvalidUnlockBlockKind(tag)))?,
+        };
+
+        Ok(variant)
+    }
+}
+
 /// A collection of unlock blocks.
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[packable(pack_error = PackPrefixError<Infallible, u16>)]
-#[packable(unpack_error = UnpackPrefixError<UnknownTagError<u8>, u16>)]
+#[packable(unpack_error = UnpackPrefixError<UnlockBlockUnpackError, u16>)]
 pub struct UnlockBlocks {
     #[packable(wrapper = VecPrefix<UnlockBlock, u16>)]
     inner: Vec<UnlockBlock>,
