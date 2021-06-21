@@ -5,6 +5,8 @@ mod output_id;
 mod signature_locked_dust_allowance;
 mod signature_locked_single;
 
+pub use crate::ValidationError;
+
 pub use output_id::{OutputId, OutputIdUnpackError, OUTPUT_ID_LENGTH};
 pub use signature_locked_dust_allowance::{
     SignatureLockedDustAllowanceOutput, 
@@ -28,6 +30,7 @@ pub enum OutputUnpackError {
     InvalidOutputKind(u8),
     SignatureLockedDustAllowance(SignatureLockedDustAllowanceOutputUnpackError),
     SignatureLockedSingle(SignatureLockedSingleOutputUnpackError),
+    ValidationError(ValidationError),
 }
 
 impl From<UnknownTagError<u8>> for OutputUnpackError {
@@ -38,13 +41,19 @@ impl From<UnknownTagError<u8>> for OutputUnpackError {
 
 impl From<SignatureLockedDustAllowanceOutputUnpackError> for OutputUnpackError {
     fn from(error: SignatureLockedDustAllowanceOutputUnpackError) -> Self {
-        Self::SignatureLockedDustAllowance(error)
+        match error {
+            SignatureLockedDustAllowanceOutputUnpackError::ValidationError(error) => Self::ValidationError(error),
+            error => Self::SignatureLockedDustAllowance(error),
+        }
     }
 }
 
 impl From<SignatureLockedSingleOutputUnpackError> for OutputUnpackError {
     fn from(error: SignatureLockedSingleOutputUnpackError) -> Self {
-        Self::SignatureLockedSingle(error)
+        match error {
+            SignatureLockedSingleOutputUnpackError::ValidationError(error) => Self::ValidationError(error),
+            error => Self::SignatureLockedSingle(error),
+        }
     }
 }
 
@@ -57,6 +66,7 @@ impl fmt::Display for OutputUnpackError {
                 write!(f, "Error unpacking SignatureLockedDustAllowanceOutput: {}", e)
             }
             Self::SignatureLockedSingle(e) => write!(f, "Error unpacking SignatureLockedSingleOutput: {}", e),
+            Self::ValidationError(e) => write!(f, "{}", e),
         }
     }
 }

@@ -55,30 +55,38 @@ impl From<PackPrefixError<Infallible, u16>> for TransactionPackError {
 #[derive(Debug)]
 pub enum TransactionUnpackError {
     InvalidUnlockBlocksPrefix,
-    UnlockBlockUnpack(UnlockBlockUnpackError),
     TransactionEssence(Box<TransactionEssenceUnpackError>),
+    UnlockBlockUnpack(UnlockBlockUnpackError),
+    ValidationError(ValidationError),
 }
 
 impl fmt::Display for TransactionUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidUnlockBlocksPrefix => write!(f, "Invalid unlock block vector prefix"),
-            Self::UnlockBlockUnpack(e) => write!(f, "Error unpacking unlock blocks: {}", e),
             Self::TransactionEssence(e) => write!(f, "Error unpacking transaction essence: {}", e),
+            Self::UnlockBlockUnpack(e) => write!(f, "Error unpacking unlock blocks: {}", e),
+            Self::ValidationError(e) => write!(f, "{}", e),
         }
     }
 }
 
 impl From<TransactionEssenceUnpackError> for TransactionUnpackError {
     fn from(error: TransactionEssenceUnpackError) -> Self {
-        Self::TransactionEssence(Box::new(error))
+        match error {
+            TransactionEssenceUnpackError::ValidationError(error) => Self::ValidationError(error),
+            error => Self::TransactionEssence(Box::new(error)),
+        }
     }
 }
 
 impl From<UnpackPrefixError<UnlockBlockUnpackError, u16>> for TransactionUnpackError {
     fn from(error: UnpackPrefixError<UnlockBlockUnpackError, u16>) -> Self {
         match error {
-            UnpackPrefixError::Packable(error) => Self::UnlockBlockUnpack(error),
+            UnpackPrefixError::Packable(error) => match error {
+                UnlockBlockUnpackError::ValidationError(error) => Self::ValidationError(error),
+                error => Self::UnlockBlockUnpack(error),
+            }
             UnpackPrefixError::Prefix(_) => Self::InvalidUnlockBlocksPrefix,
         }
     }

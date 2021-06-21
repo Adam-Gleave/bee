@@ -10,7 +10,7 @@ pub mod indexation;
 pub mod salt_declaration;
 pub mod transaction;
 
-use std::convert::Infallible;
+use crate::ValidationError;
 
 use data::{DataPayload, DataPackError, DataUnpackError};
 use drng::{ApplicationMessagePayload, DkgPayload, DkgPackError, DkgUnpackError, BeaconPayload, CollectiveBeaconPayload};
@@ -22,7 +22,7 @@ use transaction::{TransactionPayload, TransactionPackError, TransactionUnpackErr
 use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker};
 
 use alloc::boxed::Box;
-use core::fmt;
+use core::{fmt, convert::Infallible};
 
 #[derive(Debug)]
 pub enum PayloadPackError {
@@ -98,6 +98,7 @@ pub enum PayloadUnpackError {
     InvalidPayloadKind(u32),
     SaltDeclaration(SaltDeclarationUnpackError),
     Transaction(TransactionUnpackError),
+    ValidationError(ValidationError),
 }
 
 impl fmt::Display for PayloadUnpackError {
@@ -110,6 +111,7 @@ impl fmt::Display for PayloadUnpackError {
             Self::InvalidPayloadKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
             Self::SaltDeclaration(e) => write!(f, "Error unpacking salt declaration payload: {}", e),
             Self::Transaction(e) => write!(f, "Error unpacking transaction payload: {}", e),
+            Self::ValidationError(e) => write!(f, "{}", e),
         }
     }
 }
@@ -134,7 +136,10 @@ impl From<FpcUnpackError> for PayloadUnpackError {
 
 impl From<IndexationUnpackError> for PayloadUnpackError {
     fn from(error: IndexationUnpackError) -> Self {
-        Self::Indexation(error)
+        match error {
+            IndexationUnpackError::ValidationError(error) => Self::ValidationError(error),
+            error => Self::Indexation(error),
+        }
     }
 }
 
@@ -146,7 +151,10 @@ impl From<SaltDeclarationUnpackError> for PayloadUnpackError {
 
 impl From<TransactionUnpackError> for PayloadUnpackError {
     fn from(error: TransactionUnpackError) -> Self {
-        Self::Transaction(error)
+        match error {
+            TransactionUnpackError::ValidationError(error) => Self::ValidationError(error),
+            error => Self::Transaction(error),
+        }
     }
 }
 

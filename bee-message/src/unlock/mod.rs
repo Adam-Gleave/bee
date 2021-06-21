@@ -21,12 +21,14 @@ use std::collections::HashSet;
 pub enum UnlockBlockUnpackError {
     InvalidUnlockBlockKind(u8),
     InvalidSignatureUnlockKind(u8),
-    ReferenceUnlock(ReferenceUnlockUnpackError),
+    ValidationError(ValidationError),
 }
 
 impl From<ReferenceUnlockUnpackError> for UnlockBlockUnpackError {
     fn from(error: ReferenceUnlockUnpackError) -> Self {
-        Self::ReferenceUnlock(error)
+        match error {
+            ReferenceUnlockUnpackError::ValidationError(error) => Self::ValidationError(error),
+        }
     }
 }
 
@@ -41,7 +43,7 @@ impl fmt::Display for UnlockBlockUnpackError {
         match self {
             Self::InvalidUnlockBlockKind(kind) => write!(f, "Invalid unlock block kind: {}", kind),
             Self::InvalidSignatureUnlockKind(kind) => write!(f, "Invalid signature unlock kind: {}", kind),
-            Self::ReferenceUnlock(e) => write!(f, "Error unpacking ReferenceUnlock: {}", e),
+            Self::ValidationError(e) => write!(f, "{}", e),
         }
     }
 }

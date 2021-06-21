@@ -49,6 +49,7 @@ pub enum TransactionEssenceUnpackError {
     InvalidOutputPrefixLength,
     InvalidOptionTag(u8),
     OptionalPayloadUnpack(PayloadUnpackError),
+    ValidationError(ValidationError),
 }
 
 impl fmt::Display for TransactionEssenceUnpackError {
@@ -61,6 +62,7 @@ impl fmt::Display for TransactionEssenceUnpackError {
             Self::InvalidOutputPrefixLength => write!(f, "Invalid output prefix length"),
             Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1", tag),
             Self::OptionalPayloadUnpack(e) => write!(f, "Error unpacking payload: {}", e),
+            Self::ValidationError(e) => write!(f, "{}", e),
         }
     }
 }
@@ -79,7 +81,10 @@ impl From<UnpackPrefixError<UnknownTagError<u8>, u32>> for TransactionEssenceUnp
 impl From<UnpackPrefixError<InputUnpackError, u32>> for TransactionEssenceUnpackError {
     fn from(error: UnpackPrefixError<InputUnpackError, u32>) -> Self {
         match error {
-            UnpackPrefixError::Packable(error) => Self::InputUnpack(error),
+            UnpackPrefixError::Packable(error) => match error {
+                InputUnpackError::ValidationError(error) => Self::ValidationError(error),
+                error => Self::InputUnpack(error),
+            }
             UnpackPrefixError::Prefix(_) => Self::InvalidInputPrefixLength,
         }
     }
@@ -88,7 +93,10 @@ impl From<UnpackPrefixError<InputUnpackError, u32>> for TransactionEssenceUnpack
 impl From<UnpackPrefixError<OutputUnpackError, u32>> for TransactionEssenceUnpackError {
     fn from(error: UnpackPrefixError<OutputUnpackError, u32>) -> Self {
         match error {
-            UnpackPrefixError::Packable(error) => Self::OutputUnpack(error),
+            UnpackPrefixError::Packable(error) => match error {
+                OutputUnpackError::ValidationError(error) => Self::ValidationError(error),
+                error => Self::OutputUnpack(error),
+            }
             UnpackPrefixError::Prefix(_) => Self::InvalidOutputPrefixLength,
         }
     }

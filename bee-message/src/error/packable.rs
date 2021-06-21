@@ -3,10 +3,7 @@
 
 use crate::{ValidationError, parents::{ParentsPackError, ParentsUnpackError}, payload::{PayloadPackError, PayloadUnpackError}};
 
-use bee_packable::{
-    error::{PackPrefixError, UnpackPrefixError},
-    UnpackOptionError,
-};
+use bee_packable::{UnpackOptionError};
 
 use core::{convert::Infallible, fmt};
 
@@ -70,7 +67,10 @@ impl fmt::Display for MessageUnpackError {
 impl From<UnpackOptionError<PayloadUnpackError>> for MessageUnpackError {
     fn from(error: UnpackOptionError<PayloadUnpackError>) -> Self {
         match error {
-            UnpackOptionError::Inner(e) => Self::PayloadUnpackError(e),
+            UnpackOptionError::Inner(error) => match error {
+                PayloadUnpackError::ValidationError(error) => Self::ValidationError(error),
+                error => Self::PayloadUnpackError(error),
+            }
             UnpackOptionError::UnknownTag(tag) => Self::InvalidOptionTag(tag),
         }
     }
@@ -78,7 +78,10 @@ impl From<UnpackOptionError<PayloadUnpackError>> for MessageUnpackError {
 
 impl From<ParentsUnpackError> for MessageUnpackError {
     fn from(error: ParentsUnpackError) -> Self {
-        Self::ParentsUnpackError(error)
+        match error {
+            ParentsUnpackError::ValidationError(error) => Self::ValidationError(error),
+            error => Self::ParentsUnpackError(error),
+        }
     }
 }
 

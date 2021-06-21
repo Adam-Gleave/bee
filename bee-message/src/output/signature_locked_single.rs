@@ -13,18 +13,18 @@ pub const SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT: RangeInclusive<u64> = 1..=IOTA_
 #[derive(Debug)]
 pub enum SignatureLockedSingleOutputUnpackError {
     InvalidAddressKind(u8),
-    Validation(ValidationError),
+    ValidationError(ValidationError),
 }
 
 impl From<UnknownTagError<u8>> for SignatureLockedSingleOutputUnpackError {
     fn from(error: UnknownTagError<u8>) -> Self {
-        Self::InvalidAddressKind(error.0)   
+        Self::InvalidAddressKind(error.0) 
     }
 }
 
 impl From<ValidationError> for SignatureLockedSingleOutputUnpackError {
     fn from(error: ValidationError) -> Self {
-        Self::Validation(error)
+        Self::ValidationError(error)
     }
 }
 
@@ -32,7 +32,7 @@ impl fmt::Display for SignatureLockedSingleOutputUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidAddressKind(kind) => write!(f, "Invalid address kind: {}", kind),
-            Self::Validation(e) => write!(f, "{}", e),
+            Self::ValidationError(e) => write!(f, "{}", e),
         }
     }
 }
