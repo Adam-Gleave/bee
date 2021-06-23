@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY}, error::ValidationError, input::{Input, InputUnpackError}, output::{Output, OutputUnpackError}, payload::{Payload, PayloadPackError, PayloadUnpackError}};
+use crate::{constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY}, error::ValidationError, input::{Input, InputUnpackError}, output::{Output, OutputUnpackError}, payload::{Payload, PayloadPackError, PayloadUnpackError}, prelude::{SignatureLockedDustAllowanceOutput, SignatureLockedSingleOutput}};
 
 use bee_ord::is_sorted;
 use bee_packable::{
@@ -117,6 +117,12 @@ impl From<UnpackOptionError<PayloadUnpackError>> for TransactionEssenceUnpackErr
     }
 }
 
+impl From<ValidationError> for TransactionEssenceUnpackError {
+    fn from(error: ValidationError) -> Self {
+        Self::ValidationError(error)
+    }
+}
+
 impl From<Infallible> for TransactionEssenceUnpackError {
     fn from(err: Infallible) -> Self {
         match err {}
@@ -216,9 +222,27 @@ impl Packable for TransactionEssence {
         let timestamp = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
         let access_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
         let consensus_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
-        let inputs = VecPrefix::<Input, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
-        let outputs = VecPrefix::<Output, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+
+        // Inputs syntactical validation
+        let inputs: Vec<Input> = VecPrefix::<Input, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        validate_input_count(inputs.len()).map_err(|e| UnpackError::Packable(e.into()))?;
+        validate_inputs_unique_utxos(&inputs).map_err(|e| UnpackError::Packable(e.into()))?;
+        validate_inputs_sorted(&inputs).map_err(|e| UnpackError::Packable(e.into()))?;
+
+        // Outputs syntactical validation
+        let outputs: Vec<Output> = VecPrefix::<Output, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        validate_output_count(outputs.len()).map_err(|e| UnpackError::Packable(e.into()))?;
+        validate_output_total(
+            outputs.iter().try_fold(0u64, |total, output| {
+                let amount = validate_output_variant(output, &outputs)?;
+                total.checked_add(amount)
+                    .ok_or_else(|| ValidationError::InvalidAccumulatedOutput(total as u128 + amount as u128))
+            }).map_err(|e| UnpackError::Packable(e.into()))?
+        ).map_err(|e| UnpackError::Packable(e.into()))?;
+        validate_outputs_sorted(&outputs).map_err(|e| UnpackError::Packable(e.into()))?;
+
         let payload = Option::<Payload>::unpack(unpacker).map_err(UnpackError::coerce)?;
+        validate_payload(&payload).map_err(|e| UnpackError::Packable(e.into()))?;
 
         Ok(Self {
             version,
@@ -315,84 +339,23 @@ impl TransactionEssenceBuilder {
             .consensus_pledge_id
             .ok_or(ValidationError::MissingField("consensus_pledge_id"))?;
 
-        if !INPUT_OUTPUT_COUNT_RANGE.contains(&self.inputs.len()) {
-            return Err(ValidationError::InvalidInputCount(self.inputs.len()));
-        }
+        // Inputs syntactical validation
+        validate_input_count(self.inputs.len())?;
+        validate_inputs_unique_utxos(&self.inputs)?;
+        validate_inputs_sorted(&self.inputs)?;
 
-        if !INPUT_OUTPUT_COUNT_RANGE.contains(&self.outputs.len()) {
-            return Err(ValidationError::InvalidOutputCount(self.outputs.len()));
-        }
+        // Outputs syntactical validation
+        validate_output_count(self.outputs.len())?;
+        validate_output_total(
+            self.outputs.iter().try_fold(0u64, |total, output| {
+                let amount = validate_output_variant(output, &self.outputs)?;
+                total.checked_add(amount)
+                    .ok_or_else(|| ValidationError::InvalidAccumulatedOutput(total as u128 + amount as u128))
+            })?
+        )?;
+        validate_outputs_sorted(&self.outputs)?;
 
-        if !matches!(self.payload, None | Some(Payload::Indexation(_))) {
-            // Unwrap is fine because we just checked that the Option is not None.
-            return Err(ValidationError::InvalidPayloadKind(self.payload.unwrap().kind()));
-        }
-
-        for input in self.inputs.iter() {
-            match input {
-                Input::Utxo(u) => {
-                    if self.inputs.iter().filter(|i| *i == input).count() > 1 {
-                        return Err(ValidationError::DuplicateUtxo(u.clone()));
-                    }
-                }
-            }
-        }
-
-        // Inputs must be lexicographically sorted in their serialised forms.
-        if !is_sorted(self.inputs.iter().map(Packable::pack_to_vec)) {
-            return Err(ValidationError::TransactionInputsNotSorted);
-        }
-
-        let mut total: u64 = 0;
-
-        for output in self.outputs.iter() {
-            match output {
-                Output::SignatureLockedSingle(single) => {
-                    // The addresses must be unique in the set of SignatureLockedSingleOutputs.
-                    if self
-                        .outputs
-                        .iter()
-                        .filter(|o| matches!(o, Output::SignatureLockedSingle(s) if s.address() == single.address()))
-                        .count()
-                        > 1
-                    {
-                        return Err(ValidationError::DuplicateAddress(*single.address()));
-                    }
-
-                    total = total
-                        .checked_add(single.amount())
-                        .ok_or_else(|| ValidationError::InvalidAccumulatedOutput((total + single.amount()) as u128))?;
-                }
-                Output::SignatureLockedDustAllowance(dust_allowance) => {
-                    // The addresses must be unique in the set of SignatureLockedDustAllowanceOutputs.
-                    if self
-                        .outputs
-                        .iter()
-                        .filter(
-                            |o| matches!(o, Output::SignatureLockedDustAllowance(s) if s.address() == dust_allowance.address()),
-                        )
-                        .count()
-                        > 1
-                    {
-                        return Err(ValidationError::DuplicateAddress(*dust_allowance.address()));
-                    }
-
-                    total = total.checked_add(dust_allowance.amount()).ok_or_else(|| {
-                        ValidationError::InvalidAccumulatedOutput(total as u128 + dust_allowance.amount() as u128)
-                    })?;
-                }
-            }
-
-            // Accumulated output balance must not exceed the total supply of tokens.
-            if total > IOTA_SUPPLY {
-                return Err(ValidationError::InvalidAccumulatedOutput(total as u128));
-            }
-        }
-
-        // Outputs must be lexicographically sorted in their serialised forms.
-        if !is_sorted(self.outputs.iter().map(Packable::pack_to_vec)) {
-            return Err(ValidationError::TransactionOutputsNotSorted);
-        }
+        validate_payload(&self.payload)?;
 
         Ok(TransactionEssence {
             version,
@@ -403,5 +366,104 @@ impl TransactionEssenceBuilder {
             outputs: self.outputs.into(),
             payload: self.payload,
         })
+    }
+}
+
+fn validate_input_count(len: usize) -> Result<(), ValidationError> {
+    if !INPUT_OUTPUT_COUNT_RANGE.contains(&len) {
+        Err(ValidationError::InvalidInputCount(len))
+    } else {
+        Ok(())
+    }
+}
+
+fn validate_inputs_unique_utxos(inputs: &[Input]) -> Result<(), ValidationError> {
+    for input in inputs.iter() {
+        match input {
+            Input::Utxo(u) => {
+                if inputs.iter().filter(|i| *i == input).count() > 1 {
+                    return Err(ValidationError::DuplicateUtxo(u.clone()));
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn validate_inputs_sorted(inputs: &[Input]) -> Result<(), ValidationError> {
+    if !is_sorted(inputs.iter().map(Packable::pack_to_vec)) {
+        Err(ValidationError::TransactionInputsNotSorted)
+    } else {
+        Ok(())
+    }
+}
+
+fn validate_output_count(len: usize) -> Result<(), ValidationError> {
+    if !INPUT_OUTPUT_COUNT_RANGE.contains(&len) {
+        Err(ValidationError::InvalidOutputCount(len))
+    } else {
+        Ok(())
+    }
+}
+
+fn validate_output_variant(output: &Output, outputs: &[Output]) -> Result<u64, ValidationError> {
+    match output {
+        Output::SignatureLockedSingle(single) => validate_single(single, outputs),
+        Output::SignatureLockedDustAllowance(dust_allowance) => validate_dust_allowance(dust_allowance, outputs),
+    }
+}
+
+fn validate_single(single: &SignatureLockedSingleOutput, outputs: &[Output]) -> Result<u64, ValidationError> {
+    if outputs
+        .iter()
+        .filter(|o| matches!(o, Output::SignatureLockedSingle(s) if s.address() == single.address()))
+        .count()
+        > 1
+    {
+        Err(ValidationError::DuplicateAddress(*single.address()))
+    } else {
+        Ok(single.amount())
+    }
+}
+
+fn validate_dust_allowance(
+    dust_allowance: &SignatureLockedDustAllowanceOutput, 
+    outputs: &[Output]
+) -> Result<u64, ValidationError> {
+    if outputs
+        .iter()
+        .filter(|o| matches!(o, Output::SignatureLockedDustAllowance(s) if s.address() == dust_allowance.address()))
+        .count()
+        > 1
+    {
+        Err(ValidationError::DuplicateAddress(*dust_allowance.address()))
+    } else {
+        Ok(dust_allowance.amount())
+    }
+}
+
+fn validate_output_total(total: u64) -> Result<(), ValidationError> {
+    if total > IOTA_SUPPLY {
+        Err(ValidationError::InvalidAccumulatedOutput(total as u128))
+    } else {
+        Ok(())
+    }
+}
+
+fn validate_outputs_sorted(outputs: &[Output]) -> Result<(), ValidationError> {
+    if !is_sorted(outputs.iter().map(Packable::pack_to_vec)) {
+        Err(ValidationError::TransactionOutputsNotSorted)
+    } else {
+        Ok(())
+    }
+}
+
+fn validate_payload(payload: &Option<Payload>) -> Result<(), ValidationError> {
+    if !matches!(*payload, None | Some(Payload::Indexation(_))) {
+        // Unwrap is fine because we just checked that the Option is not None.
+        Err(ValidationError::InvalidPayloadKind(payload.as_ref().unwrap().kind()))
+    } else {
+        Ok(())
     }
 }
