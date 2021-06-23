@@ -92,6 +92,12 @@ impl From<UnpackPrefixError<UnlockBlockUnpackError, u16>> for TransactionUnpackE
     }
 }
 
+impl From<ValidationError> for TransactionUnpackError {
+    fn from(error: ValidationError) -> Self {
+        Self::ValidationError(error)
+    }
+}
+
 /// A transaction to move funds.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -151,6 +157,8 @@ impl Packable for TransactionPayload {
         let essence = TransactionEssence::unpack(unpacker).map_err(UnpackError::coerce)?;
         let unlock_blocks = UnlockBlocks::unpack(unpacker).map_err(UnpackError::coerce)?;
 
+        validate_unlock_block_count(&essence, &unlock_blocks).map_err(|e| UnpackError::Packable(e.into()))?;
+
         Ok(Self { essence, unlock_blocks })
     }
 }
@@ -187,13 +195,22 @@ impl TransactionPayloadBuilder {
             .unlock_blocks
             .ok_or(ValidationError::MissingField("unlock_blocks"))?;
 
-        if essence.inputs().len() != unlock_blocks.len() {
-            return Err(ValidationError::InputUnlockBlockCountMismatch(
-                essence.inputs().len(),
-                unlock_blocks.len(),
-            ));
-        }
+        validate_unlock_block_count(&essence, &unlock_blocks)?;
 
         Ok(TransactionPayload { essence, unlock_blocks })
+    }
+}
+
+fn validate_unlock_block_count(
+    essence: &TransactionEssence, 
+    unlock_blocks: &UnlockBlocks,
+) -> Result<(), ValidationError> {
+    if essence.inputs().len() != unlock_blocks.len() {
+        Err(ValidationError::InputUnlockBlockCountMismatch(
+            essence.inputs().len(),
+            unlock_blocks.len(),
+        ))
+    } else {
+        Ok(())
     }
 }
