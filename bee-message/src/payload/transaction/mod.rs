@@ -60,6 +60,8 @@ pub enum TransactionUnpackError {
     ValidationError(ValidationError),
 }
 
+impl_wrapped_variant!(TransactionUnpackError, ValidationError, TransactionUnpackError::ValidationError);
+
 impl fmt::Display for TransactionUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -89,12 +91,6 @@ impl From<UnpackPrefixError<UnlockBlockUnpackError, u16>> for TransactionUnpackE
             }
             UnpackPrefixError::Prefix(_) => Self::InvalidUnlockBlocksPrefix,
         }
-    }
-}
-
-impl From<ValidationError> for TransactionUnpackError {
-    fn from(error: ValidationError) -> Self {
-        Self::ValidationError(error)
     }
 }
 

@@ -20,11 +20,7 @@ pub enum OutputIdUnpackError {
     ValidationError(ValidationError),
 }
 
-impl From<ValidationError> for OutputIdUnpackError {
-    fn from(error: ValidationError) -> Self {
-        Self::ValidationError(error)
-    }
-}
+impl_wrapped_variant!(OutputIdUnpackError, ValidationError, OutputIdUnpackError::ValidationError);
 
 impl fmt::Display for OutputIdUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

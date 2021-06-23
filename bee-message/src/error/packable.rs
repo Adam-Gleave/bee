@@ -13,24 +13,15 @@ pub enum MessagePackError {
     PayloadPackError(PayloadPackError),
 }
 
+impl_wrapped_variant!(MessagePackError, ParentsPackError, MessagePackError::ParentsPackError);
+impl_wrapped_variant!(MessagePackError, PayloadPackError, MessagePackError::PayloadPackError);
+
 impl fmt::Display for MessagePackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::ParentsPackError(e) => write!(f, "{}", e),
             Self::PayloadPackError(e) => write!(f, "{}", e),
         }
-    }
-}
-
-impl From<ParentsPackError> for MessagePackError {
-    fn from(error: ParentsPackError) -> Self {
-        Self::ParentsPackError(error)
-    }
-}
-
-impl From<PayloadPackError> for MessagePackError {
-    fn from(error: PayloadPackError) -> Self {
-        Self::PayloadPackError(error)
     }
 }
 
@@ -43,23 +34,13 @@ pub enum MessageUnpackError {
     ValidationError(ValidationError),
 }
 
+impl_wrapped_variant!(MessageUnpackError, ValidationError, MessageUnpackError::ValidationError);
+
 impl MessageUnpackError {
     fn validation_error(&self) -> Option<&ValidationError> {
         match self {
             Self::ValidationError(e) => Some(e),
             _ => None,
-        }
-    }
-}
-
-impl fmt::Display for MessageUnpackError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidPayloadKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
-            Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1.", tag),
-            Self::ParentsUnpackError(e) => write!(f, "{}", e),
-            Self::PayloadUnpackError(e) => write!(f, "{}", e),
-	        Self::ValidationError(e) => write!(f, "{}", e),
         }
     }
 }
@@ -85,14 +66,21 @@ impl From<ParentsUnpackError> for MessageUnpackError {
     }
 }
 
-impl From<ValidationError> for MessageUnpackError {
-    fn from(error: ValidationError) -> Self {
-        Self::ValidationError(error)
-    }
-}
-
 impl From<Infallible> for MessageUnpackError {
     fn from(error: Infallible) -> Self {
         match error {}
     }
 }
+
+impl fmt::Display for MessageUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidPayloadKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
+            Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1.", tag),
+            Self::ParentsUnpackError(e) => write!(f, "{}", e),
+            Self::PayloadUnpackError(e) => write!(f, "{}", e),
+	        Self::ValidationError(e) => write!(f, "{}", e),
+        }
+    }
+}
+

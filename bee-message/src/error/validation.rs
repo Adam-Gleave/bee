@@ -43,6 +43,8 @@ pub enum ValidationError {
     TransactionOutputsNotSorted,
 }
 
+impl_wrapped_variant!(ValidationError, CryptoError, ValidationError::CryptoError);
+
 impl fmt::Display for ValidationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -101,11 +103,5 @@ impl fmt::Display for ValidationError {
                 write!(f, "Transaction outputs are not sorted.")
             }
         }
-    }
-}
-
-impl From<CryptoError> for ValidationError {
-    fn from(error: CryptoError) -> Self {
-        Self::CryptoError(error)
     }
 }

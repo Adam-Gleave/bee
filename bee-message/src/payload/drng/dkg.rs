@@ -225,7 +225,7 @@ pub struct DkgPayloadBuilder {
 
 impl DkgPayloadBuilder {
     pub fn new() -> Self {
-        Default::default()
+        Self::default()
     }
 
     pub fn with_version(mut self, version: u8) -> Self {

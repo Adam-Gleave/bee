@@ -62,6 +62,9 @@ pub enum UnlockBlock {
     Reference(ReferenceUnlock),
 }
 
+impl_wrapped_variant!(UnlockBlock, SignatureUnlock, UnlockBlock::Signature);
+impl_wrapped_variant!(UnlockBlock, ReferenceUnlock, UnlockBlock::Reference);
+
 impl UnlockBlock {
     /// Returns the unlock kind of an `UnlockBlock`.
     pub fn kind(&self) -> u8 {
@@ -69,18 +72,6 @@ impl UnlockBlock {
             Self::Signature(_) => SignatureUnlock::KIND,
             Self::Reference(_) => ReferenceUnlock::KIND,
         }
-    }
-}
-
-impl From<SignatureUnlock> for UnlockBlock {
-    fn from(signature: SignatureUnlock) -> Self {
-        Self::Signature(signature)
-    }
-}
-
-impl From<ReferenceUnlock> for UnlockBlock {
-    fn from(reference: ReferenceUnlock) -> Self {
-        Self::Reference(reference)
     }
 }
 

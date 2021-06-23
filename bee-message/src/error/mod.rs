@@ -16,6 +16,10 @@ pub enum Error {
     ValidationError(ValidationError),
 }
 
+impl_wrapped_variant!(Error, MessagePackError, Error::PackError);
+impl_wrapped_variant!(Error, MessageUnpackError, Error::UnpackError);
+impl_wrapped_variant!(Error, ValidationError, Error::ValidationError);
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -23,23 +27,5 @@ impl fmt::Display for Error {
             Self::UnpackError(e) => write!(f, "{}", e),
             Self::ValidationError(e) => write!(f, "Validation error: {}", e),
         }
-    }
-}
-
-impl From<MessagePackError> for Error {
-    fn from(error: MessagePackError) -> Self {
-        Self::PackError(error)
-    }
-}
-
-impl From<MessageUnpackError> for Error {
-    fn from(error: MessageUnpackError) -> Self {
-        Self::UnpackError(error)
-    }
-}
-
-impl From<ValidationError> for Error {
-    fn from(error: ValidationError) -> Self {
-        Self::ValidationError(error)
     }
 }

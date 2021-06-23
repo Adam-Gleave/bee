@@ -16,15 +16,15 @@ pub enum SignatureLockedSingleOutputUnpackError {
     ValidationError(ValidationError),
 }
 
+impl_wrapped_variant!(
+    SignatureLockedSingleOutputUnpackError, 
+    ValidationError, 
+    SignatureLockedSingleOutputUnpackError::ValidationError
+);
+
 impl From<UnknownTagError<u8>> for SignatureLockedSingleOutputUnpackError {
     fn from(error: UnknownTagError<u8>) -> Self {
         Self::InvalidAddressKind(error.0) 
-    }
-}
-
-impl From<ValidationError> for SignatureLockedSingleOutputUnpackError {
-    fn from(error: ValidationError) -> Self {
-        Self::ValidationError(error)
     }
 }
 

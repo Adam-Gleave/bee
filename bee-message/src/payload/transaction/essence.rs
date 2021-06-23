@@ -20,23 +20,19 @@ pub enum TransactionEssencePackError {
     OptionalPayload(PayloadPackError),
 }
 
+impl_wrapped_variant!(TransactionEssencePackError, PayloadPackError, TransactionEssencePackError::OptionalPayload);
+
+impl From<Infallible> for TransactionEssencePackError {
+    fn from(error: Infallible) -> Self {
+        match error {}
+    }
+}
+
 impl fmt::Display for TransactionEssencePackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::OptionalPayload(e) => write!(f, "Error packing payload: {}", e),
         }
-    }
-}
-
-impl From<PayloadPackError> for TransactionEssencePackError {
-    fn from(error: PayloadPackError) -> Self {
-        Self::OptionalPayload(error)
-    }
-}
-
-impl From<Infallible> for TransactionEssencePackError {
-    fn from(error: Infallible) -> Self {
-        match error {}
     }
 }
 
@@ -51,6 +47,14 @@ pub enum TransactionEssenceUnpackError {
     OptionalPayloadUnpack(PayloadUnpackError),
     ValidationError(ValidationError),
 }
+
+impl_wrapped_variant!(
+    TransactionEssenceUnpackError, 
+    PayloadUnpackError, 
+    TransactionEssenceUnpackError::OptionalPayloadUnpack
+);
+
+impl_wrapped_variant!(TransactionEssenceUnpackError, ValidationError, TransactionEssenceUnpackError::ValidationError);
 
 impl fmt::Display for TransactionEssenceUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -102,24 +106,12 @@ impl From<UnpackPrefixError<OutputUnpackError, u32>> for TransactionEssenceUnpac
     }
 }
 
-impl From<PayloadUnpackError> for TransactionEssenceUnpackError {
-    fn from(error: PayloadUnpackError) -> Self {
-        Self::OptionalPayloadUnpack(error)
-    }
-}
-
 impl From<UnpackOptionError<PayloadUnpackError>> for TransactionEssenceUnpackError {
     fn from(error: UnpackOptionError<PayloadUnpackError>) -> Self {
         match error {
             UnpackOptionError::Inner(error) => Self::OptionalPayloadUnpack(error),
             UnpackOptionError::UnknownTag(tag) => Self::InvalidOptionTag(tag),
         }
-    }
-}
-
-impl From<ValidationError> for TransactionEssenceUnpackError {
-    fn from(error: ValidationError) -> Self {
-        Self::ValidationError(error)
     }
 }
 

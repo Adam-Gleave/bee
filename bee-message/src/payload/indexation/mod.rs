@@ -44,18 +44,14 @@ pub enum IndexationUnpackError {
     ValidationError(ValidationError),
 }
 
+impl_wrapped_variant!(IndexationUnpackError, ValidationError, IndexationUnpackError::ValidationError);
+
 impl From<UnpackPrefixError<Infallible, u32>> for IndexationUnpackError {
     fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
         match error {
             UnpackPrefixError::Packable(e) => match e {},
             UnpackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
         }
-    }
-}
-
-impl From<ValidationError> for IndexationUnpackError {
-    fn from(error: ValidationError) -> Self {
-        Self::ValidationError(error)
     }
 }
 

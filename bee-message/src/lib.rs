@@ -7,6 +7,8 @@
 
 extern crate alloc;
 
+#[macro_use]
+mod macros;
 mod error;
 mod message;
 mod message_id;

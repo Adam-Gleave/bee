@@ -18,17 +18,17 @@ pub enum SignatureLockedDustAllowanceOutputUnpackError {
     ValidationError(ValidationError),
 }
 
+impl_wrapped_variant!(
+    SignatureLockedDustAllowanceOutputUnpackError, 
+    ValidationError, 
+    SignatureLockedDustAllowanceOutputUnpackError::ValidationError
+);
+
 impl From<UnknownTagError<u8>> for SignatureLockedDustAllowanceOutputUnpackError {
     fn from(error: UnknownTagError<u8>) -> Self {
         match error {
             UnknownTagError(tag) => Self::InvalidAddressKind(tag)
         }
-    }
-}
-
-impl From<ValidationError> for SignatureLockedDustAllowanceOutputUnpackError {
-    fn from(error: ValidationError) -> Self {
-        Self::ValidationError(error)
     }
 }
 

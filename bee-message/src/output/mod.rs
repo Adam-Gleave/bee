@@ -85,6 +85,9 @@ pub enum Output {
     SignatureLockedDustAllowance(SignatureLockedDustAllowanceOutput),
 }
 
+impl_wrapped_variant!(Output, SignatureLockedSingleOutput, Output::SignatureLockedSingle);
+impl_wrapped_variant!(Output, SignatureLockedDustAllowanceOutput, Output::SignatureLockedDustAllowance);
+
 impl Output {
     /// Return the output kind of an `Output`.
     pub fn kind(&self) -> u8 {
@@ -131,17 +134,5 @@ impl Packable for Output {
         };
 
         Ok(variant)
-    }
-}
-
-impl From<SignatureLockedSingleOutput> for Output {
-    fn from(output: SignatureLockedSingleOutput) -> Self {
-        Self::SignatureLockedSingle(output)
-    }
-}
-
-impl From<SignatureLockedDustAllowanceOutput> for Output {
-    fn from(output: SignatureLockedDustAllowanceOutput) -> Self {
-        Self::SignatureLockedDustAllowance(output)
     }
 }

@@ -12,11 +12,7 @@ pub enum ReferenceUnlockUnpackError {
     ValidationError(ValidationError),
 }
 
-impl From<ValidationError> for ReferenceUnlockUnpackError {
-    fn from(error: ValidationError) -> Self {
-        Self::ValidationError(error)
-    }
-}
+impl_wrapped_variant!(ReferenceUnlockUnpackError, ValidationError, ReferenceUnlockUnpackError::ValidationError);
 
 impl fmt::Display for ReferenceUnlockUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

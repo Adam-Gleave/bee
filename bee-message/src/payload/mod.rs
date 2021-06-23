@@ -34,6 +34,13 @@ pub enum PayloadPackError {
     Transaction(TransactionPackError),
 }
 
+impl_wrapped_variant!(PayloadPackError, DataPackError, PayloadPackError::Data);
+impl_wrapped_variant!(PayloadPackError, DkgPackError, PayloadPackError::Dkg);
+impl_wrapped_variant!(PayloadPackError, FpcPackError, PayloadPackError::Fpc);
+impl_wrapped_variant!(PayloadPackError, IndexationPackError, PayloadPackError::Indexation);
+impl_wrapped_variant!(PayloadPackError, SaltDeclarationPackError, PayloadPackError::SaltDeclaration);
+impl_wrapped_variant!(PayloadPackError, TransactionPackError, PayloadPackError::Transaction);
+
 impl fmt::Display for PayloadPackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -44,42 +51,6 @@ impl fmt::Display for PayloadPackError {
             Self::SaltDeclaration(e) => write!(f, "Error packing salt declaration payload: {}", e),
             Self::Transaction(e) => write!(f, "Error packing transaction payload: {}", e),
         }
-    }
-}
-
-impl From<DataPackError> for PayloadPackError {
-    fn from(error: DataPackError) -> Self {
-        Self::Data(error)
-    }
-}
-
-impl From<DkgPackError> for PayloadPackError {
-    fn from(error: DkgPackError) -> Self {
-        Self::Dkg(error)
-    }
-}
-
-impl From<FpcPackError> for PayloadPackError {
-    fn from(error: FpcPackError) -> Self {
-        Self::Fpc(error)
-    }
-}
-
-impl From<IndexationPackError> for PayloadPackError {
-    fn from(error: IndexationPackError) -> Self {
-        Self::Indexation(error)
-    }
-}
-
-impl From<SaltDeclarationPackError> for PayloadPackError {
-    fn from(error: SaltDeclarationPackError) -> Self {
-        Self::SaltDeclaration(error)
-    }
-}
-
-impl From<TransactionPackError> for PayloadPackError {
-    fn from(error: TransactionPackError) -> Self {
-        Self::Transaction(error)
     }
 }
 
@@ -101,6 +72,13 @@ pub enum PayloadUnpackError {
     ValidationError(ValidationError),
 }
 
+impl_wrapped_variant!(PayloadUnpackError, DataUnpackError, PayloadUnpackError::Data);
+impl_wrapped_variant!(PayloadUnpackError, DkgUnpackError, PayloadUnpackError::Dkg);
+impl_wrapped_variant!(PayloadUnpackError, FpcUnpackError, PayloadUnpackError::Fpc);
+impl_wrapped_variant!(PayloadUnpackError, IndexationUnpackError, PayloadUnpackError::Indexation);
+impl_wrapped_variant!(PayloadUnpackError, SaltDeclarationUnpackError, PayloadUnpackError::SaltDeclaration);
+impl_wrapped_variant!(PayloadUnpackError, ValidationError, PayloadUnpackError::ValidationError);
+
 impl fmt::Display for PayloadUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -113,39 +91,6 @@ impl fmt::Display for PayloadUnpackError {
             Self::Transaction(e) => write!(f, "Error unpacking transaction payload: {}", e),
             Self::ValidationError(e) => write!(f, "{}", e),
         }
-    }
-}
-
-impl From<DataUnpackError> for PayloadUnpackError {
-    fn from(error: DataUnpackError) -> Self {
-        Self::Data(error)
-    }
-}
-
-impl From<DkgUnpackError> for PayloadUnpackError {
-    fn from(error: DkgUnpackError) -> Self {
-        Self::Dkg(error)
-    }
-}
-
-impl From<FpcUnpackError> for PayloadUnpackError {
-    fn from(error: FpcUnpackError) -> Self {
-        Self::Fpc(error)
-    }
-}
-
-impl From<IndexationUnpackError> for PayloadUnpackError {
-    fn from(error: IndexationUnpackError) -> Self {
-        match error {
-            IndexationUnpackError::ValidationError(error) => Self::ValidationError(error),
-            error => Self::Indexation(error),
-        }
-    }
-}
-
-impl From<SaltDeclarationUnpackError> for PayloadUnpackError {
-    fn from(error: SaltDeclarationUnpackError) -> Self {
-        Self::SaltDeclaration(error)
     }
 }
 
