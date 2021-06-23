@@ -11,3 +11,14 @@ macro_rules! impl_wrapped_variant {
         }
     };
 }
+
+#[macro_export]
+macro_rules! impl_from_infallible {
+    ($type:ty) => {
+        impl From<core::convert::Infallible> for $type {
+            fn from(i: Infallible) -> $type {
+                match i {}
+            }
+        }
+    };
+}

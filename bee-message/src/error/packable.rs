@@ -35,6 +35,7 @@ pub enum MessageUnpackError {
 }
 
 impl_wrapped_variant!(MessageUnpackError, ValidationError, MessageUnpackError::ValidationError);
+impl_from_infallible!(MessageUnpackError);
 
 impl MessageUnpackError {
     fn validation_error(&self) -> Option<&ValidationError> {
@@ -63,12 +64,6 @@ impl From<ParentsUnpackError> for MessageUnpackError {
             ParentsUnpackError::ValidationError(error) => Self::ValidationError(error),
             error => Self::ParentsUnpackError(error),
         }
-    }
-}
-
-impl From<Infallible> for MessageUnpackError {
-    fn from(error: Infallible) -> Self {
-        match error {}
     }
 }
 

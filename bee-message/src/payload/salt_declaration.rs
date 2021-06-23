@@ -34,18 +34,14 @@ pub enum SaltDeclarationUnpackError {
     InvalidPrefixLength,
 }
 
+impl_from_infallible!(SaltDeclarationUnpackError);
+
 impl From<UnpackPrefixError<Infallible, u32>> for SaltDeclarationUnpackError {
     fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
         match error {
             UnpackPrefixError::Packable(e) => match e {},
             UnpackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
         }
-    }
-}
-
-impl From<Infallible> for SaltDeclarationUnpackError {
-    fn from(error: Infallible) -> Self {
-        match error {}
     }
 }
 

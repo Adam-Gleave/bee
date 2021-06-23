@@ -40,6 +40,7 @@ impl_wrapped_variant!(PayloadPackError, FpcPackError, PayloadPackError::Fpc);
 impl_wrapped_variant!(PayloadPackError, IndexationPackError, PayloadPackError::Indexation);
 impl_wrapped_variant!(PayloadPackError, SaltDeclarationPackError, PayloadPackError::SaltDeclaration);
 impl_wrapped_variant!(PayloadPackError, TransactionPackError, PayloadPackError::Transaction);
+impl_from_infallible!(PayloadPackError);
 
 impl fmt::Display for PayloadPackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -51,12 +52,6 @@ impl fmt::Display for PayloadPackError {
             Self::SaltDeclaration(e) => write!(f, "Error packing salt declaration payload: {}", e),
             Self::Transaction(e) => write!(f, "Error packing transaction payload: {}", e),
         }
-    }
-}
-
-impl From<Infallible> for PayloadPackError {
-    fn from(error: Infallible) -> Self {
-        match error {}
     }
 }
 
@@ -78,6 +73,7 @@ impl_wrapped_variant!(PayloadUnpackError, FpcUnpackError, PayloadUnpackError::Fp
 impl_wrapped_variant!(PayloadUnpackError, IndexationUnpackError, PayloadUnpackError::Indexation);
 impl_wrapped_variant!(PayloadUnpackError, SaltDeclarationUnpackError, PayloadUnpackError::SaltDeclaration);
 impl_wrapped_variant!(PayloadUnpackError, ValidationError, PayloadUnpackError::ValidationError);
+impl_from_infallible!(PayloadUnpackError);
 
 impl fmt::Display for PayloadUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -108,12 +104,6 @@ impl From<UnknownTagError<u32>> for PayloadUnpackError {
         match error {
             UnknownTagError(tag) => Self::InvalidPayloadKind(tag),
         }
-    }
-}
-
-impl From<Infallible> for PayloadUnpackError {
-    fn from(error: Infallible) -> Self {
-        match error {}
     }
 }
 

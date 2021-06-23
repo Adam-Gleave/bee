@@ -21,12 +21,7 @@ pub enum TransactionEssencePackError {
 }
 
 impl_wrapped_variant!(TransactionEssencePackError, PayloadPackError, TransactionEssencePackError::OptionalPayload);
-
-impl From<Infallible> for TransactionEssencePackError {
-    fn from(error: Infallible) -> Self {
-        match error {}
-    }
-}
+impl_from_infallible!(TransactionEssencePackError);
 
 impl fmt::Display for TransactionEssencePackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -55,6 +50,7 @@ impl_wrapped_variant!(
 );
 
 impl_wrapped_variant!(TransactionEssenceUnpackError, ValidationError, TransactionEssenceUnpackError::ValidationError);
+impl_from_infallible!(TransactionEssenceUnpackError);
 
 impl fmt::Display for TransactionEssenceUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -112,12 +108,6 @@ impl From<UnpackOptionError<PayloadUnpackError>> for TransactionEssenceUnpackErr
             UnpackOptionError::Inner(error) => Self::OptionalPayloadUnpack(error),
             UnpackOptionError::UnknownTag(tag) => Self::InvalidOptionTag(tag),
         }
-    }
-}
-
-impl From<Infallible> for TransactionEssenceUnpackError {
-    fn from(err: Infallible) -> Self {
-        match err {}
     }
 }
 

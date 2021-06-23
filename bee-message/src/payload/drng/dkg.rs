@@ -34,18 +34,14 @@ pub enum DkgUnpackError {
     InvalidPrefixLength,
 }
 
+impl_from_infallible!(DkgUnpackError);
+
 impl From<UnpackPrefixError<Infallible, u32>> for DkgUnpackError {
     fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
         match error {
             UnpackPrefixError::Packable(e) => match e {},
             UnpackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
         }
-    }
-}
-
-impl From<Infallible> for DkgUnpackError {
-    fn from(error: Infallible) -> Self {
-        match error {}
     }
 }
 
