@@ -31,7 +31,7 @@ impl Ed25519Address {
     }
 
     /// Returns the length of an Ed25519 address.
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         ED25519_ADDRESS_LENGTH
     }
 
@@ -56,9 +56,6 @@ impl Ed25519Address {
         Ok(())
     }
 }
-
-#[cfg(feature = "serde")]
-string_serde_impl!(Ed25519Address);
 
 impl From<[u8; ED25519_ADDRESS_LENGTH]> for Ed25519Address {
     fn from(bytes: [u8; ED25519_ADDRESS_LENGTH]) -> Self {

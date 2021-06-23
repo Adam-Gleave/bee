@@ -214,6 +214,7 @@ impl Packable for DkgPayload {
     }
 }
 
+#[derive(Default)]
 pub struct DkgPayloadBuilder {
     version: Option<u8>,
     instance_id: Option<u32>,
@@ -224,13 +225,7 @@ pub struct DkgPayloadBuilder {
 
 impl DkgPayloadBuilder {
     pub fn new() -> Self {
-        Self {
-            version: None,
-            instance_id: None,
-            from_index: None,
-            to_index: None,
-            deal: None,
-        }
+        Default::default()
     }
 
     pub fn with_version(mut self, version: u8) -> Self {

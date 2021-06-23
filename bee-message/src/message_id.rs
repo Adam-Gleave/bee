@@ -27,9 +27,6 @@ impl MessageId {
     }
 }
 
-#[cfg(feature = "serde")]
-string_serde_impl!(MessageId);
-
 impl From<[u8; MESSAGE_ID_LENGTH]> for MessageId {
     fn from(bytes: [u8; MESSAGE_ID_LENGTH]) -> Self {
         Self(bytes)

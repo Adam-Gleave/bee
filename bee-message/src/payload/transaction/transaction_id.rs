@@ -22,9 +22,6 @@ impl TransactionId {
     }
 }
 
-#[cfg(feature = "serde")]
-string_serde_impl!(TransactionId);
-
 impl From<[u8; TRANSACTION_ID_LENGTH]> for TransactionId {
     fn from(bytes: [u8; TRANSACTION_ID_LENGTH]) -> Self {
         Self(bytes)

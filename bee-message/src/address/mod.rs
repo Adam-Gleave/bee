@@ -7,8 +7,9 @@ pub use ed25519::{Ed25519Address, ED25519_ADDRESS_LENGTH};
 
 use crate::{error::ValidationError, signature::SignatureUnlock};
 
+use bee_packable::Packable;
+
 use bech32::{self, FromBase32, ToBase32, Variant};
-use bee_packable::{Packable, SliceUnpacker};
 
 use alloc::{str::FromStr, string::String};
 use core::convert::TryFrom;
@@ -40,8 +41,7 @@ impl Address {
         match bech32::decode(addr) {
             Ok((_hrp, data, _)) => {
                 let bytes = Vec::<u8>::from_base32(&data).map_err(|_| ValidationError::InvalidAddress)?;
-                let mut unpacker = SliceUnpacker::new(bytes.as_slice());
-                Self::unpack(&mut unpacker).map_err(|_| ValidationError::InvalidAddress)
+                Self::unpack_from_slice(bytes).map_err(|_| ValidationError::InvalidAddress)
             }
             Err(_) => Err(ValidationError::InvalidAddress),
         }
