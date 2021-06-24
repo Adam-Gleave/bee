@@ -248,7 +248,7 @@ fn validate_unlock_block_variants(unlock_blocks: &Vec<UnlockBlock>) -> Result<()
         let signature = validate_unlock_block_variant(idx, unlock_block, &unlock_blocks)?;
 
         if let Some(signature) = signature {
-            if seen.insert(signature) {
+            if !seen.insert(signature) {
                 return Err(ValidationError::DuplicateSignature(idx));
             }
         }
