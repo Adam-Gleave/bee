@@ -52,21 +52,6 @@ impl_wrapped_variant!(
 impl_wrapped_variant!(TransactionEssenceUnpackError, ValidationError, TransactionEssenceUnpackError::ValidationError);
 impl_from_infallible!(TransactionEssenceUnpackError);
 
-impl fmt::Display for TransactionEssenceUnpackError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InputUnpack(e) => write!(f, "Error unpacking input: {}", e),
-            Self::InvalidInputPrefixLength => write!(f, "Invalid input prefix length"),
-            Self::OutputUnpack(e) => write!(f, "Error unpacking output: {}", e),
-            Self::InvalidOutputKind(kind) => write!(f, "Invalid output kind: {}", kind),
-            Self::InvalidOutputPrefixLength => write!(f, "Invalid output prefix length"),
-            Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1", tag),
-            Self::OptionalPayloadUnpack(e) => write!(f, "Error unpacking payload: {}", e),
-            Self::ValidationError(e) => write!(f, "{}", e),
-        }
-    }
-}
-
 impl From<UnpackPrefixError<UnknownTagError<u8>, u32>> for TransactionEssenceUnpackError {
     fn from(error: UnpackPrefixError<UnknownTagError<u8>, u32>) -> Self {
         match error {
@@ -107,6 +92,21 @@ impl From<UnpackOptionError<PayloadUnpackError>> for TransactionEssenceUnpackErr
         match error {
             UnpackOptionError::Inner(error) => Self::OptionalPayloadUnpack(error),
             UnpackOptionError::UnknownTag(tag) => Self::InvalidOptionTag(tag),
+        }
+    }
+}
+
+impl fmt::Display for TransactionEssenceUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InputUnpack(e) => write!(f, "Error unpacking input: {}", e),
+            Self::InvalidInputPrefixLength => write!(f, "Invalid input prefix length"),
+            Self::OutputUnpack(e) => write!(f, "Error unpacking output: {}", e),
+            Self::InvalidOutputKind(kind) => write!(f, "Invalid output kind: {}", kind),
+            Self::InvalidOutputPrefixLength => write!(f, "Invalid output prefix length"),
+            Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1", tag),
+            Self::OptionalPayloadUnpack(e) => write!(f, "Error unpacking payload: {}", e),
+            Self::ValidationError(e) => write!(f, "{}", e),
         }
     }
 }

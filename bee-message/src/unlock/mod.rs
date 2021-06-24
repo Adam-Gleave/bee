@@ -14,8 +14,10 @@ use crate::{
 
 use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError, UnknownTagError, VecPrefix, error::{PackPrefixError, UnpackPrefixError}};
 
+use hashbrown::HashSet;
+
+use alloc::vec::Vec;
 use core::{fmt, convert::Infallible, ops::Deref};
-use std::collections::HashSet;
 
 #[derive(Debug)]
 pub enum UnlockBlockUnpackError {
@@ -110,46 +112,79 @@ impl Packable for UnlockBlock {
     }
 }
 
+#[derive(Debug)]
+pub enum UnlockBlocksPackError {
+    InvalidPrefixLength,
+}
+
+impl From<PackPrefixError<Infallible, u16>> for UnlockBlocksPackError {
+    fn from(error: PackPrefixError<Infallible, u16>) -> Self {
+        match error {
+            PackPrefixError::Packable(error) => match error {},
+            PackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
+        }
+    }
+}
+
+impl fmt::Display for UnlockBlocksPackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidPrefixLength => write!(f, "Invalid prefix length"),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum UnlockBlocksUnpackError {
+    InvalidPrefixLength,
+    UnlockBlockUnpack(UnlockBlockUnpackError),
+    ValidationError(ValidationError),
+}
+
+impl_wrapped_variant!(UnlockBlocksUnpackError, ValidationError, UnlockBlocksUnpackError::ValidationError);
+
+impl From<UnpackPrefixError<UnlockBlockUnpackError, u16>> for UnlockBlocksUnpackError {
+    fn from(error: UnpackPrefixError<UnlockBlockUnpackError, u16>) -> Self {
+        match error {
+            UnpackPrefixError::Packable(error) => Self::from(error),
+            UnpackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
+        }
+    }
+}
+
+impl From<UnlockBlockUnpackError> for UnlockBlocksUnpackError {
+    fn from(error: UnlockBlockUnpackError) -> Self {
+        match error {
+            UnlockBlockUnpackError::ValidationError(error) => Self::ValidationError(error),
+            error => Self::UnlockBlockUnpack(error),
+        }
+    }
+}
+
+impl fmt::Display for UnlockBlocksUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidPrefixLength => write!(f, "Invalid prefix length"),
+            Self::UnlockBlockUnpack(e) => write!(f, "{}", e),
+            Self::ValidationError(e) => write!(f, "{}", e),
+        }
+    }
+}
+
 /// A collection of unlock blocks.
-#[derive(Clone, Debug, Eq, PartialEq, Packable)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[packable(pack_error = PackPrefixError<Infallible, u16>)]
-#[packable(unpack_error = UnpackPrefixError<UnlockBlockUnpackError, u16>)]
 pub struct UnlockBlocks {
-    #[packable(wrapper = VecPrefix<UnlockBlock, u16>)]
     inner: Vec<UnlockBlock>,
 }
 
 impl UnlockBlocks {
     /// Creates a new `UnlockBlocks`.
     pub fn new(unlock_blocks: Vec<UnlockBlock>) -> Result<Self, ValidationError> {
-        if !UNLOCK_BLOCK_COUNT_RANGE.contains(&unlock_blocks.len()) {
-            return Err(ValidationError::InvalidUnlockBlockCount(unlock_blocks.len()));
-        }
+        validate_unlock_block_count(unlock_blocks.len())?;
+        validate_unlock_block_variants(&unlock_blocks)?;
 
-        let mut seen_signatures = HashSet::new();
-
-        for (index, unlock_block) in unlock_blocks.iter().enumerate() {
-            match unlock_block {
-                UnlockBlock::Reference(r) => {
-                    if index == 0
-                        || r.index() >= index as u16
-                        || matches!(unlock_blocks[r.index() as usize], UnlockBlock::Reference(_))
-                    {
-                        return Err(ValidationError::InvalidUnlockBlockReference(index));
-                    }
-                }
-                UnlockBlock::Signature(s) => {
-                    if !seen_signatures.insert(s) {
-                        return Err(ValidationError::DuplicateSignature(index));
-                    }
-                }
-            }
-        }
-
-        Ok(Self {
-            inner: unlock_blocks.into(),
-        })
+        Ok(Self { inner: unlock_blocks })
     }
 
     /// Gets an `UnlockBlock` from an `UnlockBlocks`.
@@ -168,5 +203,81 @@ impl Deref for UnlockBlocks {
 
     fn deref(&self) -> &Self::Target {
         &self.inner.as_slice()
+    }
+}
+
+impl Packable for UnlockBlocks {
+    type PackError = UnlockBlocksPackError;
+    type UnpackError = UnlockBlocksUnpackError;
+
+    fn packed_len(&self) -> usize {
+        0u16.packed_len() + self.inner.packed_len()
+    }
+
+    fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        let prefixed = VecPrefix::<UnlockBlock, u16>::from(self.inner.clone());
+        prefixed.pack(packer).map_err(PackError::coerce)?;
+
+        Ok(())
+    }
+
+    fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let inner: Vec<UnlockBlock> = VecPrefix::<UnlockBlock, u16>::unpack(unpacker)
+            .map_err(UnpackError::coerce)?
+            .into();
+
+        validate_unlock_block_count(inner.len()).map_err(|e| UnpackError::Packable(e.into()))?;
+        validate_unlock_block_variants(&inner).map_err(|e| UnpackError::Packable(e.into()))?;
+
+        Ok(Self { inner })
+    }
+}
+
+fn validate_unlock_block_count(len: usize) -> Result<(), ValidationError> {
+    if !UNLOCK_BLOCK_COUNT_RANGE.contains(&len) {
+        Err(ValidationError::InvalidUnlockBlockCount(len))
+    } else {
+        Ok(())
+    }
+}
+
+fn validate_unlock_block_variants(unlock_blocks: &Vec<UnlockBlock>) -> Result<(), ValidationError> {
+    let mut seen = HashSet::new();
+
+    for (idx, unlock_block) in unlock_blocks.iter().enumerate() {
+        let signature = validate_unlock_block_variant(idx, unlock_block, &unlock_blocks)?;
+
+        if let Some(signature) = signature {
+            if seen.insert(signature) {
+                return Err(ValidationError::DuplicateSignature(idx));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn validate_unlock_block_variant(
+    idx: usize, 
+    unlock_block: &UnlockBlock, 
+    unlock_blocks: &Vec<UnlockBlock>,
+) -> Result<Option<SignatureUnlock>, ValidationError> {
+    match unlock_block {
+        UnlockBlock::Reference(r) => validate_unlock_block_reference(&r, idx, unlock_blocks).map(|_| None),
+        UnlockBlock::Signature(s) => Ok(Some(s.clone())),
+    }
+}
+
+fn validate_unlock_block_reference(
+    reference: &ReferenceUnlock, 
+    idx: usize, 
+    unlock_blocks: &Vec<UnlockBlock>,
+) -> Result<(), ValidationError> {
+    let r_idx = reference.index();
+
+    if idx == 0 || r_idx >= idx as u16 || matches!(unlock_blocks[r_idx as usize], UnlockBlock::Reference(_)) {
+        Err(ValidationError::InvalidUnlockBlockReference(idx))
+    } else {
+        Ok(())
     }
 }

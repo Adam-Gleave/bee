@@ -96,6 +96,7 @@ dependencies = [
  "bee-packable-derive",
  "bee-test",
  "digest",
+ "hashbrown 0.11.2",
  "hex",
  "iota-crypto",
  "num_cpus",
