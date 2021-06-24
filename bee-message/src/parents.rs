@@ -17,6 +17,8 @@ use core::{
     ops::{Deref, RangeInclusive},
 };
 
+use alloc::vec::Vec;
+
 /// The range representing the valid number of parents.
 pub const MESSAGE_PARENTS_RANGE: RangeInclusive<usize> = 1..=8;
 

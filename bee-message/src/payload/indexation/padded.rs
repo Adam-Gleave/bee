@@ -29,7 +29,7 @@ impl AsRef<[u8]> for PaddedIndex {
     }
 }
 
-impl std::ops::Deref for PaddedIndex {
+impl core::ops::Deref for PaddedIndex {
     type Target = [u8; INDEXATION_PADDED_INDEX_LENGTH];
 
     fn deref(&self) -> &Self::Target {

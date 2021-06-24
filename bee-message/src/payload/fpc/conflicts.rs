@@ -8,6 +8,7 @@ use bee_packable::{
     Packable, VecPrefix,
 };
 
+use alloc::vec::Vec;
 use core::{convert::Infallible, ops::Deref};
 
 /// Provides a convenient collection of `Conflict`s.

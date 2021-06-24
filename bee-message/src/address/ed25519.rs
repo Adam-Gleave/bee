@@ -10,6 +10,7 @@ use crypto::{
     signatures::ed25519::{PublicKey, Signature},
 };
 
+use alloc::borrow::ToOwned;
 use core::{convert::TryInto, str::FromStr};
 
 /// The number of bytes in an Ed25519 address.

@@ -9,6 +9,7 @@ use crate::{
 
 use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
 
+use alloc::borrow::ToOwned;
 use core::{
     fmt,
     convert::{Infallible, From, TryFrom, TryInto},
@@ -31,7 +32,7 @@ impl fmt::Display for OutputIdUnpackError {
 }
 
 /// The length of an `OutputId`.
-pub const OUTPUT_ID_LENGTH: usize = TRANSACTION_ID_LENGTH + std::mem::size_of::<u16>();
+pub const OUTPUT_ID_LENGTH: usize = TRANSACTION_ID_LENGTH + core::mem::size_of::<u16>();
 
 /// The identifier of an `Output`.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd)]

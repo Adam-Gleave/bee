@@ -15,6 +15,8 @@ use crypto::{
     signatures::ed25519,
 };
 
+use alloc::vec::Vec;
+
 /// The minimum number of bytes in a message.
 pub const MESSAGE_LENGTH_MIN: usize = 53;
 

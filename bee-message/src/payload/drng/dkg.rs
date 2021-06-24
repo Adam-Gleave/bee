@@ -5,6 +5,7 @@ use crate::error::ValidationError;
 
 use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, Packer, PackError, Unpacker, UnpackError, VecPrefix};
 
+use alloc::vec::Vec;
 use core::{fmt, convert::Infallible};
 
 #[derive(Debug)]

@@ -11,7 +11,7 @@ use bee_packable::Packable;
 
 use bech32::{self, FromBase32, ToBase32, Variant};
 
-use alloc::{str::FromStr, string::String};
+use alloc::{str::FromStr, string::String, vec::Vec};
 use core::convert::TryFrom;
 
 /// A generic address supporting different address kinds.

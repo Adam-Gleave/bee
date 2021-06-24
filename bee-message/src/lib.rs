@@ -5,6 +5,8 @@
 
 //#![deny(missing_docs, warnings)]
 
+#![no_std]
+
 extern crate alloc;
 
 #[macro_use]

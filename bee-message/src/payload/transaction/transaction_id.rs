@@ -5,6 +5,7 @@ use crate::error::ValidationError;
 
 use bee_packable::Packable;
 
+use alloc::borrow::ToOwned;
 use core::{convert::TryInto, str::FromStr};
 
 /// The length of a transaction identifier.

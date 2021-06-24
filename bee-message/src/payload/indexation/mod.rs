@@ -11,6 +11,7 @@ pub use padded::{PaddedIndex, INDEXATION_PADDED_INDEX_LENGTH};
 
 use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker, VecPrefix, error::{PackPrefixError, UnpackPrefixError}};
 
+use alloc::vec::Vec;
 use core::{fmt, convert::Infallible, ops::RangeInclusive};
 
 /// Valid lengths for an indexation payload index.
