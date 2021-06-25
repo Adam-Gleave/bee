@@ -1,11 +1,11 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY}, error::ValidationError, input::{Input, InputUnpackError}, output::{Output, OutputUnpackError}, payload::{Payload, PayloadPackError, PayloadUnpackError}, prelude::{SignatureLockedDustAllowanceOutput, SignatureLockedSingleOutput}};
+use crate::{constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY}, error::{MessageUnpackError, ValidationError}, input::Input, output::Output, payload::{Payload, PayloadPackError}, prelude::{SignatureLockedDustAllowanceOutput, SignatureLockedSingleOutput}};
 
 use bee_ord::is_sorted;
 use bee_packable::{
-    error::UnpackPrefixError, PackError, Packable, Packer, UnknownTagError, UnpackError, UnpackOptionError, Unpacker,
+    error::UnpackPrefixError, PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker,
     VecPrefix,
 };
 
@@ -33,23 +33,13 @@ impl fmt::Display for TransactionEssencePackError {
 
 #[derive(Debug)]
 pub enum TransactionEssenceUnpackError {
-    InputUnpack(InputUnpackError),
     InvalidInputPrefixLength,
-    OutputUnpack(OutputUnpackError),
     InvalidOutputKind(u8),
     InvalidOutputPrefixLength,
     InvalidOptionTag(u8),
-    OptionalPayloadUnpack(PayloadUnpackError),
     ValidationError(ValidationError),
 }
 
-impl_wrapped_variant!(
-    TransactionEssenceUnpackError, 
-    PayloadUnpackError, 
-    TransactionEssenceUnpackError::OptionalPayloadUnpack
-);
-
-impl_wrapped_variant!(TransactionEssenceUnpackError, ValidationError, TransactionEssenceUnpackError::ValidationError);
 impl_from_infallible!(TransactionEssenceUnpackError);
 
 impl From<UnpackPrefixError<UnknownTagError<u8>, u32>> for TransactionEssenceUnpackError {
@@ -63,49 +53,13 @@ impl From<UnpackPrefixError<UnknownTagError<u8>, u32>> for TransactionEssenceUnp
     }
 }
 
-impl From<UnpackPrefixError<InputUnpackError, u32>> for TransactionEssenceUnpackError {
-    fn from(error: UnpackPrefixError<InputUnpackError, u32>) -> Self {
-        match error {
-            UnpackPrefixError::Packable(error) => match error {
-                InputUnpackError::ValidationError(error) => Self::ValidationError(error),
-                error => Self::InputUnpack(error),
-            }
-            UnpackPrefixError::Prefix(_) => Self::InvalidInputPrefixLength,
-        }
-    }
-}
-
-impl From<UnpackPrefixError<OutputUnpackError, u32>> for TransactionEssenceUnpackError {
-    fn from(error: UnpackPrefixError<OutputUnpackError, u32>) -> Self {
-        match error {
-            UnpackPrefixError::Packable(error) => match error {
-                OutputUnpackError::ValidationError(error) => Self::ValidationError(error),
-                error => Self::OutputUnpack(error),
-            }
-            UnpackPrefixError::Prefix(_) => Self::InvalidOutputPrefixLength,
-        }
-    }
-}
-
-impl From<UnpackOptionError<PayloadUnpackError>> for TransactionEssenceUnpackError {
-    fn from(error: UnpackOptionError<PayloadUnpackError>) -> Self {
-        match error {
-            UnpackOptionError::Inner(error) => Self::OptionalPayloadUnpack(error),
-            UnpackOptionError::UnknownTag(tag) => Self::InvalidOptionTag(tag),
-        }
-    }
-}
-
 impl fmt::Display for TransactionEssenceUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InputUnpack(e) => write!(f, "Error unpacking input: {}", e),
             Self::InvalidInputPrefixLength => write!(f, "Invalid input prefix length"),
-            Self::OutputUnpack(e) => write!(f, "Error unpacking output: {}", e),
             Self::InvalidOutputKind(kind) => write!(f, "Invalid output kind: {}", kind),
             Self::InvalidOutputPrefixLength => write!(f, "Invalid output prefix length"),
             Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1", tag),
-            Self::OptionalPayloadUnpack(e) => write!(f, "Error unpacking payload: {}", e),
             Self::ValidationError(e) => write!(f, "{}", e),
         }
     }
@@ -175,7 +129,7 @@ impl TransactionEssence {
 
 impl Packable for TransactionEssence {
     type PackError = TransactionEssencePackError;
-    type UnpackError = TransactionEssenceUnpackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         self.version.packed_len()
@@ -206,22 +160,52 @@ impl Packable for TransactionEssence {
         let consensus_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
 
         // Inputs syntactical validation
-        let inputs: Vec<Input> = VecPrefix::<Input, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
-        validate_input_count(inputs.len()).map_err(|e| UnpackError::Packable(e.into()))?;
-        validate_inputs_unique_utxos(&inputs).map_err(|e| UnpackError::Packable(e.into()))?;
-        validate_inputs_sorted(&inputs).map_err(|e| UnpackError::Packable(e.into()))?;
+        let inputs = VecPrefix::<Input, u32>::unpack(unpacker);
+
+        let inputs_vec: Vec<Input> = if let Err(unpack_err) = inputs {
+            match unpack_err {
+                UnpackError::Packable(e) => match e {
+                    UnpackPrefixError::Packable(err) => return Err(UnpackError::Packable(err)),
+                    UnpackPrefixError::Prefix(_) => return Err(
+                        UnpackError::Packable(TransactionEssenceUnpackError::InvalidInputPrefixLength.into())
+                    ),
+                }
+                UnpackError::Unpacker(e) => return Err(UnpackError::Unpacker(e)),
+            }
+        } else {
+            inputs.ok().unwrap().into()
+        };
+
+        validate_input_count(inputs_vec.len()).map_err(|e| UnpackError::Packable(e.into()))?;
+        validate_inputs_unique_utxos(&inputs_vec).map_err(|e| UnpackError::Packable(e.into()))?;
+        validate_inputs_sorted(&inputs_vec).map_err(|e| UnpackError::Packable(e.into()))?;
 
         // Outputs syntactical validation
-        let outputs: Vec<Output> = VecPrefix::<Output, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
-        validate_output_count(outputs.len()).map_err(|e| UnpackError::Packable(e.into()))?;
+        let outputs = VecPrefix::<Output, u32>::unpack(unpacker);
+
+        let outputs_vec: Vec<Output> = if let Err(unpack_err) = inputs {
+            match unpack_err {
+                UnpackError::Packable(e) => match e {
+                    UnpackPrefixError::Packable(err) => return Err(UnpackError::Packable(err)),
+                    UnpackPrefixError::Prefix(_) => return Err(
+                        UnpackError::Packable(TransactionEssenceUnpackError::InvalidOutputPrefixLength.into())
+                    ),
+                }
+                UnpackError::Unpacker(e) => return Err(UnpackError::Unpacker(e)),
+            }
+        } else {
+            outputs.ok().unwrap().into()
+        };
+
+        validate_output_count(outputs_vec.len()).map_err(|e| UnpackError::Packable(e.into()))?;
         validate_output_total(
-            outputs.iter().try_fold(0u64, |total, output| {
-                let amount = validate_output_variant(output, &outputs)?;
+            outputs_vec.iter().try_fold(0u64, |total, output| {
+                let amount = validate_output_variant(output, &outputs_vec)?;
                 total.checked_add(amount)
                     .ok_or_else(|| ValidationError::InvalidAccumulatedOutput(total as u128 + amount as u128))
             }).map_err(|e| UnpackError::Packable(e.into()))?
         ).map_err(|e| UnpackError::Packable(e.into()))?;
-        validate_outputs_sorted(&outputs).map_err(|e| UnpackError::Packable(e.into()))?;
+        validate_outputs_sorted(&outputs_vec).map_err(|e| UnpackError::Packable(e.into()))?;
 
         let payload = Option::<Payload>::unpack(unpacker).map_err(UnpackError::coerce)?;
         validate_payload(&payload).map_err(|e| UnpackError::Packable(e.into()))?;
@@ -231,8 +215,8 @@ impl Packable for TransactionEssence {
             timestamp,
             access_pledge_id,
             consensus_pledge_id,
-            inputs,
-            outputs,
+            inputs: inputs_vec,
+            outputs: outputs_vec,
             payload,
         })
     }

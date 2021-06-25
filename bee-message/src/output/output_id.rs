@@ -3,7 +3,7 @@
 
 use crate::{
     constants::INPUT_OUTPUT_INDEX_RANGE,
-    error::ValidationError,
+    error::{MessageUnpackError, ValidationError},
     payload::transaction::{TransactionId, TRANSACTION_ID_LENGTH},
 };
 
@@ -67,7 +67,7 @@ impl OutputId {
 
 impl Packable for OutputId {
     type PackError = Infallible;
-    type UnpackError = OutputIdUnpackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         self.transaction_id.packed_len() + self.index.packed_len()
@@ -82,8 +82,8 @@ impl Packable for OutputId {
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
         let transaction_id = TransactionId::unpack(unpacker).map_err(UnpackError::infallible)?;
-        let index = u16::unpack(unpacker).map_err(UnpackError::infallible)?;
 
+        let index = u16::unpack(unpacker).map_err(UnpackError::infallible)?;
         validate_index(index).map_err(|e| UnpackError::Packable(e.into()))?;
 
         Ok(Self { transaction_id, index })

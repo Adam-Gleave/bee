@@ -1,11 +1,11 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{ValidationError, parents::{ParentsPackError, ParentsUnpackError}, payload::{PayloadPackError, PayloadUnpackError}};
+use crate::{ValidationError, input::InputUnpackError, output::{OutputIdUnpackError, OutputUnpackError, SignatureLockedDustAllowanceUnpackError, SignatureLockedSingleUnpackError}, parents::{ParentsPackError, ParentsUnpackError}, payload::{PayloadPackError, PayloadUnpackError, data::DataUnpackError, drng::DkgUnpackError, fpc::FpcUnpackError, indexation::IndexationUnpackError, salt_declaration::SaltDeclarationUnpackError, transaction::{TransactionEssenceUnpackError, TransactionUnpackError}}, unlock::{UnlockBlockUnpackError, UnlockBlocksUnpackError}};
 
-use bee_packable::{UnpackOptionError};
+use bee_packable::UnpackOptionError;
 
-use core::{convert::Infallible, fmt};
+use core::{fmt, convert::Infallible};
 
 #[derive(Debug)]
 pub enum MessagePackError {
@@ -27,15 +27,82 @@ impl fmt::Display for MessagePackError {
 
 #[derive(Debug)]
 pub enum MessageUnpackError {
+    Data(DataUnpackError),
+    Dkg(DkgUnpackError),
+    Fpc(FpcUnpackError),
+    Indexation(IndexationUnpackError),
+    Input(InputUnpackError),
     InvalidPayloadKind(u32),
     InvalidOptionTag(u8),
-    ParentsUnpackError(ParentsUnpackError),
-    PayloadUnpackError(PayloadUnpackError),
+    Output(OutputUnpackError),
+    OutputId(OutputIdUnpackError),
+    Parents(ParentsUnpackError),
+    Payload(PayloadUnpackError),
+    SaltDeclaration(SaltDeclarationUnpackError),
+    SignatureLockedDustAllowance(SignatureLockedDustAllowanceUnpackError),
+    SignatureLockedSingle(SignatureLockedSingleUnpackError),
+    Transaction(TransactionUnpackError),
+    TransactionEssence(TransactionEssenceUnpackError),
+    UnlockBlock(UnlockBlockUnpackError),
+    UnlockBlocks(UnlockBlocksUnpackError),
     ValidationError(ValidationError),
 }
 
+impl_wrapped_validated!(MessageUnpackError, ParentsUnpackError, MessageUnpackError::Parents);
+impl_wrapped_validated!(MessageUnpackError, IndexationUnpackError, MessageUnpackError::Indexation);
+impl_wrapped_validated!(MessageUnpackError, InputUnpackError, MessageUnpackError::Input);
+impl_wrapped_validated!(MessageUnpackError, OutputUnpackError, MessageUnpackError::Output);
+impl_wrapped_validated!(MessageUnpackError, PayloadUnpackError, MessageUnpackError::Payload);
+impl_wrapped_validated!(MessageUnpackError, TransactionUnpackError, MessageUnpackError::Transaction);
+impl_wrapped_validated!(MessageUnpackError, TransactionEssenceUnpackError, MessageUnpackError::TransactionEssence);
+impl_wrapped_validated!(MessageUnpackError, SignatureLockedDustAllowanceUnpackError, MessageUnpackError::SignatureLockedDustAllowance);
+impl_wrapped_validated!(MessageUnpackError, SignatureLockedSingleUnpackError, MessageUnpackError::SignatureLockedSingle);
+impl_wrapped_validated!(MessageUnpackError, UnlockBlockUnpackError, MessageUnpackError::UnlockBlock);
+impl_wrapped_validated!(MessageUnpackError, UnlockBlocksUnpackError, MessageUnpackError::UnlockBlocks);
+impl_wrapped_variant!(MessageUnpackError, DataUnpackError, MessageUnpackError::Data);
+impl_wrapped_variant!(MessageUnpackError, DkgUnpackError, MessageUnpackError::Dkg);
+impl_wrapped_variant!(MessageUnpackError, FpcUnpackError, MessageUnpackError::Fpc);
+impl_wrapped_variant!(MessageUnpackError, SaltDeclarationUnpackError, MessageUnpackError::SaltDeclaration);
 impl_wrapped_variant!(MessageUnpackError, ValidationError, MessageUnpackError::ValidationError);
 impl_from_infallible!(MessageUnpackError);
+
+impl From<UnpackOptionError<PayloadUnpackError>> for MessageUnpackError {
+    fn from(error: UnpackOptionError<PayloadUnpackError>) -> Self {
+        match error {
+            UnpackOptionError::Inner(error) => match error {
+                PayloadUnpackError::ValidationError(error) => Self::ValidationError(error),
+                error => Self::Payload(error),
+            }
+            UnpackOptionError::UnknownTag(tag) => Self::InvalidOptionTag(tag),
+        }
+    }
+}
+
+impl fmt::Display for MessageUnpackError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Data(e) => write!(f, "Error unpacking Data payload: {}", e),
+            Self::Dkg(e) => write!(f, "Error unpacking DKG payload: {}", e),
+            Self::Fpc(e) => write!(f, "Error unpacking FPC payload: {}", e),
+            Self::Indexation(e) => write!(f, "Error unpacking Indexation payload: {}", e),
+            Self::Input(e) => write!(f, "Error unpacking Input: {}", e),
+            Self::InvalidPayloadKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
+            Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1", tag),
+            Self::Output(e) => write!(f, "Error unpacking Output: {}", e),
+            Self::OutputId(e) => write!(f, "Error unpacking OutputId: {}", e),
+            Self::Parents(e) => write!(f, "Error unpacking message parents: {}", e),
+            Self::Payload(e) => write!(f, "Error unpacking payload: {}", e),
+            Self::SaltDeclaration(e) => write!(f, "Error unpacking SaltDeclaration payload: {}", e),
+            Self::SignatureLockedDustAllowance(e) => write!(f, "Error unpacking SignatureLockedDustAllowance: {}", e),
+            Self::SignatureLockedSingle(e) => write!(f, "Error unpacking SignatureLockedSingle: {}", e),
+            Self::Transaction(e) => write!(f, "Error unpacking Transaction payload: {}", e),
+            Self::TransactionEssence(e) => write!(f, "Error unpacking TransactionEssence: {}", e),
+            Self::UnlockBlock(e) => write!(f, "Error unpacking UnlockBlock: {}", e),
+            Self::UnlockBlocks(e) => write!(f, "Error unpacking UnlockBlocks: {}", e),
+            Self::ValidationError(e) => write!(f, "Validation error occured while unpacking: {}", e),
+        }
+    }
+}
 
 impl MessageUnpackError {
     fn validation_error(&self) -> Option<&ValidationError> {
@@ -45,37 +112,3 @@ impl MessageUnpackError {
         }
     }
 }
-
-impl From<UnpackOptionError<PayloadUnpackError>> for MessageUnpackError {
-    fn from(error: UnpackOptionError<PayloadUnpackError>) -> Self {
-        match error {
-            UnpackOptionError::Inner(error) => match error {
-                PayloadUnpackError::ValidationError(error) => Self::ValidationError(error),
-                error => Self::PayloadUnpackError(error),
-            }
-            UnpackOptionError::UnknownTag(tag) => Self::InvalidOptionTag(tag),
-        }
-    }
-}
-
-impl From<ParentsUnpackError> for MessageUnpackError {
-    fn from(error: ParentsUnpackError) -> Self {
-        match error {
-            ParentsUnpackError::ValidationError(error) => Self::ValidationError(error),
-            error => Self::ParentsUnpackError(error),
-        }
-    }
-}
-
-impl fmt::Display for MessageUnpackError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidPayloadKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
-            Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1.", tag),
-            Self::ParentsUnpackError(e) => write!(f, "{}", e),
-            Self::PayloadUnpackError(e) => write!(f, "{}", e),
-	        Self::ValidationError(e) => write!(f, "{}", e),
-        }
-    }
-}
-

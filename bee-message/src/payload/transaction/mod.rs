@@ -6,7 +6,7 @@
 mod essence;
 mod transaction_id;
 
-use crate::{error::ValidationError, unlock::{UnlockBlocksPackError, UnlockBlocksUnpackError, UnlockBlocks}};
+use crate::{MessageUnpackError, error::ValidationError, unlock::{UnlockBlocksPackError, UnlockBlocksUnpackError, UnlockBlocks}};
 
 pub use essence::{
     TransactionEssence, TransactionEssenceBuilder, TransactionEssencePackError, TransactionEssenceUnpackError,
@@ -126,7 +126,7 @@ impl TransactionPayload {
 
 impl Packable for TransactionPayload {
     type PackError = TransactionPackError;
-    type UnpackError = TransactionUnpackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         self.essence.packed_len() + self.unlock_blocks.packed_len()
@@ -140,8 +140,8 @@ impl Packable for TransactionPayload {
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
-        let essence = TransactionEssence::unpack(unpacker).map_err(UnpackError::coerce)?;
-        let unlock_blocks = UnlockBlocks::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let essence = TransactionEssence::unpack(unpacker)?;
+        let unlock_blocks = UnlockBlocks::unpack(unpacker)?;
 
         validate_unlock_block_count(&essence, &unlock_blocks).map_err(|e| UnpackError::Packable(e.into()))?;
 

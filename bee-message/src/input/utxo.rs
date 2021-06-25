@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{output::{OutputId, OutputIdUnpackError}, payload::transaction::TransactionId, ValidationError};
+use crate::{error::{MessageUnpackError, ValidationError}, output::OutputId, payload::transaction::TransactionId};
 
 use bee_packable::Packable;
 
@@ -9,7 +9,7 @@ use core::{convert::From, str::FromStr};
 
 /// Represents an input referencing an output.
 #[derive(Clone, Eq, PartialEq, Hash, Ord, PartialOrd, Packable)]
-#[packable(unpack_error = OutputIdUnpackError)]
+#[packable(unpack_error = MessageUnpackError)]
 pub struct UtxoInput(OutputId);
 
 impl UtxoInput {

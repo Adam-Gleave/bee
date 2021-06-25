@@ -5,18 +5,18 @@ mod output_id;
 mod signature_locked_dust_allowance;
 mod signature_locked_single;
 
-pub use crate::ValidationError;
+pub use crate::error::{MessageUnpackError, ValidationError};
 
 pub use output_id::{OutputId, OutputIdUnpackError, OUTPUT_ID_LENGTH};
 pub use signature_locked_dust_allowance::{
-    SignatureLockedDustAllowanceOutput, 
-    SignatureLockedDustAllowanceOutputUnpackError,
+    SignatureLockedDustAllowanceOutput,
+    SignatureLockedDustAllowanceUnpackError,
     DUST_THRESHOLD, 
     SIGNATURE_LOCKED_DUST_ALLOWANCE_OUTPUT_AMOUNT,
 };
 pub use signature_locked_single::{
-    SignatureLockedSingleOutput, 
-    SignatureLockedSingleOutputUnpackError,
+    SignatureLockedSingleOutput,
+    SignatureLockedSingleUnpackError,
     SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT,
 };
 
@@ -28,8 +28,6 @@ use core::{fmt, convert::Infallible};
 pub enum OutputUnpackError {
     InvalidAddressKind(u8),
     InvalidOutputKind(u8),
-    SignatureLockedDustAllowance(SignatureLockedDustAllowanceOutputUnpackError),
-    SignatureLockedSingle(SignatureLockedSingleOutputUnpackError),
     ValidationError(ValidationError),
 }
 
@@ -39,33 +37,11 @@ impl From<UnknownTagError<u8>> for OutputUnpackError {
     }
 }
 
-impl From<SignatureLockedDustAllowanceOutputUnpackError> for OutputUnpackError {
-    fn from(error: SignatureLockedDustAllowanceOutputUnpackError) -> Self {
-        match error {
-            SignatureLockedDustAllowanceOutputUnpackError::ValidationError(error) => Self::ValidationError(error),
-            error => Self::SignatureLockedDustAllowance(error),
-        }
-    }
-}
-
-impl From<SignatureLockedSingleOutputUnpackError> for OutputUnpackError {
-    fn from(error: SignatureLockedSingleOutputUnpackError) -> Self {
-        match error {
-            SignatureLockedSingleOutputUnpackError::ValidationError(error) => Self::ValidationError(error),
-            error => Self::SignatureLockedSingle(error),
-        }
-    }
-}
-
 impl fmt::Display for OutputUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidAddressKind(kind) => write!(f, "Invalid address kind: {}", kind),
             Self::InvalidOutputKind(kind) => write!(f, "Invalid output kind: {}", kind),
-            Self::SignatureLockedDustAllowance(e) => {
-                write!(f, "Error unpacking SignatureLockedDustAllowanceOutput: {}", e)
-            }
-            Self::SignatureLockedSingle(e) => write!(f, "Error unpacking SignatureLockedSingleOutput: {}", e),
             Self::ValidationError(e) => write!(f, "{}", e),
         }
     }
@@ -100,7 +76,7 @@ impl Output {
 
 impl Packable for Output {
     type PackError = Infallible;
-    type UnpackError = OutputUnpackError;
+    type UnpackError = MessageUnpackError;
     
     fn packed_len(&self) -> usize {
         0u8.packed_len() + match self {
@@ -125,12 +101,12 @@ impl Packable for Output {
 
         let variant = match kind {
             SignatureLockedSingleOutput::KIND => Self::SignatureLockedSingle(
-                SignatureLockedSingleOutput::unpack(unpacker).map_err(UnpackError::coerce)?
+                SignatureLockedSingleOutput::unpack(unpacker)?
             ),
             SignatureLockedDustAllowanceOutput::KIND => Self::SignatureLockedDustAllowance(
-                SignatureLockedDustAllowanceOutput::unpack(unpacker).map_err(UnpackError::coerce)?
+                SignatureLockedDustAllowanceOutput::unpack(unpacker)?
             ),
-            tag => Err(UnpackError::Packable(OutputUnpackError::InvalidOutputKind(tag)))?,
+            tag => Err(UnpackError::Packable(OutputUnpackError::InvalidOutputKind(tag))).map_err(UnpackError::coerce)?,
         };
 
         Ok(variant)

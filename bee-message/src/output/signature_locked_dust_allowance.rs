@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{address::Address, constants::IOTA_SUPPLY, error::ValidationError};
+use crate::{address::Address, constants::IOTA_SUPPLY, error::{MessageUnpackError, ValidationError}};
 
 use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker};
 
@@ -13,18 +13,18 @@ pub const DUST_THRESHOLD: u64 = 1_000_000;
 pub const SIGNATURE_LOCKED_DUST_ALLOWANCE_OUTPUT_AMOUNT: RangeInclusive<u64> = DUST_THRESHOLD..=IOTA_SUPPLY;
 
 #[derive(Debug)]
-pub enum SignatureLockedDustAllowanceOutputUnpackError {
+pub enum SignatureLockedDustAllowanceUnpackError {
     InvalidAddressKind(u8),
     ValidationError(ValidationError),
 }
 
 impl_wrapped_variant!(
-    SignatureLockedDustAllowanceOutputUnpackError, 
+    SignatureLockedDustAllowanceUnpackError, 
     ValidationError, 
-    SignatureLockedDustAllowanceOutputUnpackError::ValidationError
+    SignatureLockedDustAllowanceUnpackError::ValidationError
 );
 
-impl From<UnknownTagError<u8>> for SignatureLockedDustAllowanceOutputUnpackError {
+impl From<UnknownTagError<u8>> for SignatureLockedDustAllowanceUnpackError {
     fn from(error: UnknownTagError<u8>) -> Self {
         match error {
             UnknownTagError(tag) => Self::InvalidAddressKind(tag)
@@ -32,7 +32,7 @@ impl From<UnknownTagError<u8>> for SignatureLockedDustAllowanceOutputUnpackError
     }
 }
 
-impl fmt::Display for SignatureLockedDustAllowanceOutputUnpackError {
+impl fmt::Display for SignatureLockedDustAllowanceUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidAddressKind(kind) => write!(f, "Invalid address kind: {}", kind),
@@ -74,7 +74,7 @@ impl SignatureLockedDustAllowanceOutput {
 
 impl Packable for SignatureLockedDustAllowanceOutput {
     type PackError = Infallible;
-    type UnpackError = SignatureLockedDustAllowanceOutputUnpackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         self.address.packed_len() + self.amount.packed_len()
@@ -88,9 +88,11 @@ impl Packable for SignatureLockedDustAllowanceOutput {
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
-        let address = Address::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let address = Address::unpack(unpacker)
+            .map_err(UnpackError::coerce::<SignatureLockedDustAllowanceUnpackError>)
+            .map_err(UnpackError::coerce)?;
+        
         let amount = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
-
         validate_amount(amount).map_err(|e| UnpackError::Packable(e.into()))?;
 
         Ok(Self { address, amount })

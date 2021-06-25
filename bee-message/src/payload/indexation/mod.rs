@@ -5,7 +5,7 @@
 
 mod padded;
 
-use crate::{error::ValidationError, MESSAGE_LENGTH_MAX};
+use crate::{error::{MessageUnpackError, ValidationError}, MESSAGE_LENGTH_MAX};
 
 pub use padded::{PaddedIndex, INDEXATION_PADDED_INDEX_LENGTH};
 
@@ -126,7 +126,7 @@ fn validate_data(data: &Vec<u8>) -> Result<(), ValidationError> {
 
 impl Packable for IndexationPayload {
     type PackError = IndexationPackError;
-    type UnpackError = IndexationUnpackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         self.version.packed_len()
@@ -149,10 +149,18 @@ impl Packable for IndexationPayload {
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
         let version = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
 
-        let index = VecPrefix::<u8, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        let index = VecPrefix::<u8, u32>::unpack(unpacker)
+            .map_err(UnpackError::coerce::<IndexationUnpackError>)
+            .map_err(UnpackError::coerce)?
+            .into();
+
         validate_index(&index).map_err(|e| UnpackError::Packable(e.into()))?;
 
-        let data = VecPrefix::<u8, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        let data = VecPrefix::<u8, u32>::unpack(unpacker)
+            .map_err(UnpackError::coerce::<IndexationUnpackError>)
+            .map_err(UnpackError::coerce)?
+            .into();
+        
         validate_data(&data).map_err(|e| UnpackError::Packable(e.into()))?;
 
         Ok(Self {

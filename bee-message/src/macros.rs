@@ -13,6 +13,20 @@ macro_rules! impl_wrapped_variant {
 }
 
 #[macro_export]
+macro_rules! impl_wrapped_validated {
+    ($dst:ident, $src:ident, $variant:path) => {
+        impl From<$src> for $dst {
+            fn from(src: $src) -> $dst {
+                match src {
+                    $src::ValidationError(error) => $dst::ValidationError(error),
+                    error => $variant(error),
+                }
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! impl_from_infallible {
     ($type:ty) => {
         impl From<core::convert::Infallible> for $type {

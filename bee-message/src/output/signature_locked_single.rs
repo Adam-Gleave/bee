@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{address::Address, constants::IOTA_SUPPLY, error::ValidationError};
+use crate::{MessageUnpackError, address::Address, constants::IOTA_SUPPLY, error::ValidationError};
 
 use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError, UnknownTagError};
 
@@ -11,24 +11,24 @@ use core::{fmt, convert::Infallible, ops::RangeInclusive};
 pub const SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT: RangeInclusive<u64> = 1..=IOTA_SUPPLY;
 
 #[derive(Debug)]
-pub enum SignatureLockedSingleOutputUnpackError {
+pub enum SignatureLockedSingleUnpackError {
     InvalidAddressKind(u8),
     ValidationError(ValidationError),
 }
 
 impl_wrapped_variant!(
-    SignatureLockedSingleOutputUnpackError, 
+    SignatureLockedSingleUnpackError, 
     ValidationError, 
-    SignatureLockedSingleOutputUnpackError::ValidationError
+    SignatureLockedSingleUnpackError::ValidationError
 );
 
-impl From<UnknownTagError<u8>> for SignatureLockedSingleOutputUnpackError {
+impl From<UnknownTagError<u8>> for SignatureLockedSingleUnpackError {
     fn from(error: UnknownTagError<u8>) -> Self {
         Self::InvalidAddressKind(error.0) 
     }
 }
 
-impl fmt::Display for SignatureLockedSingleOutputUnpackError {
+impl fmt::Display for SignatureLockedSingleUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidAddressKind(kind) => write!(f, "Invalid address kind: {}", kind),
@@ -69,7 +69,7 @@ impl SignatureLockedSingleOutput {
 
 impl Packable for SignatureLockedSingleOutput {
     type PackError = Infallible;
-    type UnpackError = SignatureLockedSingleOutputUnpackError;
+    type UnpackError = MessageUnpackError; 
 
     fn packed_len(&self) -> usize {
         self.address.packed_len() + self.amount.packed_len()
@@ -83,9 +83,11 @@ impl Packable for SignatureLockedSingleOutput {
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
-        let address = Address::unpack(unpacker).map_err(UnpackError::coerce)?;
-        let amount = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let address = Address::unpack(unpacker)
+            .map_err(UnpackError::coerce::<SignatureLockedSingleUnpackError>)
+            .map_err(UnpackError::coerce)?;
 
+        let amount = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
         validate_amount(amount).map_err(|e| UnpackError::Packable(e.into()))?;
 
         Ok(Self { address, amount })

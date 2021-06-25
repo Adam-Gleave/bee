@@ -5,7 +5,7 @@ mod utxo;
 
 pub use utxo::UtxoInput;
 
-use crate::{output::OutputIdUnpackError, ValidationError};
+use crate::error::{MessageUnpackError, ValidationError};
 
 use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
 
@@ -15,14 +15,6 @@ use core::{fmt, convert::Infallible};
 pub enum InputUnpackError {
     InvalidInputKind(u8),
     ValidationError(ValidationError),
-}
-
-impl From<OutputIdUnpackError> for InputUnpackError {
-    fn from(error: OutputIdUnpackError) -> Self {
-        match error {
-            OutputIdUnpackError::ValidationError(error) => Self::ValidationError(error),
-        }
-    }
 }
 
 impl fmt::Display for InputUnpackError {
@@ -57,7 +49,7 @@ impl Input {
 
 impl Packable for Input {
     type PackError = Infallible;
-    type UnpackError = InputUnpackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         self.kind().packed_len() + match self {
@@ -79,8 +71,8 @@ impl Packable for Input {
         let kind = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
 
         let variant = match kind {
-            UtxoInput::KIND => Self::Utxo(UtxoInput::unpack(unpacker).map_err(UnpackError::coerce)?),
-            tag => Err(UnpackError::Packable(InputUnpackError::InvalidInputKind(tag)))?,
+            UtxoInput::KIND => Self::Utxo(UtxoInput::unpack(unpacker)?),
+            tag => Err(UnpackError::Packable(InputUnpackError::InvalidInputKind(tag))).map_err(UnpackError::coerce)?,
         };
 
         Ok(variant)

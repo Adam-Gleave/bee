@@ -5,12 +5,7 @@ mod reference;
 
 pub use reference::ReferenceUnlock;
 
-use crate::{
-    constants::UNLOCK_BLOCK_COUNT_RANGE, 
-    error::ValidationError,
-    signature::SignatureUnlock,
-    unlock::reference::ReferenceUnlockUnpackError,
-};
+use crate::{MessageUnpackError, constants::UNLOCK_BLOCK_COUNT_RANGE, error::ValidationError, signature::SignatureUnlock, unlock::reference::ReferenceUnlockUnpackError};
 
 use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError, UnknownTagError, VecPrefix, error::{PackPrefixError, UnpackPrefixError}};
 
@@ -79,7 +74,7 @@ impl UnlockBlock {
 
 impl Packable for UnlockBlock {
     type PackError = Infallible;
-    type UnpackError = UnlockBlockUnpackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         0u8.packed_len() + match self {
@@ -105,7 +100,7 @@ impl Packable for UnlockBlock {
         let variant = match kind {
             SignatureUnlock::KIND => Self::Signature(SignatureUnlock::unpack(unpacker).map_err(UnpackError::coerce)?),
             ReferenceUnlock::KIND => Self::Reference(ReferenceUnlock::unpack(unpacker).map_err(UnpackError::coerce)?),
-            tag => Err(UnpackError::Packable(UnlockBlockUnpackError::InvalidUnlockBlockKind(tag)))?,
+            tag => return Err(UnpackError::Packable(UnlockBlockUnpackError::InvalidUnlockBlockKind(tag))),
         };
 
         Ok(variant)
@@ -208,7 +203,7 @@ impl Deref for UnlockBlocks {
 
 impl Packable for UnlockBlocks {
     type PackError = UnlockBlocksPackError;
-    type UnpackError = UnlockBlocksUnpackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         0u16.packed_len() + self.inner.packed_len()
@@ -222,9 +217,21 @@ impl Packable for UnlockBlocks {
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
-        let inner: Vec<UnlockBlock> = VecPrefix::<UnlockBlock, u16>::unpack(unpacker)
-            .map_err(UnpackError::coerce)?
-            .into();
+        let inner_prefixed = VecPrefix::<UnlockBlock, u32>::unpack(unpacker);
+
+        let inner: Vec<UnlockBlock> = if let Err(unpack_err) = inner_prefixed {
+            match unpack_err {
+                UnpackError::Packable(e) => match e {
+                    UnpackPrefixError::Packable(err) => return Err(UnpackError::Packable(err)),
+                    UnpackPrefixError::Prefix(_) => return Err(
+                        UnpackError::Packable(UnlockBlocksUnpackError::InvalidPrefixLength.into())
+                    ),
+                }
+                UnpackError::Unpacker(e) => return Err(UnpackError::Unpacker(e)),
+            }
+        } else {
+            inner_prefixed.ok().unwrap().into()
+        };
 
         validate_unlock_block_count(inner.len()).map_err(|e| UnpackError::Packable(e.into()))?;
         validate_unlock_block_variants(&inner).map_err(|e| UnpackError::Packable(e.into()))?;
