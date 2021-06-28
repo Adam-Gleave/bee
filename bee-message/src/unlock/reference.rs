@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{constants::INPUT_OUTPUT_INDEX_RANGE, error::ValidationError};
+use crate::{MessageUnpackError, constants::INPUT_OUTPUT_INDEX_RANGE, error::ValidationError};
 
 use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
 
@@ -56,7 +56,7 @@ impl TryFrom<u16> for ReferenceUnlock {
 
 impl Packable for ReferenceUnlock {
     type PackError = Infallible;
-    type UnpackError = ReferenceUnlockUnpackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         self.0.packed_len()

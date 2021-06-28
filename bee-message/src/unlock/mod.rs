@@ -7,7 +7,7 @@ pub use reference::ReferenceUnlock;
 
 use crate::{MessageUnpackError, constants::UNLOCK_BLOCK_COUNT_RANGE, error::ValidationError, signature::SignatureUnlock, unlock::reference::ReferenceUnlockUnpackError};
 
-use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError, UnknownTagError, VecPrefix, error::{PackPrefixError, UnpackPrefixError}};
+use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError, VecPrefix, error::{PackPrefixError, UnpackPrefixError}};
 
 use hashbrown::HashSet;
 
@@ -17,7 +17,6 @@ use core::{fmt, convert::Infallible, ops::Deref};
 #[derive(Debug)]
 pub enum UnlockBlockUnpackError {
     InvalidUnlockBlockKind(u8),
-    InvalidSignatureUnlockKind(u8),
     ValidationError(ValidationError),
 }
 
@@ -29,17 +28,10 @@ impl From<ReferenceUnlockUnpackError> for UnlockBlockUnpackError {
     }
 }
 
-impl From<UnknownTagError<u8>> for UnlockBlockUnpackError {
-    fn from(error: UnknownTagError<u8>) -> Self {
-        Self::InvalidSignatureUnlockKind(error.0)
-    }
-}
-
 impl fmt::Display for UnlockBlockUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidUnlockBlockKind(kind) => write!(f, "Invalid unlock block kind: {}", kind),
-            Self::InvalidSignatureUnlockKind(kind) => write!(f, "Invalid signature unlock kind: {}", kind),
             Self::ValidationError(e) => write!(f, "{}", e),
         }
     }
@@ -98,9 +90,9 @@ impl Packable for UnlockBlock {
         let kind = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
 
         let variant = match kind {
-            SignatureUnlock::KIND => Self::Signature(SignatureUnlock::unpack(unpacker).map_err(UnpackError::coerce)?),
+            SignatureUnlock::KIND => Self::Signature(SignatureUnlock::unpack(unpacker)?),
             ReferenceUnlock::KIND => Self::Reference(ReferenceUnlock::unpack(unpacker).map_err(UnpackError::coerce)?),
-            tag => return Err(UnpackError::Packable(UnlockBlockUnpackError::InvalidUnlockBlockKind(tag))),
+            tag => return Err(UnpackError::Packable(UnlockBlockUnpackError::InvalidUnlockBlockKind(tag).into())),
         };
 
         Ok(variant)

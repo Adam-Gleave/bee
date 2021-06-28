@@ -183,7 +183,7 @@ impl Packable for TransactionEssence {
         // Outputs syntactical validation
         let outputs = VecPrefix::<Output, u32>::unpack(unpacker);
 
-        let outputs_vec: Vec<Output> = if let Err(unpack_err) = inputs {
+        let outputs_vec: Vec<Output> = if let Err(unpack_err) = outputs {
             match unpack_err {
                 UnpackError::Packable(e) => match e {
                     UnpackPrefixError::Packable(err) => return Err(UnpackError::Packable(err)),

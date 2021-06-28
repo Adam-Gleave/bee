@@ -10,7 +10,7 @@ pub mod indexation;
 pub mod salt_declaration;
 pub mod transaction;
 
-use crate::ValidationError;
+use crate::{MessageUnpackError, ValidationError};
 
 use data::{DataPayload, DataPackError, DataUnpackError};
 use drng::{ApplicationMessagePayload, DkgPayload, DkgPackError, DkgUnpackError, BeaconPayload, CollectiveBeaconPayload};
@@ -19,7 +19,7 @@ use indexation::{IndexationPayload, IndexationPackError, IndexationUnpackError};
 use salt_declaration::{SaltDeclarationPayload, SaltDeclarationPackError, SaltDeclarationUnpackError};
 use transaction::{TransactionPayload, TransactionPackError, TransactionUnpackError};
 
-use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker};
+use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
 use alloc::boxed::Box;
 use core::{fmt, convert::Infallible};
@@ -95,14 +95,6 @@ impl From<TransactionUnpackError> for PayloadUnpackError {
         match error {
             TransactionUnpackError::ValidationError(error) => Self::ValidationError(error),
             error => Self::Transaction(error),
-        }
-    }
-}
-
-impl From<UnknownTagError<u32>> for PayloadUnpackError {
-    fn from(error: UnknownTagError<u32>) -> Self {
-        match error {
-            UnknownTagError(tag) => Self::InvalidPayloadKind(tag),
         }
     }
 }
@@ -203,7 +195,7 @@ impl From<TransactionPayload> for Payload {
 
 impl Packable for Payload {
     type PackError = PayloadPackError;
-    type UnpackError = PayloadUnpackError;
+    type UnpackError = MessageUnpackError;
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         match *self {
@@ -271,7 +263,7 @@ impl Packable for Payload {
             TransactionPayload::KIND => Payload::Transaction(Box::new(
                 TransactionPayload::unpack(unpacker).map_err(UnpackError::coerce)?,
             )),
-            tag => Err(UnpackError::Packable(Self::UnpackError::from(UnknownTagError(tag))))?,
+            tag => Err(UnpackError::Packable(PayloadUnpackError::InvalidPayloadKind(tag).into()))?,
         };
 
         Ok(payload)

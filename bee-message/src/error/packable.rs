@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{ValidationError, input::InputUnpackError, output::{OutputIdUnpackError, OutputUnpackError, SignatureLockedDustAllowanceUnpackError, SignatureLockedSingleUnpackError}, parents::{ParentsPackError, ParentsUnpackError}, payload::{PayloadPackError, PayloadUnpackError, data::DataUnpackError, drng::DkgUnpackError, fpc::FpcUnpackError, indexation::IndexationUnpackError, salt_declaration::SaltDeclarationUnpackError, transaction::{TransactionEssenceUnpackError, TransactionUnpackError}}, unlock::{UnlockBlockUnpackError, UnlockBlocksUnpackError}};
+use crate::{ValidationError, input::InputUnpackError, output::{OutputIdUnpackError, OutputUnpackError, SignatureLockedDustAllowanceUnpackError, SignatureLockedSingleUnpackError}, parents::{ParentsPackError, ParentsUnpackError}, payload::{PayloadPackError, PayloadUnpackError, data::DataUnpackError, drng::DkgUnpackError, fpc::FpcUnpackError, indexation::IndexationUnpackError, salt_declaration::SaltDeclarationUnpackError, transaction::{TransactionEssenceUnpackError, TransactionUnpackError}}, signature::SignatureUnlockUnpackError, unlock::{UnlockBlockUnpackError, UnlockBlocksUnpackError}};
 
 use bee_packable::UnpackOptionError;
 
@@ -41,6 +41,7 @@ pub enum MessageUnpackError {
     SaltDeclaration(SaltDeclarationUnpackError),
     SignatureLockedDustAllowance(SignatureLockedDustAllowanceUnpackError),
     SignatureLockedSingle(SignatureLockedSingleUnpackError),
+    SignatureUnlock(SignatureUnlockUnpackError),
     Transaction(TransactionUnpackError),
     TransactionEssence(TransactionEssenceUnpackError),
     UnlockBlock(UnlockBlockUnpackError),
@@ -63,16 +64,14 @@ impl_wrapped_variant!(MessageUnpackError, DataUnpackError, MessageUnpackError::D
 impl_wrapped_variant!(MessageUnpackError, DkgUnpackError, MessageUnpackError::Dkg);
 impl_wrapped_variant!(MessageUnpackError, FpcUnpackError, MessageUnpackError::Fpc);
 impl_wrapped_variant!(MessageUnpackError, SaltDeclarationUnpackError, MessageUnpackError::SaltDeclaration);
+impl_wrapped_variant!(MessageUnpackError, SignatureUnlockUnpackError, MessageUnpackError::SignatureUnlock);
 impl_wrapped_variant!(MessageUnpackError, ValidationError, MessageUnpackError::ValidationError);
 impl_from_infallible!(MessageUnpackError);
 
-impl From<UnpackOptionError<PayloadUnpackError>> for MessageUnpackError {
-    fn from(error: UnpackOptionError<PayloadUnpackError>) -> Self {
+impl From<UnpackOptionError<MessageUnpackError>> for MessageUnpackError {
+    fn from(error: UnpackOptionError<MessageUnpackError>) -> Self {
         match error {
-            UnpackOptionError::Inner(error) => match error {
-                PayloadUnpackError::ValidationError(error) => Self::ValidationError(error),
-                error => Self::Payload(error),
-            }
+            UnpackOptionError::Inner(error) => error,
             UnpackOptionError::UnknownTag(tag) => Self::InvalidOptionTag(tag),
         }
     }
@@ -95,6 +94,7 @@ impl fmt::Display for MessageUnpackError {
             Self::SaltDeclaration(e) => write!(f, "Error unpacking SaltDeclaration payload: {}", e),
             Self::SignatureLockedDustAllowance(e) => write!(f, "Error unpacking SignatureLockedDustAllowance: {}", e),
             Self::SignatureLockedSingle(e) => write!(f, "Error unpacking SignatureLockedSingle: {}", e),
+            Self::SignatureUnlock(e) => write!(f, "Error unpacking SignatureUnlock: {}", e),
             Self::Transaction(e) => write!(f, "Error unpacking Transaction payload: {}", e),
             Self::TransactionEssence(e) => write!(f, "Error unpacking TransactionEssence: {}", e),
             Self::UnlockBlock(e) => write!(f, "Error unpacking UnlockBlock: {}", e),
