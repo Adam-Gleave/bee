@@ -119,7 +119,7 @@ impl Packable for Parents {
     type UnpackError = ParentsUnpackError;
 
     fn packed_len(&self) -> usize {
-        0u32.packed_len() + self.inner.packed_len()
+        VecPrefix::<MessageId, u32>::from(self.inner.clone()).packed_len()
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {

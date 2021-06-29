@@ -73,7 +73,7 @@ impl Packable for DataPayload {
 
     fn packed_len(&self) -> usize {
         self.version.packed_len()
-            + 0u32.packed_len() + self.data.packed_len()
+            + VecPrefix::<u8, u32>::from(self.data.clone()).packed_len()
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {

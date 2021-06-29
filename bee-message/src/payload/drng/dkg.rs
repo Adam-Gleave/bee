@@ -91,11 +91,11 @@ impl Packable for EncryptedDeal {
     type UnpackError = DkgUnpackError;
 
     fn packed_len(&self) -> usize {
-        0u32.packed_len() + self.dh_key.packed_len()
-            + 0u32.packed_len() + self.nonce.packed_len()
-            + 0u32.packed_len() + self.encrypted_share.packed_len()
+        VecPrefix::<u8, u32>::from(self.dh_key.clone()).packed_len()
+            + VecPrefix::<u8, u32>::from(self.nonce.clone()).packed_len()
+            + VecPrefix::<u8, u32>::from(self.encrypted_share.clone()).packed_len()
             + self.threshold.packed_len()
-            + 0u32.packed_len() + self.commitments.packed_len()
+            + VecPrefix::<u8, u32>::from(self.commitments.clone()).packed_len()
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {

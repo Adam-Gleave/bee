@@ -75,8 +75,7 @@ impl Packable for Salt {
     type UnpackError = SaltDeclarationUnpackError;
 
     fn packed_len(&self) -> usize {
-        0u32.packed_len()
-            + self.bytes.packed_len()
+        VecPrefix::<u8, u32>::from(self.bytes.clone()).packed_len()
             + self.expiry_time.packed_len()
     }
 

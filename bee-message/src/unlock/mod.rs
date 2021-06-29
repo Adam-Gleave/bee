@@ -198,7 +198,7 @@ impl Packable for UnlockBlocks {
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
-        0u16.packed_len() + self.inner.packed_len()
+        VecPrefix::<UnlockBlock, u16>::from(self.inner.clone()).packed_len()
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
