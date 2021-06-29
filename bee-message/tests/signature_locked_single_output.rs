@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use bee_message::prelude::*;
-use bee_packable::Packable;
+use bee_packable::{Packable, UnpackError};
 
 use core::str::FromStr;
 
@@ -69,15 +69,13 @@ fn pack_unpack_valid() {
     assert_eq!(output_1, output_2);
 }
 
-// #[test]
-// fn pack_unpack_invalid() {
-//     assert!(matches!(
-//         SignatureLockedSingleOutput::unpack_from_slice(
-//             vec![
-//                 0, 82, 253, 252, 7, 33, 130, 101, 79, 22, 63, 95, 15, 154, 98, 29, 114, 149, 102, 199, 77, 16, 3, 124,
-//                 77, 123, 187, 4, 7, 209, 226, 198, 73, 0, 0, 0, 0, 0, 0, 0, 0,
-//             ]
-//         ),
-//         Err(Error::InvalidAmount(0))
-//     ));
-// }
+#[test]
+fn unpack_invalid_amount() {
+    assert!(matches!(
+        SignatureLockedSingleOutput::unpack_from_slice(vec![
+            0, 82, 253, 252, 7, 33, 130, 101, 79, 22, 63, 95, 15, 154, 98, 29, 114, 149, 102, 199, 77, 16, 3, 124, 77,
+            123, 187, 4, 7, 209, 226, 198, 73, 0, 0, 0, 0, 0, 0, 0, 0,
+        ]).err().unwrap(),
+        UnpackError::Packable(MessageUnpackError::ValidationError(ValidationError::InvalidAmount(0))),
+    ));
+}

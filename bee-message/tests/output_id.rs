@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use bee_message::prelude::*;
-use bee_packable::Packable;
+use bee_packable::{Packable, UnpackError};
 
 use core::{
     convert::{TryFrom, TryInto},
@@ -132,15 +132,15 @@ fn pack_unpack_valid() {
 
 // TODO: correct error type here
 
-// #[test]
-// fn pack_unpack_invalid() {
-//     let bytes = vec![
-//         82, 253, 252, 7, 33, 130, 101, 79, 22, 63, 95, 15, 154, 98, 29, 114, 149, 102, 199, 77, 16, 3, 124, 77, 123,
-//         187, 4, 7, 209, 226, 198, 73, 127, 0,
-//     ];
+#[test]
+fn pack_unpack_invalid() {
+    let bytes = vec![
+        82, 253, 252, 7, 33, 130, 101, 79, 22, 63, 95, 15, 154, 98, 29, 114, 149, 102, 199, 77, 16, 3, 124, 77, 123,
+        187, 4, 7, 209, 226, 198, 73, 127, 0,
+    ];
 
-//     assert!(matches!(
-//         OutputId::unpack_from_slice(bytes),
-//         Err(ValidationError::InvalidOutputIndex(127))
-//     ));
-// }
+    assert!(matches!(
+        OutputId::unpack_from_slice(bytes).err().unwrap(),
+        UnpackError::Packable(MessageUnpackError::ValidationError(ValidationError::InvalidOutputIndex(127))),
+    ));
+}

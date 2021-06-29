@@ -103,12 +103,3 @@ impl fmt::Display for MessageUnpackError {
         }
     }
 }
-
-impl MessageUnpackError {
-    fn validation_error(&self) -> Option<&ValidationError> {
-        match self {
-            Self::ValidationError(e) => Some(e),
-            _ => None,
-        }
-    }
-}
