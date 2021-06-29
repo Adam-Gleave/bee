@@ -118,7 +118,7 @@ fn validate_index(index: &Vec<u8>) -> Result<(), ValidationError> {
 
 fn validate_data(data: &Vec<u8>) -> Result<(), ValidationError> {
     if data.len() > MESSAGE_LENGTH_MAX {
-        Err(ValidationError::InvalidIndexationIndexLength(data.len()))
+        Err(ValidationError::InvalidIndexationDataLength(data.len()))
     } else {
         Ok(())
     }
@@ -130,8 +130,8 @@ impl Packable for IndexationPayload {
 
     fn packed_len(&self) -> usize {
         self.version.packed_len()
-            + 0u32.packed_len() + self.index.packed_len()
-            + 0u32.packed_len() + self.data.packed_len()
+            + VecPrefix::<u8, u32>::from(self.index.clone()).packed_len()
+            + VecPrefix::<u8, u32>::from(self.data.clone()).packed_len()
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {

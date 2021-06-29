@@ -3,59 +3,59 @@
 
 use bee_message::{prelude::*, signature::SignatureUnlockUnpackError};
 use bee_packable::{Packable, UnpackError};
-// use bee_test::rand::bytes::{rand_bytes, rand_bytes_32};
+use bee_test::rand::bytes::rand_bytes_array;
 
 #[test]
 fn unlock_kind() {
     assert_eq!(SignatureUnlock::KIND, 0);
 }
 
-// #[test]
-// fn signature_kind() {
-//     assert_eq!(
-//         SignatureUnlock::from(Ed25519Signature::new(
-//             rand_bytes_32(),
-//             rand_bytes(64).try_into().unwrap()
-//         )).kind(),
-//         0,
-//     );
-// }
+#[test]
+fn signature_kind() {
+    assert_eq!(
+        SignatureUnlock::from(Ed25519Signature::new(
+            rand_bytes_array::<32>(),
+            rand_bytes_array::<64>(),
+        )).kind(),
+        0,
+    );
+}
 
-// #[test]
-// fn from_ed25519() {
-//     let public_key_bytes = rand_bytes_32();
-//     let signature_bytes: [u8; 64] = rand_bytes(64).try_into().unwrap();
-//     let signature = SignatureUnlock::from(Ed25519Signature::new(public_key_bytes, signature_bytes));
+#[test]
+fn from_ed25519() {
+    let public_key_bytes = rand_bytes_array::<32>();
+    let signature_bytes: [u8; 64] = rand_bytes_array::<64>();
+    let signature = SignatureUnlock::from(Ed25519Signature::new(public_key_bytes, signature_bytes));
 
-//     assert!(matches!(signature, SignatureUnlock::Ed25519(signature)
-//         if signature.public_key() == &public_key_bytes
-//         && signature.signature() == signature_bytes.as_ref()
-//     ));
-// }
+    assert!(matches!(signature, SignatureUnlock::Ed25519(signature)
+        if signature.public_key() == &public_key_bytes
+        && signature.signature() == signature_bytes.as_ref()
+    ));
+}
 
-// #[test]
-// fn packed_len() {
-//     let signature = SignatureUnlock::from(Ed25519Signature::new(
-//         rand_bytes_32(),
-//         rand_bytes(64).try_into().unwrap(),
-//     ));
+#[test]
+fn packed_len() {
+    let signature = SignatureUnlock::from(Ed25519Signature::new(
+        rand_bytes_array::<32>(),
+        rand_bytes_array::<64>(),
+    ));
 
-//     assert_eq!(signature.packed_len(), 1 + 32 + 64);
-//     assert_eq!(signature.pack_new().len(), 1 + 32 + 64);
-// }
+    assert_eq!(signature.packed_len(), 1 + 32 + 64);
+    assert_eq!(signature.pack_to_vec().unwrap().len(), 1 + 32 + 64);
+}
 
-// #[test]
-// fn pack_unpack_valid_ed25519() {
-//     let signature_1 = SignatureUnlock::from(Ed25519Signature::new(
-//         rand_bytes_32(),
-//         rand_bytes(64).try_into().unwrap(),
-//     ));
-//     let signature_bytes = signature_1.pack_new();
-//     let signature_2 = SignatureUnlock::unpack(&mut signature_bytes.as_slice()).unwrap();
+#[test]
+fn pack_unpack_valid_ed25519() {
+    let signature_1 = SignatureUnlock::from(Ed25519Signature::new(
+        rand_bytes_array::<32>(),
+        rand_bytes_array::<64>(),
+    ));
+    let signature_bytes = signature_1.pack_to_vec().unwrap();
+    let signature_2 = SignatureUnlock::unpack_from_slice(signature_bytes.clone()).unwrap();
 
-//     assert_eq!(signature_bytes[0], 0);
-//     assert_eq!(signature_1, signature_2);
-// }
+    assert_eq!(signature_bytes[0], 0);
+    assert_eq!(signature_1, signature_2);
+}
 
 #[test]
 fn pack_unpack_invalid_kind() {

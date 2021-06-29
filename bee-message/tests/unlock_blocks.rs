@@ -2,16 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use bee_message::prelude::*;
-use bee_test::rand::bytes::{rand_bytes, rand_bytes_32};
-
-use core::convert::TryInto;
+use bee_test::rand::bytes::rand_bytes_array;
 
 #[test]
 fn kind() {
     assert_eq!(
         UnlockBlock::from(SignatureUnlock::from(Ed25519Signature::new(
-            rand_bytes_32(),
-            rand_bytes(64).try_into().unwrap(),
+            rand_bytes_array::<32>(),
+            rand_bytes_array::<64>(),
         )))
         .kind(),
         0

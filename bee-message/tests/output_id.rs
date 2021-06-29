@@ -130,8 +130,6 @@ fn pack_unpack_valid() {
     assert_eq!(output_id_1, output_id_2);
 }
 
-// TODO: correct error type here
-
 #[test]
 fn pack_unpack_invalid() {
     let bytes = vec![

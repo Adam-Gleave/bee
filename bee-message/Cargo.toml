@@ -24,6 +24,6 @@ serde = { version = "1.0", optional = true }
 thiserror = "1.0"
 
 [dev-dependencies]
-bee-test = { git = "https://github.com/iotaledger/bee.git", branch = "dev" }
+bee-test = { path = "../bee-test" }
 
 num_cpus = "1.13"
