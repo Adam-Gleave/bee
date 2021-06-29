@@ -10,7 +10,7 @@ pub mod indexation;
 pub mod salt_declaration;
 pub mod transaction;
 
-use crate::{MessageUnpackError, ValidationError};
+use crate::{MessagePackError, MessageUnpackError, ValidationError};
 
 use data::{DataPayload, DataPackError, DataUnpackError};
 use drng::{ApplicationMessagePayload, DkgPayload, DkgPackError, DkgUnpackError, BeaconPayload, CollectiveBeaconPayload};
@@ -194,48 +194,46 @@ impl From<TransactionPayload> for Payload {
 }
 
 impl Packable for Payload {
-    type PackError = PayloadPackError;
+    type PackError = MessagePackError;
     type UnpackError = MessageUnpackError;
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         match *self {
             Self::ApplicationMessage(ref payload) => {
-                ApplicationMessagePayload::KIND
-                    .pack(packer)
-                    .map_err(PackError::coerce)?;
-                payload.pack(packer).map_err(PackError::coerce)
+                ApplicationMessagePayload::KIND.pack(packer).map_err(PackError::infallible)?;
+                payload.pack(packer).map_err(PackError::infallible)
             }
             Self::Beacon(ref payload) => {
-                BeaconPayload::KIND.pack(packer).map_err(PackError::coerce)?;
-                payload.pack(packer).map_err(PackError::coerce)
+                BeaconPayload::KIND.pack(packer).map_err(PackError::infallible)?;
+                payload.pack(packer).map_err(PackError::infallible)
             }
             Self::CollectiveBeacon(ref payload) => {
-                CollectiveBeaconPayload::KIND.pack(packer).map_err(PackError::coerce)?;
-                payload.pack(packer).map_err(PackError::coerce)
+                CollectiveBeaconPayload::KIND.pack(packer).map_err(PackError::infallible)?;
+                payload.pack(packer).map_err(PackError::infallible)
             }
             Self::Data(ref payload) => {
-                DataPayload::KIND.pack(packer).map_err(PackError::coerce)?;
-                payload.pack(packer).map_err(PackError::coerce)
+                DataPayload::KIND.pack(packer).map_err(PackError::infallible)?;
+                payload.pack(packer)
             }
             Self::Dkg(ref payload) => {
-                DkgPayload::KIND.pack(packer).map_err(PackError::coerce)?;
-                payload.pack(packer).map_err(PackError::coerce)
+                DkgPayload::KIND.pack(packer).map_err(PackError::infallible)?;
+                payload.pack(packer)
             }
             Self::Fpc(ref payload) => {
-                FpcPayload::KIND.pack(packer).map_err(PackError::coerce)?;
-                payload.pack(packer).map_err(PackError::coerce)
+                FpcPayload::KIND.pack(packer).map_err(PackError::infallible)?;
+                payload.pack(packer)
             }
             Self::Indexation(ref payload) => {
-                IndexationPayload::KIND.pack(packer).map_err(PackError::coerce)?;
-                payload.pack(packer).map_err(PackError::coerce)
+                IndexationPayload::KIND.pack(packer).map_err(PackError::infallible)?;
+                payload.pack(packer)
             }
             Self::SaltDeclaration(ref payload) => {
-                SaltDeclarationPayload::KIND.pack(packer).map_err(PackError::coerce)?;
-                payload.pack(packer).map_err(PackError::coerce)
+                SaltDeclarationPayload::KIND.pack(packer).map_err(PackError::infallible)?;
+                payload.pack(packer)
             }
             Self::Transaction(ref payload) => {
-                TransactionPayload::KIND.pack(packer).map_err(PackError::coerce)?;
-                payload.pack(packer).map_err(PackError::coerce)
+                TransactionPayload::KIND.pack(packer).map_err(PackError::infallible)?;
+                payload.pack(packer)
             }
         }
     }
@@ -251,18 +249,14 @@ impl Packable for Payload {
             CollectiveBeaconPayload::KIND => Payload::CollectiveBeacon(Box::new(
                 CollectiveBeaconPayload::unpack(unpacker).map_err(UnpackError::coerce)?,
             )),
-            DataPayload::KIND => Payload::Data(Box::new(DataPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
-            DkgPayload::KIND => Payload::Dkg(Box::new(DkgPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
-            FpcPayload::KIND => Payload::Fpc(Box::new(FpcPayload::unpack(unpacker).map_err(UnpackError::coerce)?)),
-            IndexationPayload::KIND => Payload::Indexation(Box::new(
-                IndexationPayload::unpack(unpacker).map_err(UnpackError::coerce)?,
+            DataPayload::KIND => Payload::Data(Box::new(DataPayload::unpack(unpacker)?)),
+            DkgPayload::KIND => Payload::Dkg(Box::new(DkgPayload::unpack(unpacker)?)),
+            FpcPayload::KIND => Payload::Fpc(Box::new(FpcPayload::unpack(unpacker)?)),
+            IndexationPayload::KIND => Payload::Indexation(Box::new(IndexationPayload::unpack(unpacker)?)),
+            SaltDeclarationPayload::KIND => Payload::SaltDeclaration(
+                Box::new(SaltDeclarationPayload::unpack(unpacker)?,
             )),
-            SaltDeclarationPayload::KIND => Payload::SaltDeclaration(Box::new(
-                SaltDeclarationPayload::unpack(unpacker).map_err(UnpackError::coerce)?,
-            )),
-            TransactionPayload::KIND => Payload::Transaction(Box::new(
-                TransactionPayload::unpack(unpacker).map_err(UnpackError::coerce)?,
-            )),
+            TransactionPayload::KIND => Payload::Transaction(Box::new(TransactionPayload::unpack(unpacker)?)),
             tag => Err(UnpackError::Packable(PayloadUnpackError::InvalidPayloadKind(tag).into()))?,
         };
 

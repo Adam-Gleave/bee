@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{error::ValidationError, signature::ED25519_PUBLIC_KEY_LENGTH};
+use crate::{MessagePackError, MessageUnpackError, ValidationError, signature::ED25519_PUBLIC_KEY_LENGTH};
 
 use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, Packer, PackError, Unpacker, UnpackError, VecPrefix};
 
@@ -71,8 +71,8 @@ impl Salt {
 }
 
 impl Packable for Salt {
-    type PackError = SaltDeclarationPackError;
-    type UnpackError = SaltDeclarationUnpackError;
+    type PackError = MessagePackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         VecPrefix::<u8, u32>::from(self.bytes.clone()).packed_len()
@@ -81,7 +81,7 @@ impl Packable for Salt {
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         let prefixed_bytes: VecPrefix<u8, u32> = self.bytes.clone().into();
-        prefixed_bytes.pack(packer).map_err(PackError::coerce)?;
+        prefixed_bytes.pack(packer).map_err(PackError::coerce::<SaltDeclarationPackError>).map_err(PackError::coerce)?;
 
         self.expiry_time.pack(packer).map_err(PackError::infallible)?;
 
@@ -90,7 +90,11 @@ impl Packable for Salt {
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
-        let bytes = VecPrefix::<u8, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        let bytes = VecPrefix::<u8, u32>::unpack(unpacker)
+            .map_err(UnpackError::coerce::<SaltDeclarationUnpackError>)
+            .map_err(UnpackError::coerce)?
+            .into();
+
         let expiry_time = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
 
         Ok(Self { bytes, expiry_time })
@@ -136,8 +140,8 @@ impl SaltDeclarationPayload {
 }
 
 impl Packable for SaltDeclarationPayload {
-    type PackError = SaltDeclarationPackError;
-    type UnpackError = SaltDeclarationUnpackError;
+    type PackError = MessagePackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         self.version.packed_len()

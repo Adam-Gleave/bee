@@ -5,7 +5,7 @@
 
 mod padded;
 
-use crate::{error::{MessageUnpackError, ValidationError}, MESSAGE_LENGTH_MAX};
+use crate::{MessagePackError, MessageUnpackError, ValidationError, MESSAGE_LENGTH_MAX};
 
 pub use padded::{PaddedIndex, INDEXATION_PADDED_INDEX_LENGTH};
 
@@ -125,7 +125,7 @@ fn validate_data(data: &Vec<u8>) -> Result<(), ValidationError> {
 }
 
 impl Packable for IndexationPayload {
-    type PackError = IndexationPackError;
+    type PackError = MessagePackError;
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
@@ -138,10 +138,10 @@ impl Packable for IndexationPayload {
         self.version.pack(packer).map_err(PackError::infallible)?;
 
         let prefixed_index: VecPrefix<u8, u32> = self.index.clone().into();
-        prefixed_index.pack(packer).map_err(PackError::coerce)?;
+        prefixed_index.pack(packer).map_err(PackError::coerce::<IndexationPackError>).map_err(PackError::coerce)?;
 
         let prefixed_data: VecPrefix<u8, u32> = self.data.clone().into();
-        prefixed_data.pack(packer).map_err(PackError::coerce)?;
+        prefixed_data.pack(packer).map_err(PackError::coerce::<IndexationPackError>).map_err(PackError::coerce)?;
 
         Ok(())
     }

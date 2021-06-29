@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{ValidationError, input::InputUnpackError, output::{OutputIdUnpackError, OutputUnpackError, SignatureLockedDustAllowanceUnpackError, SignatureLockedSingleUnpackError}, parents::{ParentsPackError, ParentsUnpackError}, payload::{PayloadPackError, PayloadUnpackError, data::DataUnpackError, drng::DkgUnpackError, fpc::FpcUnpackError, indexation::IndexationUnpackError, salt_declaration::SaltDeclarationUnpackError, transaction::{TransactionEssenceUnpackError, TransactionUnpackError}}, signature::SignatureUnlockUnpackError, unlock::{UnlockBlockUnpackError, UnlockBlocksUnpackError}};
+use crate::{ValidationError, input::InputUnpackError, output::{OutputIdUnpackError, OutputUnpackError, SignatureLockedDustAllowanceUnpackError, SignatureLockedSingleUnpackError}, parents::{ParentsPackError, ParentsUnpackError}, payload::{PayloadPackError, PayloadUnpackError, data::{DataPackError, DataUnpackError}, drng::{DkgPackError, DkgUnpackError}, fpc::{FpcPackError, FpcUnpackError}, indexation::{IndexationPackError, IndexationUnpackError}, salt_declaration::{SaltDeclarationPackError, SaltDeclarationUnpackError}, transaction::{TransactionEssencePackError, TransactionEssenceUnpackError, TransactionPackError, TransactionUnpackError}}, signature::SignatureUnlockUnpackError, unlock::{UnlockBlockUnpackError, UnlockBlocksPackError, UnlockBlocksUnpackError}};
 
 use bee_packable::UnpackOptionError;
 
@@ -9,18 +9,43 @@ use core::{fmt, convert::Infallible};
 
 #[derive(Debug)]
 pub enum MessagePackError {
-    ParentsPackError(ParentsPackError),
-    PayloadPackError(PayloadPackError),
+    Data(DataPackError),
+    Dkg(DkgPackError),
+    Fpc(FpcPackError),
+    Indexation(IndexationPackError),
+    Parents(ParentsPackError),
+    Payload(PayloadPackError),
+    SaltDeclaration(SaltDeclarationPackError),
+    Transaction(TransactionPackError),
+    TransactionEssence(TransactionEssencePackError),
+    UnlockBlocks(UnlockBlocksPackError),
 }
 
-impl_wrapped_variant!(MessagePackError, ParentsPackError, MessagePackError::ParentsPackError);
-impl_wrapped_variant!(MessagePackError, PayloadPackError, MessagePackError::PayloadPackError);
+impl_wrapped_variant!(MessagePackError, DataPackError, MessagePackError::Data);
+impl_wrapped_variant!(MessagePackError, DkgPackError, MessagePackError::Dkg);
+impl_wrapped_variant!(MessagePackError, FpcPackError, MessagePackError::Fpc);
+impl_wrapped_variant!(MessagePackError, IndexationPackError, MessagePackError::Indexation);
+impl_wrapped_variant!(MessagePackError, ParentsPackError, MessagePackError::Parents);
+impl_wrapped_variant!(MessagePackError, PayloadPackError, MessagePackError::Payload);
+impl_wrapped_variant!(MessagePackError, SaltDeclarationPackError, MessagePackError::SaltDeclaration);
+impl_wrapped_variant!(MessagePackError, TransactionPackError, MessagePackError::Transaction);
+impl_wrapped_variant!(MessagePackError, TransactionEssencePackError, MessagePackError::TransactionEssence);
+impl_wrapped_variant!(MessagePackError, UnlockBlocksPackError, MessagePackError::UnlockBlocks);
+impl_from_infallible!(MessagePackError);
 
 impl fmt::Display for MessagePackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::ParentsPackError(e) => write!(f, "{}", e),
-            Self::PayloadPackError(e) => write!(f, "{}", e),
+            Self::Data(e) => write!(f, "Error packing Data payload: {}", e),
+            Self::Dkg(e) => write!(f, "Error packing DKG payload: {}", e),
+            Self::Fpc(e) => write!(f, "Error packing FPC payload: {}", e),
+            Self::Indexation(e) => write!(f, "Error packing Indexation payload: {}", e),
+            Self::Parents(e) => write!(f, "Error packing message parents: {}", e),
+            Self::Payload(e) => write!(f, "Error packing payload: {}", e),
+            Self::SaltDeclaration(e) => write!(f, "Error packing SaltDeclaration payload: {}", e),
+            Self::Transaction(e) => write!(f, "Error packing Transaction payload: {}", e),
+            Self::TransactionEssence(e) => write!(f, "Error packing TransactionEssence: {}", e),
+            Self::UnlockBlocks(e) => write!(f, "Error packing UnlockBlocks: {}", e), 
         }
     }
 }

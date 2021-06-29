@@ -6,7 +6,7 @@
 mod essence;
 mod transaction_id;
 
-use crate::{MessageUnpackError, error::ValidationError, unlock::{UnlockBlocksPackError, UnlockBlocksUnpackError, UnlockBlocks}};
+use crate::{MessagePackError, MessageUnpackError, ValidationError, unlock::{UnlockBlocksPackError, UnlockBlocksUnpackError, UnlockBlocks}};
 
 pub use essence::{
     TransactionEssence, TransactionEssenceBuilder, TransactionEssencePackError, TransactionEssenceUnpackError,
@@ -23,10 +23,10 @@ use core::{convert::Infallible, fmt};
 pub enum TransactionPackError {
     InvalidUnlockBlocksPrefix,
     TransactionEssence(Box<TransactionEssencePackError>),
-    UnlockBlocksPack(UnlockBlocksPackError),
+    UnlockBlocks(UnlockBlocksPackError),
 }
 
-impl_wrapped_variant!(TransactionPackError, UnlockBlocksPackError, TransactionPackError::UnlockBlocksPack);
+impl_wrapped_variant!(TransactionPackError, UnlockBlocksPackError, TransactionPackError::UnlockBlocks);
 
 impl From<TransactionEssencePackError> for TransactionPackError {
     fn from(error: TransactionEssencePackError) -> Self {
@@ -47,7 +47,7 @@ impl fmt::Display for TransactionPackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidUnlockBlocksPrefix => write!(f, "Invalid unlock block vector prefix"),        
-            Self::UnlockBlocksPack(e) => write!(f, "Error unpacking UnlockBlocks: {}", e),
+            Self::UnlockBlocks(e) => write!(f, "Error unpacking UnlockBlocks: {}", e),
             Self::TransactionEssence(e) => write!(f, "{}", e),
         }
     }
@@ -125,7 +125,7 @@ impl TransactionPayload {
 }
 
 impl Packable for TransactionPayload {
-    type PackError = TransactionPackError;
+    type PackError = MessagePackError;
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
@@ -133,8 +133,8 @@ impl Packable for TransactionPayload {
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
-        self.essence.pack(packer).map_err(PackError::coerce)?;
-        self.unlock_blocks.pack(packer).map_err(PackError::coerce)?;
+        self.essence.pack(packer)?;
+        self.unlock_blocks.pack(packer)?;
 
         Ok(())
     }

@@ -5,7 +5,7 @@ mod reference;
 
 pub use reference::ReferenceUnlock;
 
-use crate::{MessageUnpackError, constants::UNLOCK_BLOCK_COUNT_RANGE, error::ValidationError, signature::SignatureUnlock, unlock::reference::ReferenceUnlockUnpackError};
+use crate::{MessagePackError, MessageUnpackError, ValidationError, constants::UNLOCK_BLOCK_COUNT_RANGE, signature::SignatureUnlock, unlock::reference::ReferenceUnlockUnpackError};
 
 use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError, VecPrefix, error::{PackPrefixError, UnpackPrefixError}};
 
@@ -194,7 +194,7 @@ impl Deref for UnlockBlocks {
 }
 
 impl Packable for UnlockBlocks {
-    type PackError = UnlockBlocksPackError;
+    type PackError = MessagePackError;
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
@@ -203,7 +203,7 @@ impl Packable for UnlockBlocks {
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         let prefixed = VecPrefix::<UnlockBlock, u16>::from(self.inner.clone());
-        prefixed.pack(packer).map_err(PackError::coerce)?;
+        prefixed.pack(packer).map_err(PackError::coerce::<UnlockBlocksPackError>).map_err(PackError::coerce)?;
 
         Ok(())
     }

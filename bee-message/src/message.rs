@@ -148,12 +148,12 @@ impl Packable for Message {
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
-        self.strong_parents.pack(packer).map_err(PackError::coerce)?;
-        self.weak_parents.pack(packer).map_err(PackError::coerce)?;
+        self.strong_parents.pack(packer)?;
+        self.weak_parents.pack(packer)?;
         self.issuer_public_key.pack(packer).map_err(PackError::infallible)?;
         self.issue_timestamp.pack(packer).map_err(PackError::infallible)?;
         self.sequence_number.pack(packer).map_err(PackError::infallible)?;
-        self.payload.pack(packer).map_err(PackError::coerce)?;
+        self.payload.pack(packer)?;
         self.nonce.pack(packer).map_err(PackError::infallible)?;
         self.signature.pack(packer).map_err(PackError::infallible)?;
 
@@ -161,8 +161,8 @@ impl Packable for Message {
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
-        let strong_parents = Parents::unpack(unpacker).map_err(UnpackError::coerce)?;
-        let weak_parents = Parents::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let strong_parents = Parents::unpack(unpacker)?;
+        let weak_parents = Parents::unpack(unpacker)?;
         let issuer_public_key = <[u8; MESSAGE_PUBLIC_KEY_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
         let issue_timestamp = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
         let sequence_number = u32::unpack(unpacker).map_err(UnpackError::infallible)?;

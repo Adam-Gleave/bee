@@ -9,7 +9,7 @@ mod timestamps;
 pub use conflicts::{Conflict, Conflicts};
 pub use timestamps::{Timestamp, Timestamps};
 
-use crate::error::ValidationError;
+use crate::{MessagePackError, MessageUnpackError, ValidationError};
 
 use bee_packable::{
     error::{PackPrefixError, UnpackPrefixError},
@@ -89,25 +89,31 @@ impl FpcPayload {
 }
 
 impl Packable for FpcPayload {
-    type PackError = FpcPackError;
-    type UnpackError = FpcUnpackError;
+    type PackError = MessagePackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         self.version.packed_len() + self.conflicts.packed_len() + self.timestamps.packed_len()
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
-        self.version.pack(packer).map_err(PackError::coerce)?;
-        self.conflicts.pack(packer).map_err(PackError::coerce)?;
-        self.timestamps.pack(packer).map_err(PackError::coerce)?;
+        self.version.pack(packer).map_err(PackError::infallible)?;
+        self.conflicts.pack(packer).map_err(PackError::coerce::<FpcPackError>).map_err(PackError::coerce)?;
+        self.timestamps.pack(packer).map_err(PackError::coerce::<FpcPackError>).map_err(PackError::coerce)?;
 
         Ok(())
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
-        let version = u8::unpack(unpacker).map_err(UnpackError::coerce)?;
-        let conflicts = Conflicts::unpack(unpacker).map_err(UnpackError::coerce)?;
-        let timestamps = Timestamps::unpack(unpacker).map_err(UnpackError::coerce)?;
+        let version = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
+
+        let conflicts = Conflicts::unpack(unpacker)
+            .map_err(UnpackError::coerce::<FpcUnpackError>)
+            .map_err(UnpackError::coerce)?;
+
+        let timestamps = Timestamps::unpack(unpacker)
+            .map_err(UnpackError::coerce::<FpcUnpackError>)
+            .map_err(UnpackError::coerce)?;
 
         Ok(Self {
             version,

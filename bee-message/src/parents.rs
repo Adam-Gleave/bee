@@ -3,7 +3,7 @@
 
 //! The parents module defines the core data type for storing the messages directly approved by a message.
 
-use crate::{error::ValidationError, MessageId};
+use crate::{MessagePackError, MessageUnpackError, ValidationError, MessageId};
 
 use bee_ord::is_unique_sorted;
 use bee_packable::{
@@ -115,8 +115,8 @@ impl Parents {
 }
 
 impl Packable for Parents {
-    type PackError = ParentsPackError;
-    type UnpackError = ParentsUnpackError;
+    type PackError = MessagePackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         VecPrefix::<MessageId, u32>::from(self.inner.clone()).packed_len()
@@ -124,13 +124,16 @@ impl Packable for Parents {
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         let prefixed = VecPrefix::<MessageId, u32>::from(self.inner.clone());
-        prefixed.pack(packer).map_err(PackError::coerce)?;
+        prefixed.pack(packer).map_err(PackError::coerce::<ParentsPackError>).map_err(PackError::coerce)?;
 
         Ok(())
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
-        let parents = VecPrefix::<MessageId, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        let parents = VecPrefix::<MessageId, u32>::unpack(unpacker)
+            .map_err(UnpackError::coerce::<ParentsUnpackError>)
+            .map_err(UnpackError::coerce)?
+            .into();
 
         Ok(Parents::new(parents).map_err(|e| UnpackError::Packable(e.into()))?)
     }

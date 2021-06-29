@@ -1,6 +1,8 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::{MessagePackError, MessageUnpackError};
+
 use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, Packer, PackError, Unpacker, UnpackError, VecPrefix};
 
 use alloc::vec::Vec;
@@ -68,8 +70,8 @@ impl DataPayload {
 }
 
 impl Packable for DataPayload {
-    type PackError = DataPackError;
-    type UnpackError = DataUnpackError;
+    type PackError = MessagePackError;
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         self.version.packed_len()
@@ -80,14 +82,17 @@ impl Packable for DataPayload {
         self.version.pack(packer).map_err(PackError::infallible)?;
         
         let prefixed_data: VecPrefix::<u8, u32> = self.data.clone().into();
-        prefixed_data.pack(packer).map_err(PackError::coerce)?;
+        prefixed_data.pack(packer).map_err(PackError::coerce::<DataPackError>).map_err(PackError::coerce)?;
 
         Ok(())
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
         let version = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
-        let data = VecPrefix::<u8, u32>::unpack(unpacker).map_err(UnpackError::coerce)?.into();
+        let data = VecPrefix::<u8, u32>::unpack(unpacker)
+            .map_err(UnpackError::coerce::<DataUnpackError>)
+            .map_err(UnpackError::coerce)?
+            .into();
     
         Ok(Self { version, data })
     }

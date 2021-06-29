@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY}, error::{MessageUnpackError, ValidationError}, input::Input, output::Output, payload::{Payload, PayloadPackError}, prelude::{SignatureLockedDustAllowanceOutput, SignatureLockedSingleOutput}};
+use crate::{MessagePackError, MessageUnpackError, ValidationError, constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY}, input::Input, output::Output, payload::{Payload, PayloadPackError}, prelude::{SignatureLockedDustAllowanceOutput, SignatureLockedSingleOutput}};
 
 use bee_ord::is_sorted;
 use bee_packable::{
@@ -128,7 +128,7 @@ impl TransactionEssence {
 }
 
 impl Packable for TransactionEssence {
-    type PackError = TransactionEssencePackError;
+    type PackError = MessagePackError;
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
