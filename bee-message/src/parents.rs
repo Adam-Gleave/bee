@@ -149,21 +149,17 @@ impl Packable for Parents {
 
         let mut bits = bitarr![Lsb0, u8; 0; 8];
         bits.store(bits_repr);
-        validate_parents_count(bits.count_ones()).map_err(|e| UnpackError::Packable(e.into()))?;
+        validate_strong_parents_count(bits.count_ones()).map_err(|e| UnpackError::Packable(e.into()))?;
 
         let mut parents = vec![];
 
-        for i in 0..8 {
-            if i < count {
-                let id = MessageId::unpack(unpacker).map_err(UnpackError::infallible)?;
+        for i in 0..count {
+            let id = MessageId::unpack(unpacker).map_err(UnpackError::infallible)?;
 
-                if *bits.get(i as usize).unwrap() {
-                    parents.push(Parent::Strong(id))
-                } else {
-                    parents.push(Parent::Weak(id))
-                }
+            if *bits.get(i as usize).unwrap() {
+                parents.push(Parent::Strong(id))
             } else {
-                MessageId::unpack(unpacker).map_err(UnpackError::infallible)?;
+                parents.push(Parent::Weak(id))
             }
         }
 
