@@ -6,18 +6,11 @@
 use crate::{MESSAGE_ID_LENGTH, MessageId, MessagePackError, MessageUnpackError, ValidationError};
 
 use bee_ord::is_unique_sorted;
-use bee_packable::{
-    error::{PackPrefixError, UnpackPrefixError},
-    Packable, Packer, PackError, Unpacker, UnpackError,
-};
+use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
 
 use bitvec::prelude::*;
 
-use core::{
-    fmt,
-    convert::Infallible,
-    ops::{Deref, RangeInclusive},
-};
+use core::ops::{Deref, RangeInclusive};
 
 use alloc::vec;
 use alloc::vec::Vec;
@@ -26,52 +19,6 @@ use alloc::vec::Vec;
 pub const MESSAGE_PARENTS_RANGE: RangeInclusive<usize> = 1..=8;
 
 pub const MESSAGE_MIN_STRONG_PARENTS: usize = 1;
-
-#[derive(Debug)]
-pub enum ParentsPackError {
-    InvalidPrefixLength,
-}
-
-impl From<PackPrefixError<Infallible, u32>> for ParentsPackError {
-    fn from(_: PackPrefixError<Infallible, u32>) -> Self {
-        Self::InvalidPrefixLength
-    }
-}
-
-impl fmt::Display for ParentsPackError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for message parents"),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum ParentsUnpackError {
-    InvalidPrefixLength,
-    ValidationError(ValidationError),
-}
-
-impl From<ValidationError> for ParentsUnpackError {
-    fn from(error: ValidationError) -> Self {
-        Self::ValidationError(error)
-    }
-}
-
-impl From<UnpackPrefixError<Infallible, u32>> for ParentsUnpackError {
-    fn from(_: UnpackPrefixError<Infallible, u32>) -> Self {
-        Self::InvalidPrefixLength
-    }
-}
-
-impl fmt::Display for ParentsUnpackError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for message parents"),
-            Self::ValidationError(e) => write!(f, "{}", e),
-        }
-    }
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Parent {

@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{ValidationError, input::InputUnpackError, output::{OutputIdUnpackError, OutputUnpackError, SignatureLockedDustAllowanceUnpackError, SignatureLockedSingleUnpackError}, parents::{ParentsPackError, ParentsUnpackError}, payload::{PayloadPackError, PayloadUnpackError, data::{DataPackError, DataUnpackError}, drng::{DkgPackError, DkgUnpackError}, fpc::{FpcPackError, FpcUnpackError}, indexation::{IndexationPackError, IndexationUnpackError}, salt_declaration::{SaltDeclarationPackError, SaltDeclarationUnpackError}, transaction::{TransactionEssencePackError, TransactionEssenceUnpackError, TransactionPackError, TransactionUnpackError}}, signature::SignatureUnlockUnpackError, unlock::{UnlockBlockUnpackError, UnlockBlocksPackError, UnlockBlocksUnpackError}};
+use crate::{ValidationError, input::InputUnpackError, output::{OutputIdUnpackError, OutputUnpackError, SignatureLockedDustAllowanceUnpackError, SignatureLockedSingleUnpackError}, payload::{PayloadPackError, PayloadUnpackError, data::{DataPackError, DataUnpackError}, drng::{DkgPackError, DkgUnpackError}, fpc::{FpcPackError, FpcUnpackError}, indexation::{IndexationPackError, IndexationUnpackError}, salt_declaration::{SaltDeclarationPackError, SaltDeclarationUnpackError}, transaction::{TransactionEssencePackError, TransactionEssenceUnpackError, TransactionPackError, TransactionUnpackError}}, signature::SignatureUnlockUnpackError, unlock::{UnlockBlockUnpackError, UnlockBlocksPackError, UnlockBlocksUnpackError}};
 
 use bee_packable::UnpackOptionError;
 
@@ -13,7 +13,6 @@ pub enum MessagePackError {
     Dkg(DkgPackError),
     Fpc(FpcPackError),
     Indexation(IndexationPackError),
-    Parents(ParentsPackError),
     Payload(PayloadPackError),
     SaltDeclaration(SaltDeclarationPackError),
     Transaction(TransactionPackError),
@@ -25,7 +24,6 @@ impl_wrapped_variant!(MessagePackError, DataPackError, MessagePackError::Data);
 impl_wrapped_variant!(MessagePackError, DkgPackError, MessagePackError::Dkg);
 impl_wrapped_variant!(MessagePackError, FpcPackError, MessagePackError::Fpc);
 impl_wrapped_variant!(MessagePackError, IndexationPackError, MessagePackError::Indexation);
-impl_wrapped_variant!(MessagePackError, ParentsPackError, MessagePackError::Parents);
 impl_wrapped_variant!(MessagePackError, PayloadPackError, MessagePackError::Payload);
 impl_wrapped_variant!(MessagePackError, SaltDeclarationPackError, MessagePackError::SaltDeclaration);
 impl_wrapped_variant!(MessagePackError, TransactionPackError, MessagePackError::Transaction);
@@ -40,7 +38,6 @@ impl fmt::Display for MessagePackError {
             Self::Dkg(e) => write!(f, "Error packing DKG payload: {}", e),
             Self::Fpc(e) => write!(f, "Error packing FPC payload: {}", e),
             Self::Indexation(e) => write!(f, "Error packing Indexation payload: {}", e),
-            Self::Parents(e) => write!(f, "Error packing message parents: {}", e),
             Self::Payload(e) => write!(f, "Error packing payload: {}", e),
             Self::SaltDeclaration(e) => write!(f, "Error packing SaltDeclaration payload: {}", e),
             Self::Transaction(e) => write!(f, "Error packing Transaction payload: {}", e),
@@ -61,7 +58,6 @@ pub enum MessageUnpackError {
     InvalidOptionTag(u8),
     Output(OutputUnpackError),
     OutputId(OutputIdUnpackError),
-    Parents(ParentsUnpackError),
     Payload(PayloadUnpackError),
     SaltDeclaration(SaltDeclarationUnpackError),
     SignatureLockedDustAllowance(SignatureLockedDustAllowanceUnpackError),
@@ -74,7 +70,6 @@ pub enum MessageUnpackError {
     ValidationError(ValidationError),
 }
 
-impl_wrapped_validated!(MessageUnpackError, ParentsUnpackError, MessageUnpackError::Parents);
 impl_wrapped_validated!(MessageUnpackError, IndexationUnpackError, MessageUnpackError::Indexation);
 impl_wrapped_validated!(MessageUnpackError, InputUnpackError, MessageUnpackError::Input);
 impl_wrapped_validated!(MessageUnpackError, OutputUnpackError, MessageUnpackError::Output);
@@ -114,7 +109,6 @@ impl fmt::Display for MessageUnpackError {
             Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1", tag),
             Self::Output(e) => write!(f, "Error unpacking Output: {}", e),
             Self::OutputId(e) => write!(f, "Error unpacking OutputId: {}", e),
-            Self::Parents(e) => write!(f, "Error unpacking message parents: {}", e),
             Self::Payload(e) => write!(f, "Error unpacking payload: {}", e),
             Self::SaltDeclaration(e) => write!(f, "Error unpacking SaltDeclaration payload: {}", e),
             Self::SignatureLockedDustAllowance(e) => write!(f, "Error unpacking SignatureLockedDustAllowance: {}", e),
