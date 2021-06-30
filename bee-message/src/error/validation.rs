@@ -34,6 +34,7 @@ pub enum ValidationError {
     InvalidPayloadKind(u32),
     InvalidReferenceIndex(u16),
     InvalidSignature,
+    InvalidStrongParentsCount(usize),
     InvalidUnlockBlockCount(usize),
     InvalidUnlockBlockReference(usize),
     MissingField(&'static str),
@@ -83,6 +84,7 @@ impl fmt::Display for ValidationError {
             Self::InvalidPayloadKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
             Self::InvalidReferenceIndex(index) => write!(f, "Invalid reference index: {}.", index),
             Self::InvalidSignature => write!(f, "Invalid signature provided."),
+            Self::InvalidStrongParentsCount(count) => write!(f, "Invalid strong parents count: {}", count),
             Self::InvalidUnlockBlockCount(count) => write!(f, "Invalid unlock block count: {}.", count),
             Self::InvalidUnlockBlockReference(index) => {
                 write!(f, "Invalid unlock block reference: {}", index)
