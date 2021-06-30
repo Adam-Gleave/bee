@@ -69,10 +69,10 @@ fn pack_unpack_invalid_kind() {
                 45, 124, 67, 30, 124, 38, 34, 89, 92
             ]
         )
-		.err()
-		.unwrap(),
+        .err()
+        .unwrap(),
         UnpackError::Packable(
-			MessageUnpackError::SignatureUnlock(SignatureUnlockUnpackError::InvalidSignatureUnlockKind(1))
-		),
+            MessageUnpackError::SignatureUnlock(SignatureUnlockUnpackError::InvalidSignatureUnlockKind(1))
+        ),
     ));
 }
