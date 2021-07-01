@@ -64,7 +64,7 @@ fn packed_len() {
 }
 
 #[test]
-fn pack_unpack() {
+fn round_trip() {
     let output_id = OutputId::from_str(OUTPUT_ID).unwrap();
     let input_1 = UtxoInput::new(*output_id.transaction_id(), output_id.index()).unwrap();
     let input_2 = UtxoInput::unpack_from_slice(input_1.pack_to_vec().unwrap()).unwrap();

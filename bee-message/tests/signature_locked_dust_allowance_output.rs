@@ -54,6 +54,17 @@ fn new_invalid_more_than_max_amount() {
 }
 
 #[test]
+fn unpack_invalid_amount() {
+    assert!(matches!(
+        SignatureLockedDustAllowanceOutput::unpack_from_slice(vec![
+            0, 82, 253, 252, 7, 33, 130, 101, 79, 22, 63, 95, 15, 154, 98, 29, 114, 149, 102, 199, 77, 16, 3, 124, 77,
+            123, 187, 4, 7, 209, 226, 198, 73, 42, 0, 0, 0, 0, 0, 0, 0,
+        ]).err().unwrap(),
+        UnpackError::Packable(MessageUnpackError::ValidationError(ValidationError::InvalidDustAllowanceAmount(42))),
+    ));
+}
+
+#[test]
 fn packed_len() {
     let output = SignatureLockedDustAllowanceOutput::new(
         Address::from(Ed25519Address::from_str(ED25519_ADDRESS).unwrap()),
@@ -66,7 +77,7 @@ fn packed_len() {
 }
 
 #[test]
-fn pack_unpack_valid() {
+fn round_trip() {
     let output_1 = SignatureLockedDustAllowanceOutput::new(
         Address::from(Ed25519Address::from_str(ED25519_ADDRESS).unwrap()),
         1_000_000,
@@ -75,15 +86,4 @@ fn pack_unpack_valid() {
     let output_2 = SignatureLockedDustAllowanceOutput::unpack_from_slice(output_1.pack_to_vec().unwrap()).unwrap();
 
     assert_eq!(output_1, output_2);
-}
-
-#[test]
-fn unpack_invalid_amount() {
-    assert!(matches!(
-        SignatureLockedDustAllowanceOutput::unpack_from_slice(vec![
-            0, 82, 253, 252, 7, 33, 130, 101, 79, 22, 63, 95, 15, 154, 98, 29, 114, 149, 102, 199, 77, 16, 3, 124, 77,
-            123, 187, 4, 7, 209, 226, 198, 73, 42, 0, 0, 0, 0, 0, 0, 0,
-        ]).err().unwrap(),
-        UnpackError::Packable(MessageUnpackError::ValidationError(ValidationError::InvalidDustAllowanceAmount(42))),
-    ));
 }

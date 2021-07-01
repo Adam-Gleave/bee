@@ -43,6 +43,14 @@ fn try_from_invalid() {
 }
 
 #[test]
+fn unpack_invalid_index() {
+    assert!(matches!(
+        ReferenceUnlock::unpack_from_slice(vec![0x2a, 0x2a]).err().unwrap(),
+        UnpackError::Packable(MessageUnpackError::ValidationError(ValidationError::InvalidReferenceIndex(10794))),
+    ));
+}
+
+#[test]
 fn packed_len() {
     let reference = ReferenceUnlock::new(0).unwrap();
 
@@ -51,17 +59,9 @@ fn packed_len() {
 }
 
 #[test]
-fn pack_unpack_valid() {
+fn round_trip() {
     let reference_1 = ReferenceUnlock::try_from(42).unwrap();
     let reference_2 = ReferenceUnlock::unpack_from_slice(reference_1.pack_to_vec().unwrap()).unwrap();
 
     assert_eq!(reference_1, reference_2);
-}
-
-#[test]
-fn pack_unpack_invalid_index() {
-    assert!(matches!(
-        ReferenceUnlock::unpack_from_slice(vec![0x2a, 0x2a]).err().unwrap(),
-        UnpackError::Packable(MessageUnpackError::ValidationError(ValidationError::InvalidReferenceIndex(10794))),
-    ));
 }

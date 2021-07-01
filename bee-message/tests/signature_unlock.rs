@@ -34,31 +34,7 @@ fn from_ed25519() {
 }
 
 #[test]
-fn packed_len() {
-    let signature = SignatureUnlock::from(Ed25519Signature::new(
-        rand_bytes_array::<32>(),
-        rand_bytes_array::<64>(),
-    ));
-
-    assert_eq!(signature.packed_len(), 1 + 32 + 64);
-    assert_eq!(signature.pack_to_vec().unwrap().len(), 1 + 32 + 64);
-}
-
-#[test]
-fn pack_unpack_valid_ed25519() {
-    let signature_1 = SignatureUnlock::from(Ed25519Signature::new(
-        rand_bytes_array::<32>(),
-        rand_bytes_array::<64>(),
-    ));
-    let signature_bytes = signature_1.pack_to_vec().unwrap();
-    let signature_2 = SignatureUnlock::unpack_from_slice(signature_bytes.clone()).unwrap();
-
-    assert_eq!(signature_bytes[0], 0);
-    assert_eq!(signature_1, signature_2);
-}
-
-#[test]
-fn pack_unpack_invalid_kind() {
+fn unpack_invalid_kind() {
     assert!(matches!(
         SignatureUnlock::unpack_from_slice(
             vec![
@@ -76,3 +52,28 @@ fn pack_unpack_invalid_kind() {
         ),
     ));
 }
+
+#[test]
+fn packed_len() {
+    let signature = SignatureUnlock::from(Ed25519Signature::new(
+        rand_bytes_array::<32>(),
+        rand_bytes_array::<64>(),
+    ));
+
+    assert_eq!(signature.packed_len(), 1 + 32 + 64);
+    assert_eq!(signature.pack_to_vec().unwrap().len(), 1 + 32 + 64);
+}
+
+#[test]
+fn round_trip_ed25519() {
+    let signature_1 = SignatureUnlock::from(Ed25519Signature::new(
+        rand_bytes_array::<32>(),
+        rand_bytes_array::<64>(),
+    ));
+    let signature_bytes = signature_1.pack_to_vec().unwrap();
+    let signature_2 = SignatureUnlock::unpack_from_slice(signature_bytes.clone()).unwrap();
+
+    assert_eq!(signature_bytes[0], 0);
+    assert_eq!(signature_1, signature_2);
+}
+

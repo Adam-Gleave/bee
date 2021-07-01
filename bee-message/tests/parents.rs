@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use bee_message::prelude::*;
+use bee_message::{prelude::*, parents::Parent};
 use bee_packable::{Packable, UnpackError};
 
 // TODO: Add MessageId functions to bee-test
@@ -117,4 +117,24 @@ fn unpack_invalid_no_strong_parents() {
         Parents::unpack_from_slice(bytes).err().unwrap(),
         UnpackError::Packable(MessageUnpackError::ValidationError(ValidationError::InvalidStrongParentsCount(0))),
     ));
+}
+
+#[test]
+fn round_trip() {
+    let id_a = MessageId::new([
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+    ]);
+    let id_b = MessageId::new([
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
+    ]);
+
+    let parents_a = Parents::new(vec![
+        Parent::Strong(id_a),
+        Parent::Weak(id_b),
+    ])
+    .unwrap(); 
+
+    let parents_b = Parents::unpack_from_slice(parents_a.pack_to_vec().unwrap()).unwrap();
+
+    assert_eq!(parents_a, parents_b);
 }

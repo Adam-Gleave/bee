@@ -115,23 +115,7 @@ fn from_str_to_str() {
 }
 
 #[test]
-fn packed_len() {
-    let output_id = OutputId::from_str(OUTPUT_ID).unwrap();
-
-    assert_eq!(output_id.packed_len(), 32 + 2);
-    assert_eq!(output_id.pack_to_vec().unwrap().len(), 32 + 2);
-}
-
-#[test]
-fn pack_unpack_valid() {
-    let output_id_1 = OutputId::from_str(OUTPUT_ID).unwrap();
-    let output_id_2 = OutputId::unpack_from_slice(output_id_1.pack_to_vec().unwrap()).unwrap();
-
-    assert_eq!(output_id_1, output_id_2);
-}
-
-#[test]
-fn pack_unpack_invalid() {
+fn unpack_invalid_index() {
     let bytes = vec![
         82, 253, 252, 7, 33, 130, 101, 79, 22, 63, 95, 15, 154, 98, 29, 114, 149, 102, 199, 77, 16, 3, 124, 77, 123,
         187, 4, 7, 209, 226, 198, 73, 127, 0,
@@ -141,4 +125,20 @@ fn pack_unpack_invalid() {
         OutputId::unpack_from_slice(bytes).err().unwrap(),
         UnpackError::Packable(MessageUnpackError::ValidationError(ValidationError::InvalidOutputIndex(127))),
     ));
+}
+
+#[test]
+fn packed_len() {
+    let output_id = OutputId::from_str(OUTPUT_ID).unwrap();
+
+    assert_eq!(output_id.packed_len(), 32 + 2);
+    assert_eq!(output_id.pack_to_vec().unwrap().len(), 32 + 2);
+}
+
+#[test]
+fn round_trip() {
+    let output_id_1 = OutputId::from_str(OUTPUT_ID).unwrap();
+    let output_id_2 = OutputId::unpack_from_slice(output_id_1.pack_to_vec().unwrap()).unwrap();
+
+    assert_eq!(output_id_1, output_id_2);
 }

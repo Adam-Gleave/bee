@@ -17,10 +17,7 @@ fn kind() {
 #[test]
 fn debug_impl() {
     assert_eq!(
-        format!(
-            "{:?}",
-            PaddedIndex::new(hex::decode(PADDED_INDEX).unwrap().try_into().unwrap())
-        ),
+        format!("{:?}", PaddedIndex::new(hex::decode(PADDED_INDEX).unwrap().try_into().unwrap())),
         "PaddedIndex(52fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c64952fdfc072182654f163f5f0f9a621d729566c74d10037c4d7bbb0407d1e2c649)"
     );
 }
@@ -85,25 +82,6 @@ fn new_invalid_data_length_more_than_max() {
 }
 
 #[test]
-fn packed_len() {
-    let indexation =
-        IndexationPayload::new(0, rand_bytes(10), [0x42, 0xff, 0x84, 0xa2, 0x42, 0xff, 0x84, 0xa2].to_vec()).unwrap();
-
-    assert_eq!(indexation.packed_len(), 1 + 10 + 4 + 4 + 8);
-    assert_eq!(indexation.pack_to_vec().unwrap().len(), 1 + 10 + 4 + 4 + 8);
-}
-
-#[test]
-fn pack_unpack_valid() {
-    let indexation_1 =
-        IndexationPayload::new(0, rand_bytes(32), [0x42, 0xff, 0x84, 0xa2, 0x42, 0xff, 0x84, 0xa2].to_vec()).unwrap();
-    let indexation_2 = IndexationPayload::unpack_from_slice(indexation_1.pack_to_vec().unwrap()).unwrap();
-
-    assert_eq!(indexation_1.index(), indexation_2.index());
-    assert_eq!(indexation_1.data(), indexation_2.data());
-}
-
-#[test]
 fn unpack_invalid_index_length_less_than_min() {
     assert!(matches!(
         IndexationPayload::unpack_from_slice(vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00]).err().unwrap(),
@@ -132,7 +110,7 @@ fn unpack_invalid_index_length_more_than_max() {
 }
 
 #[test]
-fn unpack_valid_padded() {
+fn round_trip() {
     let index = rand_bytes(32);
     let mut padded_index = index.clone();
     padded_index.append(&mut vec![0u8; 32]);
@@ -141,11 +119,19 @@ fn unpack_valid_padded() {
         0, 
         index, 
         [0x42, 0xff, 0x84, 0xa2, 0x42, 0xff, 0x84, 0xa2].to_vec(),
-    ).unwrap();
+    )
+    .unwrap();
 
     let indexation_2 = IndexationPayload::unpack_from_slice(indexation_1.pack_to_vec().unwrap()).unwrap();
 
-    assert_eq!(indexation_1.index(), indexation_2.index());
-    assert_eq!(indexation_1.padded_index(), indexation_2.padded_index());
-    assert_eq!(indexation_1.data(), indexation_2.data());
+    assert_eq!(indexation_1, indexation_2);
+}
+
+#[test]
+fn packed_len() {
+    let indexation =
+        IndexationPayload::new(0, rand_bytes(10), [0x42, 0xff, 0x84, 0xa2, 0x42, 0xff, 0x84, 0xa2].to_vec()).unwrap();
+
+    assert_eq!(indexation.packed_len(), 1 + 10 + 4 + 4 + 8);
+    assert_eq!(indexation.pack_to_vec().unwrap().len(), 1 + 10 + 4 + 4 + 8);
 }

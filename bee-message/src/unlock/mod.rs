@@ -209,7 +209,7 @@ impl Packable for UnlockBlocks {
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
-        let inner_prefixed = VecPrefix::<UnlockBlock, u32>::unpack(unpacker);
+        let inner_prefixed = VecPrefix::<UnlockBlock, u16>::unpack(unpacker);
 
         let inner: Vec<UnlockBlock> = if let Err(unpack_err) = inner_prefixed {
             match unpack_err {

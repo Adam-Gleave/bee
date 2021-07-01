@@ -118,7 +118,7 @@ impl Packable for Parents {
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
-        (self.len() as usize).pack(packer).map_err(PackError::infallible)?;
+        (self.len() as u8).pack(packer).map_err(PackError::infallible)?;
         
         let mut bits = bitarr![Lsb0, u8; 0; 8];
 
