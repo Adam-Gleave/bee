@@ -30,6 +30,12 @@ impl Deref for Conflicts {
     }
 }
 
+impl Conflicts {
+    pub fn new(inner: Vec<Conflict>) -> Self {
+        Self { inner }
+    }
+}
+
 /// Describes a vote in a given round for a transaction conflict.
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -43,6 +49,10 @@ pub struct Conflict {
 }
 
 impl Conflict {
+    pub fn new(transaction_id: TransactionId, opinion: u8, round: u8) -> Self {
+        Self { transaction_id, opinion, round }
+    }
+
     /// Returns the ID of the conflicting transaction.
     pub fn transaction_id(&self) -> &TransactionId {
         &self.transaction_id

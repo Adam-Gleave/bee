@@ -30,6 +30,12 @@ impl Deref for Timestamps {
     }
 }
 
+impl Timestamps {
+    pub fn new(inner: Vec<Timestamp>) -> Self {
+        Self { inner }
+    }
+}
+
 /// Describes a vote in a given round for a message timestamp.
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -43,6 +49,14 @@ pub struct Timestamp {
 }
 
 impl Timestamp {
+    pub fn new(message_id: MessageId, opinion: u8, round: u8) -> Self {
+        Self {
+            message_id,
+            opinion,
+            round,
+        }
+    }
+
     /// Returns the ID of message that contains the timestamp.
     pub fn message_id(&self) -> &MessageId {
         &self.message_id

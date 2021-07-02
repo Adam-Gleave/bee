@@ -24,6 +24,8 @@ use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 use alloc::boxed::Box;
 use core::{fmt, convert::Infallible};
 
+pub const PAYLOAD_LENGTH_MAX: usize = 65157;
+
 #[derive(Debug)]
 pub enum PayloadPackError {
     Data(DataPackError),

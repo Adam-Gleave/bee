@@ -1,7 +1,8 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{MessagePackError, MessageUnpackError};
+use crate::{MessagePackError, MessageUnpackError, ValidationError};
+use super::PAYLOAD_LENGTH_MAX;
 
 use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, Packer, PackError, Unpacker, UnpackError, VecPrefix};
 
@@ -54,10 +55,14 @@ pub struct DataPayload {
 }
 
 impl DataPayload {
-    pub const KIND: u32 = 0;
+    pub const KIND: u32 = 1;
 
-    pub fn new(version: u8, data: Vec<u8>) -> Self {
-        Self { version, data }
+    pub fn new(version: u8, data: Vec<u8>) -> Result<Self, ValidationError> {
+        let payload = Self { version, data };
+
+        validate_payload_len(payload.packed_len())?;
+
+        Ok(payload)
     }
 
     pub fn version(&self) -> u8 {
@@ -93,7 +98,19 @@ impl Packable for DataPayload {
             .map_err(UnpackError::coerce::<DataUnpackError>)
             .map_err(UnpackError::coerce)?
             .into();
+
+        let payload = Self { version, data };
+
+        validate_payload_len(payload.packed_len()).map_err(|e| UnpackError::Packable(e.into()))?;
     
-        Ok(Self { version, data })
+        Ok(payload)
+    }
+}
+
+fn validate_payload_len(len: usize) -> Result<(), ValidationError> {
+    if len > PAYLOAD_LENGTH_MAX {
+        Err(ValidationError::InvalidPayloadLength(len))
+    } else {
+        Ok(())
     }
 }

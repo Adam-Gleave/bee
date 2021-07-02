@@ -65,6 +65,10 @@ pub struct EncryptedDeal {
 }
 
 impl EncryptedDeal {
+    pub fn builder() -> EncryptedDealBuilder {
+        EncryptedDealBuilder::new()
+    }
+
     pub fn dh_key(&self) -> &[u8] {
         self.dh_key.as_slice()
     }
@@ -140,6 +144,62 @@ impl Packable for EncryptedDeal {
             .into();
 
         Ok(Self {
+            dh_key,
+            nonce,
+            encrypted_share,
+            threshold,
+            commitments,
+        })
+    }
+}
+
+#[derive(Default)]
+pub struct EncryptedDealBuilder {
+    dh_key: Option<Vec<u8>>,
+    nonce: Option<Vec<u8>>,
+    encrypted_share: Option<Vec<u8>>,
+    threshold: Option<u32>,
+    commitments: Option<Vec<u8>>,
+}
+
+impl EncryptedDealBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_dh_key(mut self, dh_key: Vec<u8>) -> Self {
+        self.dh_key = Some(dh_key);
+        self
+    }
+
+    pub fn with_nonce(mut self, nonce: Vec<u8>) -> Self {
+        self.nonce = Some(nonce);
+        self
+    }
+
+    pub fn with_encrypted_share(mut self, encrypted_share: Vec<u8>) -> Self {
+        self.encrypted_share = Some(encrypted_share);
+        self
+    }
+
+    pub fn with_threshold(mut self, threshold: u32) -> Self {
+        self.threshold = Some(threshold);
+        self
+    }
+
+    pub fn with_commitments(mut self, commitments: Vec<u8>) -> Self {
+        self.commitments = Some(commitments);
+        self
+    }
+
+    pub fn finish(self) -> Result<EncryptedDeal, ValidationError> {
+        let dh_key = self.dh_key.ok_or(ValidationError::MissingField("dh_key"))?;
+        let nonce = self.nonce.ok_or(ValidationError::MissingField("nonce"))?;
+        let encrypted_share = self.encrypted_share.ok_or(ValidationError::MissingField("encrypted_share"))?;
+        let threshold = self.threshold.ok_or(ValidationError::MissingField("threshold"))?;
+        let commitments = self.commitments.ok_or(ValidationError::MissingField("commitments"))?;
+
+        Ok(EncryptedDeal {
             dh_key,
             nonce,
             encrypted_share,

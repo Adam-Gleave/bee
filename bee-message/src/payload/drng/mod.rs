@@ -7,7 +7,14 @@ mod dkg;
 
 pub use application_message::ApplicationMessagePayload;
 pub use beacon::{
-    collective_beacon::{self, CollectiveBeaconPayload},
-    regular_beacon::{self, BeaconPayload},
+    collective_beacon::{CollectiveBeaconPayload, CollectiveBeaconPayloadBuilder},
+    regular_beacon::{BeaconPayload, BeaconPayloadBuilder},
 };
-pub use dkg::{DkgPayload, DkgPackError, DkgUnpackError};
+pub use dkg::{
+    DkgPayload, 
+    DkgPackError, 
+    DkgPayloadBuilder, 
+    DkgUnpackError,
+    EncryptedDeal,
+    EncryptedDealBuilder,
+};
