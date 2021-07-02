@@ -123,7 +123,9 @@ fn unpack_invalid_index() {
 
     assert!(matches!(
         OutputId::unpack_from_slice(bytes).err().unwrap(),
-        UnpackError::Packable(MessageUnpackError::ValidationError(ValidationError::InvalidOutputIndex(127))),
+        UnpackError::Packable(MessageUnpackError::ValidationError(
+            ValidationError::InvalidOutputIndex(127)
+        )),
     ));
 }
 

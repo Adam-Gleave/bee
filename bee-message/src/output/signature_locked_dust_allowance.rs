@@ -1,11 +1,15 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{address::Address, constants::IOTA_SUPPLY, error::{MessageUnpackError, ValidationError}};
+use crate::{
+    address::Address,
+    constants::IOTA_SUPPLY,
+    error::{MessageUnpackError, ValidationError},
+};
 
 use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker};
 
-use core::{fmt, convert::Infallible, ops::RangeInclusive};
+use core::{convert::Infallible, fmt, ops::RangeInclusive};
 
 /// Amount of tokens below which an output is considered a dust output.
 pub const DUST_THRESHOLD: u64 = 1_000_000;
@@ -19,15 +23,15 @@ pub enum SignatureLockedDustAllowanceUnpackError {
 }
 
 impl_wrapped_variant!(
-    SignatureLockedDustAllowanceUnpackError, 
-    ValidationError, 
+    SignatureLockedDustAllowanceUnpackError,
+    ValidationError,
     SignatureLockedDustAllowanceUnpackError::ValidationError
 );
 
 impl From<UnknownTagError<u8>> for SignatureLockedDustAllowanceUnpackError {
     fn from(error: UnknownTagError<u8>) -> Self {
         match error {
-            UnknownTagError(tag) => Self::InvalidAddressKind(tag)
+            UnknownTagError(tag) => Self::InvalidAddressKind(tag),
         }
     }
 }
@@ -91,7 +95,7 @@ impl Packable for SignatureLockedDustAllowanceOutput {
         let address = Address::unpack(unpacker)
             .map_err(UnpackError::coerce::<SignatureLockedDustAllowanceUnpackError>)
             .map_err(UnpackError::coerce)?;
-        
+
         let amount = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
         validate_amount(amount).map_err(|e| UnpackError::Packable(e.into()))?;
 

@@ -61,7 +61,7 @@ impl From<UnpackPrefixError<Infallible, u32>> for FpcUnpackError {
     fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
         match error {
             UnpackPrefixError::Packable(e) => match e {},
-            UnpackPrefixError::Prefix(_) => Self::InvalidPrefixLength, 
+            UnpackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
         }
     }
 }
@@ -98,8 +98,14 @@ impl Packable for FpcPayload {
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         self.version.pack(packer).map_err(PackError::infallible)?;
-        self.conflicts.pack(packer).map_err(PackError::coerce::<FpcPackError>).map_err(PackError::coerce)?;
-        self.timestamps.pack(packer).map_err(PackError::coerce::<FpcPackError>).map_err(PackError::coerce)?;
+        self.conflicts
+            .pack(packer)
+            .map_err(PackError::coerce::<FpcPackError>)
+            .map_err(PackError::coerce)?;
+        self.timestamps
+            .pack(packer)
+            .map_err(PackError::coerce::<FpcPackError>)
+            .map_err(PackError::coerce)?;
 
         Ok(())
     }

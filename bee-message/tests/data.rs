@@ -31,10 +31,7 @@ fn new_invalid_length() {
 
 #[test]
 fn unpack_valid() {
-    let mut bytes = vec![
-        0u8,
-        255, 0, 0, 0,
-    ];
+    let mut bytes = vec![0u8, 255, 0, 0, 0];
 
     bytes.extend(rand_bytes(255));
 
@@ -47,10 +44,7 @@ fn unpack_valid() {
 fn unpack_invalid_length() {
     let data_bytes = 65160;
 
-    let mut bytes = vec![
-        0u8,
-        0x88, 0xfe, 0, 0,
-    ];
+    let mut bytes = vec![0u8, 0x88, 0xfe, 0, 0];
 
     bytes.extend(rand_bytes(data_bytes));
 
@@ -58,7 +52,7 @@ fn unpack_invalid_length() {
 
     assert!(matches!(
         data,
-        Err(UnpackError::Packable(MessageUnpackError::ValidationError(ValidationError::InvalidPayloadLength(n)))) 
+        Err(UnpackError::Packable(MessageUnpackError::ValidationError(ValidationError::InvalidPayloadLength(n))))
             if n == data_bytes + 1 + 4,
     ));
 }

@@ -16,10 +16,7 @@ fn new_valid() {
     let salt_declaration = SaltDeclarationPayload::builder()
         .with_version(0)
         .with_node_id(32)
-        .with_salt(Salt::new(
-            rand_bytes_array::<64>().to_vec(),
-            rand_number::<u64>(),
-        ))
+        .with_salt(Salt::new(rand_bytes_array::<64>().to_vec(), rand_number::<u64>()))
         .with_timestamp(rand_number::<u64>())
         .with_signature(rand_bytes_array::<32>())
         .finish();
@@ -29,11 +26,7 @@ fn new_valid() {
 
 #[test]
 fn unpack_valid() {
-    let mut bytes = vec![
-        0u8,
-        32, 0, 0, 0,
-        64, 0, 0, 0,
-    ];
+    let mut bytes = vec![0u8, 32, 0, 0, 0, 64, 0, 0, 0];
 
     bytes.extend(rand_bytes_array::<64>());
     bytes.extend(vec![0, 0, 0, 0, 0, 0, 0, 0]);
@@ -50,15 +43,12 @@ fn packed_len() {
     let salt_declaration = SaltDeclarationPayload::builder()
         .with_version(0)
         .with_node_id(32)
-        .with_salt(Salt::new(
-            rand_bytes_array::<64>().to_vec(),
-            rand_number::<u64>(),
-        ))
+        .with_salt(Salt::new(rand_bytes_array::<64>().to_vec(), rand_number::<u64>()))
         .with_timestamp(rand_number::<u64>())
         .with_signature(rand_bytes_array::<32>())
         .finish()
         .unwrap();
-    
+
     assert_eq!(salt_declaration.packed_len(), 1 + 4 + 4 + 64 + 8 + 8 + 32);
 }
 
@@ -67,18 +57,14 @@ fn round_trip() {
     let salt_declaration_a = SaltDeclarationPayload::builder()
         .with_version(0)
         .with_node_id(32)
-        .with_salt(Salt::new(
-            rand_bytes_array::<64>().to_vec(),
-            rand_number::<u64>(),
-        ))
+        .with_salt(Salt::new(rand_bytes_array::<64>().to_vec(), rand_number::<u64>()))
         .with_timestamp(rand_number::<u64>())
         .with_signature(rand_bytes_array::<32>())
         .finish()
         .unwrap();
 
-    let salt_declaration_b = SaltDeclarationPayload::unpack_from_slice(
-        salt_declaration_a.pack_to_vec().unwrap()
-    ).unwrap();
+    let salt_declaration_b =
+        SaltDeclarationPayload::unpack_from_slice(salt_declaration_a.pack_to_vec().unwrap()).unwrap();
 
     assert_eq!(salt_declaration_a, salt_declaration_b);
 }

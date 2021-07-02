@@ -11,10 +11,7 @@ fn kind() {
 
 #[test]
 fn unpack_valid() {
-    let bytes = vec![
-        0u8,
-        0, 0, 0, 1,
-    ];
+    let bytes = vec![0u8, 0, 0, 0, 1];
 
     assert!(ApplicationMessagePayload::unpack_from_slice(bytes).is_ok());
 }
@@ -30,10 +27,8 @@ fn packed_len() {
 fn round_trip() {
     let application_msg_a = ApplicationMessagePayload::new(0, 1);
 
-    let application_msg_b = ApplicationMessagePayload::unpack_from_slice(
-        application_msg_a.pack_to_vec().unwrap()
-    )
-    .unwrap();
+    let application_msg_b =
+        ApplicationMessagePayload::unpack_from_slice(application_msg_a.pack_to_vec().unwrap()).unwrap();
 
     assert_eq!(application_msg_a, application_msg_b);
 }

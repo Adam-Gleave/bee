@@ -9,10 +9,13 @@ use crate::{MessagePackError, MessageUnpackError, ValidationError, MESSAGE_LENGT
 
 pub use padded::{PaddedIndex, INDEXATION_PADDED_INDEX_LENGTH};
 
-use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker, VecPrefix, error::{PackPrefixError, UnpackPrefixError}};
+use bee_packable::{
+    error::{PackPrefixError, UnpackPrefixError},
+    PackError, Packable, Packer, UnpackError, Unpacker, VecPrefix,
+};
 
 use alloc::vec::Vec;
-use core::{fmt, convert::Infallible, ops::RangeInclusive};
+use core::{convert::Infallible, fmt, ops::RangeInclusive};
 
 /// Valid lengths for an indexation payload index.
 pub const INDEXATION_INDEX_LENGTH_RANGE: RangeInclusive<usize> = 1..=INDEXATION_PADDED_INDEX_LENGTH;
@@ -45,7 +48,11 @@ pub enum IndexationUnpackError {
     ValidationError(ValidationError),
 }
 
-impl_wrapped_variant!(IndexationUnpackError, ValidationError, IndexationUnpackError::ValidationError);
+impl_wrapped_variant!(
+    IndexationUnpackError,
+    ValidationError,
+    IndexationUnpackError::ValidationError
+);
 
 impl From<UnpackPrefixError<Infallible, u32>> for IndexationUnpackError {
     fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
@@ -83,11 +90,7 @@ impl IndexationPayload {
         validate_index(&index)?;
         validate_data(&data)?;
 
-        Ok(Self {
-            version,
-            index,
-            data,
-        })
+        Ok(Self { version, index, data })
     }
 
     /// Returns the index of an `IndexationPayload`.
@@ -138,10 +141,16 @@ impl Packable for IndexationPayload {
         self.version.pack(packer).map_err(PackError::infallible)?;
 
         let prefixed_index: VecPrefix<u8, u32> = self.index.clone().into();
-        prefixed_index.pack(packer).map_err(PackError::coerce::<IndexationPackError>).map_err(PackError::coerce)?;
+        prefixed_index
+            .pack(packer)
+            .map_err(PackError::coerce::<IndexationPackError>)
+            .map_err(PackError::coerce)?;
 
         let prefixed_data: VecPrefix<u8, u32> = self.data.clone().into();
-        prefixed_data.pack(packer).map_err(PackError::coerce::<IndexationPackError>).map_err(PackError::coerce)?;
+        prefixed_data
+            .pack(packer)
+            .map_err(PackError::coerce::<IndexationPackError>)
+            .map_err(PackError::coerce)?;
 
         Ok(())
     }
@@ -160,13 +169,9 @@ impl Packable for IndexationPayload {
             .map_err(UnpackError::coerce::<IndexationUnpackError>)
             .map_err(UnpackError::coerce)?
             .into();
-        
+
         validate_data(&data).map_err(|e| UnpackError::Packable(e.into()))?;
 
-        Ok(Self {
-            version,
-            index,
-            data,
-        })
+        Ok(Self { version, index, data })
     }
 }

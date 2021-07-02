@@ -38,13 +38,7 @@ fn encrypted_deal_packed_len() {
 
 #[test]
 fn encryped_deal_unwrap() {
-    let bytes = vec![
-        0u8, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 10,
-        0, 0, 0, 0,
-    ];
+    let bytes = vec![0u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0];
 
     let deal = EncryptedDeal::unpack_from_slice(bytes);
 
@@ -61,7 +55,7 @@ fn encrypted_deal_round_trip() {
         .with_commitments(vec![])
         .finish()
         .unwrap();
-    
+
     let deal_b = EncryptedDeal::unpack_from_slice(deal_a.pack_to_vec().unwrap()).unwrap();
 
     assert_eq!(deal_a, deal_b);
@@ -74,14 +68,15 @@ fn dkg_new() {
         .with_instance_id(1)
         .with_from_index(20)
         .with_to_index(32)
-        .with_deal(EncryptedDeal::builder()
-            .with_dh_key(vec![])
-            .with_nonce(vec![])
-            .with_encrypted_share(vec![])
-            .with_threshold(10)
-            .with_commitments(vec![])
-            .finish()
-            .unwrap()
+        .with_deal(
+            EncryptedDeal::builder()
+                .with_dh_key(vec![])
+                .with_nonce(vec![])
+                .with_encrypted_share(vec![])
+                .with_threshold(10)
+                .with_commitments(vec![])
+                .finish()
+                .unwrap(),
         )
         .finish();
 
@@ -95,36 +90,26 @@ fn dkg_packed_len() {
         .with_instance_id(1)
         .with_from_index(20)
         .with_to_index(32)
-        .with_deal(EncryptedDeal::builder()
-            .with_dh_key(vec![])
-            .with_nonce(vec![])
-            .with_encrypted_share(vec![])
-            .with_threshold(10)
-            .with_commitments(vec![])
-            .finish()
-            .unwrap()
+        .with_deal(
+            EncryptedDeal::builder()
+                .with_dh_key(vec![])
+                .with_nonce(vec![])
+                .with_encrypted_share(vec![])
+                .with_threshold(10)
+                .with_commitments(vec![])
+                .finish()
+                .unwrap(),
         )
         .finish()
         .unwrap();
 
-    assert_eq!(
-        dkg.packed_len(),
-        1 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4,
-    );
+    assert_eq!(dkg.packed_len(), 1 + 4 + 4 + 4 + 4 + 4 + 4 + 4 + 4,);
 }
 
 #[test]
 fn dkg_unpack_valid() {
     let bytes = vec![
-        0u8,
-        0, 0, 0, 1,
-        0, 0, 0, 20,
-        0, 0, 0, 32,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 10,
-        0, 0, 0, 0,
+        0u8, 0, 0, 0, 1, 0, 0, 0, 20, 0, 0, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0, 0,
     ];
 
     let dkg = DkgPayload::unpack_from_slice(bytes);
@@ -139,14 +124,15 @@ fn dkg_round_trip() {
         .with_instance_id(1)
         .with_from_index(20)
         .with_to_index(32)
-        .with_deal(EncryptedDeal::builder()
-            .with_dh_key(vec![])
-            .with_nonce(vec![])
-            .with_encrypted_share(vec![])
-            .with_threshold(10)
-            .with_commitments(vec![])
-            .finish()
-            .unwrap()
+        .with_deal(
+            EncryptedDeal::builder()
+                .with_dh_key(vec![])
+                .with_nonce(vec![])
+                .with_encrypted_share(vec![])
+                .with_threshold(10)
+                .with_commitments(vec![])
+                .finish()
+                .unwrap(),
         )
         .finish()
         .unwrap();

@@ -1,11 +1,31 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{ValidationError, input::InputUnpackError, output::{OutputIdUnpackError, OutputUnpackError, SignatureLockedDustAllowanceUnpackError, SignatureLockedSingleUnpackError}, payload::{PayloadPackError, PayloadUnpackError, data::{DataPackError, DataUnpackError}, drng::{DkgPackError, DkgUnpackError}, fpc::{FpcPackError, FpcUnpackError}, indexation::{IndexationPackError, IndexationUnpackError}, salt_declaration::{SaltDeclarationPackError, SaltDeclarationUnpackError}, transaction::{TransactionEssencePackError, TransactionEssenceUnpackError, TransactionPackError, TransactionUnpackError}}, signature::SignatureUnlockUnpackError, unlock::{UnlockBlockUnpackError, UnlockBlocksPackError, UnlockBlocksUnpackError}};
+use crate::{
+    input::InputUnpackError,
+    output::{
+        OutputIdUnpackError, OutputUnpackError, SignatureLockedDustAllowanceUnpackError,
+        SignatureLockedSingleUnpackError,
+    },
+    payload::{
+        data::{DataPackError, DataUnpackError},
+        drng::{DkgPackError, DkgUnpackError},
+        fpc::{FpcPackError, FpcUnpackError},
+        indexation::{IndexationPackError, IndexationUnpackError},
+        salt_declaration::{SaltDeclarationPackError, SaltDeclarationUnpackError},
+        transaction::{
+            TransactionEssencePackError, TransactionEssenceUnpackError, TransactionPackError, TransactionUnpackError,
+        },
+        PayloadPackError, PayloadUnpackError,
+    },
+    signature::SignatureUnlockUnpackError,
+    unlock::{UnlockBlockUnpackError, UnlockBlocksPackError, UnlockBlocksUnpackError},
+    ValidationError,
+};
 
 use bee_packable::UnpackOptionError;
 
-use core::{fmt, convert::Infallible};
+use core::{convert::Infallible, fmt};
 
 #[derive(Debug)]
 pub enum MessagePackError {
@@ -25,9 +45,17 @@ impl_wrapped_variant!(MessagePackError, DkgPackError, MessagePackError::Dkg);
 impl_wrapped_variant!(MessagePackError, FpcPackError, MessagePackError::Fpc);
 impl_wrapped_variant!(MessagePackError, IndexationPackError, MessagePackError::Indexation);
 impl_wrapped_variant!(MessagePackError, PayloadPackError, MessagePackError::Payload);
-impl_wrapped_variant!(MessagePackError, SaltDeclarationPackError, MessagePackError::SaltDeclaration);
+impl_wrapped_variant!(
+    MessagePackError,
+    SaltDeclarationPackError,
+    MessagePackError::SaltDeclaration
+);
 impl_wrapped_variant!(MessagePackError, TransactionPackError, MessagePackError::Transaction);
-impl_wrapped_variant!(MessagePackError, TransactionEssencePackError, MessagePackError::TransactionEssence);
+impl_wrapped_variant!(
+    MessagePackError,
+    TransactionEssencePackError,
+    MessagePackError::TransactionEssence
+);
 impl_wrapped_variant!(MessagePackError, UnlockBlocksPackError, MessagePackError::UnlockBlocks);
 impl_from_infallible!(MessagePackError);
 
@@ -42,7 +70,7 @@ impl fmt::Display for MessagePackError {
             Self::SaltDeclaration(e) => write!(f, "Error packing SaltDeclaration payload: {}", e),
             Self::Transaction(e) => write!(f, "Error packing Transaction payload: {}", e),
             Self::TransactionEssence(e) => write!(f, "Error packing TransactionEssence: {}", e),
-            Self::UnlockBlocks(e) => write!(f, "Error packing UnlockBlocks: {}", e), 
+            Self::UnlockBlocks(e) => write!(f, "Error packing UnlockBlocks: {}", e),
         }
     }
 }
@@ -70,21 +98,57 @@ pub enum MessageUnpackError {
     ValidationError(ValidationError),
 }
 
-impl_wrapped_validated!(MessageUnpackError, IndexationUnpackError, MessageUnpackError::Indexation);
+impl_wrapped_validated!(
+    MessageUnpackError,
+    IndexationUnpackError,
+    MessageUnpackError::Indexation
+);
 impl_wrapped_validated!(MessageUnpackError, InputUnpackError, MessageUnpackError::Input);
 impl_wrapped_validated!(MessageUnpackError, OutputUnpackError, MessageUnpackError::Output);
 impl_wrapped_validated!(MessageUnpackError, PayloadUnpackError, MessageUnpackError::Payload);
-impl_wrapped_validated!(MessageUnpackError, TransactionUnpackError, MessageUnpackError::Transaction);
-impl_wrapped_validated!(MessageUnpackError, TransactionEssenceUnpackError, MessageUnpackError::TransactionEssence);
-impl_wrapped_validated!(MessageUnpackError, SignatureLockedDustAllowanceUnpackError, MessageUnpackError::SignatureLockedDustAllowance);
-impl_wrapped_validated!(MessageUnpackError, SignatureLockedSingleUnpackError, MessageUnpackError::SignatureLockedSingle);
-impl_wrapped_validated!(MessageUnpackError, UnlockBlockUnpackError, MessageUnpackError::UnlockBlock);
-impl_wrapped_validated!(MessageUnpackError, UnlockBlocksUnpackError, MessageUnpackError::UnlockBlocks);
+impl_wrapped_validated!(
+    MessageUnpackError,
+    TransactionUnpackError,
+    MessageUnpackError::Transaction
+);
+impl_wrapped_validated!(
+    MessageUnpackError,
+    TransactionEssenceUnpackError,
+    MessageUnpackError::TransactionEssence
+);
+impl_wrapped_validated!(
+    MessageUnpackError,
+    SignatureLockedDustAllowanceUnpackError,
+    MessageUnpackError::SignatureLockedDustAllowance
+);
+impl_wrapped_validated!(
+    MessageUnpackError,
+    SignatureLockedSingleUnpackError,
+    MessageUnpackError::SignatureLockedSingle
+);
+impl_wrapped_validated!(
+    MessageUnpackError,
+    UnlockBlockUnpackError,
+    MessageUnpackError::UnlockBlock
+);
+impl_wrapped_validated!(
+    MessageUnpackError,
+    UnlockBlocksUnpackError,
+    MessageUnpackError::UnlockBlocks
+);
 impl_wrapped_variant!(MessageUnpackError, DataUnpackError, MessageUnpackError::Data);
 impl_wrapped_variant!(MessageUnpackError, DkgUnpackError, MessageUnpackError::Dkg);
 impl_wrapped_variant!(MessageUnpackError, FpcUnpackError, MessageUnpackError::Fpc);
-impl_wrapped_variant!(MessageUnpackError, SaltDeclarationUnpackError, MessageUnpackError::SaltDeclaration);
-impl_wrapped_variant!(MessageUnpackError, SignatureUnlockUnpackError, MessageUnpackError::SignatureUnlock);
+impl_wrapped_variant!(
+    MessageUnpackError,
+    SaltDeclarationUnpackError,
+    MessageUnpackError::SaltDeclaration
+);
+impl_wrapped_variant!(
+    MessageUnpackError,
+    SignatureUnlockUnpackError,
+    MessageUnpackError::SignatureUnlock
+);
 impl_wrapped_variant!(MessageUnpackError, ValidationError, MessageUnpackError::ValidationError);
 impl_from_infallible!(MessageUnpackError);
 

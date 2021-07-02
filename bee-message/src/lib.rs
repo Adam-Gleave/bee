@@ -34,6 +34,6 @@ pub mod signature;
 /// A module that provides types and syntactic validations of unlock blocks.
 pub mod unlock;
 
-pub use error::{ValidationError, MessagePackError, MessageUnpackError};
+pub use error::{MessagePackError, MessageUnpackError, ValidationError};
 pub use message::{Message, MessageBuilder, MESSAGE_LENGTH_MAX, MESSAGE_LENGTH_MIN};
 pub use message_id::{MessageId, MESSAGE_ID_LENGTH};

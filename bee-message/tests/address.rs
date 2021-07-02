@@ -52,7 +52,7 @@ fn bech32_string_to_address() {
     assert_eq!(ed.to_string(), ED25519_ADDRESS);
 
     let address = Address::try_from_bech32(&Address::from(Ed25519Address::new(bytes)).to_bech32("atoi")).unwrap();
-    let Address::Ed25519(ed) = address; 
+    let Address::Ed25519(ed) = address;
     assert_eq!(ed.to_string(), ED25519_ADDRESS);
 }
 

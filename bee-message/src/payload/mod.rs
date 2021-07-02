@@ -12,17 +12,19 @@ pub mod transaction;
 
 use crate::{MessagePackError, MessageUnpackError, ValidationError};
 
-use data::{DataPayload, DataPackError, DataUnpackError};
-use drng::{ApplicationMessagePayload, DkgPayload, DkgPackError, DkgUnpackError, BeaconPayload, CollectiveBeaconPayload};
-use fpc::{FpcPayload, FpcPackError, FpcUnpackError};
-use indexation::{IndexationPayload, IndexationPackError, IndexationUnpackError};
-use salt_declaration::{SaltDeclarationPayload, SaltDeclarationPackError, SaltDeclarationUnpackError};
-use transaction::{TransactionPayload, TransactionPackError, TransactionUnpackError};
+use data::{DataPackError, DataPayload, DataUnpackError};
+use drng::{
+    ApplicationMessagePayload, BeaconPayload, CollectiveBeaconPayload, DkgPackError, DkgPayload, DkgUnpackError,
+};
+use fpc::{FpcPackError, FpcPayload, FpcUnpackError};
+use indexation::{IndexationPackError, IndexationPayload, IndexationUnpackError};
+use salt_declaration::{SaltDeclarationPackError, SaltDeclarationPayload, SaltDeclarationUnpackError};
+use transaction::{TransactionPackError, TransactionPayload, TransactionUnpackError};
 
 use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
 use alloc::boxed::Box;
-use core::{fmt, convert::Infallible};
+use core::{convert::Infallible, fmt};
 
 pub const PAYLOAD_LENGTH_MAX: usize = 65157;
 
@@ -40,7 +42,11 @@ impl_wrapped_variant!(PayloadPackError, DataPackError, PayloadPackError::Data);
 impl_wrapped_variant!(PayloadPackError, DkgPackError, PayloadPackError::Dkg);
 impl_wrapped_variant!(PayloadPackError, FpcPackError, PayloadPackError::Fpc);
 impl_wrapped_variant!(PayloadPackError, IndexationPackError, PayloadPackError::Indexation);
-impl_wrapped_variant!(PayloadPackError, SaltDeclarationPackError, PayloadPackError::SaltDeclaration);
+impl_wrapped_variant!(
+    PayloadPackError,
+    SaltDeclarationPackError,
+    PayloadPackError::SaltDeclaration
+);
 impl_wrapped_variant!(PayloadPackError, TransactionPackError, PayloadPackError::Transaction);
 impl_from_infallible!(PayloadPackError);
 
@@ -72,8 +78,16 @@ pub enum PayloadUnpackError {
 impl_wrapped_variant!(PayloadUnpackError, DataUnpackError, PayloadUnpackError::Data);
 impl_wrapped_variant!(PayloadUnpackError, DkgUnpackError, PayloadUnpackError::Dkg);
 impl_wrapped_variant!(PayloadUnpackError, FpcUnpackError, PayloadUnpackError::Fpc);
-impl_wrapped_variant!(PayloadUnpackError, IndexationUnpackError, PayloadUnpackError::Indexation);
-impl_wrapped_variant!(PayloadUnpackError, SaltDeclarationUnpackError, PayloadUnpackError::SaltDeclaration);
+impl_wrapped_variant!(
+    PayloadUnpackError,
+    IndexationUnpackError,
+    PayloadUnpackError::Indexation
+);
+impl_wrapped_variant!(
+    PayloadUnpackError,
+    SaltDeclarationUnpackError,
+    PayloadUnpackError::SaltDeclaration
+);
 impl_wrapped_variant!(PayloadUnpackError, ValidationError, PayloadUnpackError::ValidationError);
 impl_from_infallible!(PayloadUnpackError);
 
@@ -202,7 +216,9 @@ impl Packable for Payload {
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         match *self {
             Self::ApplicationMessage(ref payload) => {
-                ApplicationMessagePayload::KIND.pack(packer).map_err(PackError::infallible)?;
+                ApplicationMessagePayload::KIND
+                    .pack(packer)
+                    .map_err(PackError::infallible)?;
                 payload.pack(packer).map_err(PackError::infallible)
             }
             Self::Beacon(ref payload) => {
@@ -210,7 +226,9 @@ impl Packable for Payload {
                 payload.pack(packer).map_err(PackError::infallible)
             }
             Self::CollectiveBeacon(ref payload) => {
-                CollectiveBeaconPayload::KIND.pack(packer).map_err(PackError::infallible)?;
+                CollectiveBeaconPayload::KIND
+                    .pack(packer)
+                    .map_err(PackError::infallible)?;
                 payload.pack(packer).map_err(PackError::infallible)
             }
             Self::Data(ref payload) => {
@@ -230,7 +248,9 @@ impl Packable for Payload {
                 payload.pack(packer)
             }
             Self::SaltDeclaration(ref payload) => {
-                SaltDeclarationPayload::KIND.pack(packer).map_err(PackError::infallible)?;
+                SaltDeclarationPayload::KIND
+                    .pack(packer)
+                    .map_err(PackError::infallible)?;
                 payload.pack(packer)
             }
             Self::Transaction(ref payload) => {
@@ -255,11 +275,15 @@ impl Packable for Payload {
             DkgPayload::KIND => Payload::Dkg(Box::new(DkgPayload::unpack(unpacker)?)),
             FpcPayload::KIND => Payload::Fpc(Box::new(FpcPayload::unpack(unpacker)?)),
             IndexationPayload::KIND => Payload::Indexation(Box::new(IndexationPayload::unpack(unpacker)?)),
-            SaltDeclarationPayload::KIND => Payload::SaltDeclaration(
-                Box::new(SaltDeclarationPayload::unpack(unpacker)?,
-            )),
+            SaltDeclarationPayload::KIND => {
+                Payload::SaltDeclaration(Box::new(SaltDeclarationPayload::unpack(unpacker)?))
+            }
             TransactionPayload::KIND => Payload::Transaction(Box::new(TransactionPayload::unpack(unpacker)?)),
-            tag => return Err(UnpackError::Packable(PayloadUnpackError::InvalidPayloadKind(tag).into())),
+            tag => {
+                return Err(UnpackError::Packable(
+                    PayloadUnpackError::InvalidPayloadKind(tag).into(),
+                ));
+            }
         };
 
         Ok(payload)

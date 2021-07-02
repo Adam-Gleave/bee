@@ -7,9 +7,9 @@ pub use ed25519::{Ed25519Signature, ED25519_PUBLIC_KEY_LENGTH, ED25519_SIGNATURE
 
 use crate::MessageUnpackError;
 
-use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
+use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
-use core::{fmt, convert::Infallible};
+use core::{convert::Infallible, fmt};
 
 #[derive(Debug)]
 pub enum SignatureUnlockUnpackError {
@@ -63,14 +63,15 @@ impl Packable for SignatureUnlock {
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
-        self.kind().packed_len() + match self {
-            Self::Ed25519(s) => s.packed_len(),
-        }
+        self.kind().packed_len()
+            + match self {
+                Self::Ed25519(s) => s.packed_len(),
+            }
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         self.kind().pack(packer).map_err(PackError::infallible)?;
-        
+
         match self {
             Self::Ed25519(s) => s.pack(packer).map_err(PackError::infallible)?,
         }
@@ -80,12 +81,14 @@ impl Packable for SignatureUnlock {
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
         let variant = match u8::unpack(unpacker).map_err(UnpackError::infallible)? {
-            Ed25519Signature::KIND => Self::Ed25519(
-                Ed25519Signature::unpack(unpacker).map_err(UnpackError::infallible)?
-            ),
-            kind => return Err(
-                UnpackError::Packable(SignatureUnlockUnpackError::InvalidSignatureUnlockKind(kind).into())
-            ),
+            Ed25519Signature::KIND => {
+                Self::Ed25519(Ed25519Signature::unpack(unpacker).map_err(UnpackError::infallible)?)
+            }
+            kind => {
+                return Err(UnpackError::Packable(
+                    SignatureUnlockUnpackError::InvalidSignatureUnlockKind(kind).into(),
+                ));
+            }
         };
 
         Ok(variant)

@@ -3,17 +3,16 @@
 
 //! The parents module defines the core data type for storing the messages directly approved by a message.
 
-use crate::{MESSAGE_ID_LENGTH, MessageId, MessagePackError, MessageUnpackError, ValidationError};
+use crate::{MessageId, MessagePackError, MessageUnpackError, ValidationError, MESSAGE_ID_LENGTH};
 
 use bee_ord::is_unique_sorted;
-use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
+use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
 use bitvec::prelude::*;
 
 use core::ops::{Deref, RangeInclusive};
 
-use alloc::vec;
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
 
 /// The range representing the valid number of parents.
 pub const MESSAGE_PARENTS_RANGE: RangeInclusive<usize> = 1..=8;
@@ -43,7 +42,7 @@ impl Parent {
 // /// * unique;
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Parents { 
+pub struct Parents {
     inner: Vec<Parent>,
 }
 
@@ -60,17 +59,13 @@ impl Parents {
         validate_parents_count(inner.len())?;
         validate_parents_unique_sorted(&inner)?;
 
-        let strong_count = inner
-            .iter()
-            .fold(0usize, |acc, parent| {
-                match parent {
-                    Parent::Strong(_) => acc + 1,
-                    _ => acc,
-                }
-            });
+        let strong_count = inner.iter().fold(0usize, |acc, parent| match parent {
+            Parent::Strong(_) => acc + 1,
+            _ => acc,
+        });
 
         validate_strong_parents_count(strong_count)?;
-        
+
         Ok(Self { inner })
     }
 
@@ -102,14 +97,12 @@ impl Packable for Parents {
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
-        0u8.packed_len()
-            + 0u8.packed_len()
-            + self.inner.len() * MESSAGE_ID_LENGTH
+        0u8.packed_len() + 0u8.packed_len() + self.inner.len() * MESSAGE_ID_LENGTH
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         (self.len() as u8).pack(packer).map_err(PackError::infallible)?;
-        
+
         let mut bits = bitarr![Lsb0, u8; 0; 8];
 
         for (i, parent) in self.iter().enumerate() {

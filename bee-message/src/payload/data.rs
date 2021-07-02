@@ -1,13 +1,16 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{MessagePackError, MessageUnpackError, ValidationError};
 use super::PAYLOAD_LENGTH_MAX;
+use crate::{MessagePackError, MessageUnpackError, ValidationError};
 
-use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, Packer, PackError, Unpacker, UnpackError, VecPrefix};
+use bee_packable::{
+    error::{PackPrefixError, UnpackPrefixError},
+    PackError, Packable, Packer, UnpackError, Unpacker, VecPrefix,
+};
 
 use alloc::vec::Vec;
-use core::{fmt, convert::Infallible};
+use core::{convert::Infallible, fmt};
 
 #[derive(Debug)]
 pub enum DataPackError {
@@ -79,15 +82,17 @@ impl Packable for DataPayload {
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
-        self.version.packed_len()
-            + VecPrefix::<u8, u32>::from(self.data.clone()).packed_len()
+        self.version.packed_len() + VecPrefix::<u8, u32>::from(self.data.clone()).packed_len()
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         self.version.pack(packer).map_err(PackError::infallible)?;
-        
-        let prefixed_data: VecPrefix::<u8, u32> = self.data.clone().into();
-        prefixed_data.pack(packer).map_err(PackError::coerce::<DataPackError>).map_err(PackError::coerce)?;
+
+        let prefixed_data: VecPrefix<u8, u32> = self.data.clone().into();
+        prefixed_data
+            .pack(packer)
+            .map_err(PackError::coerce::<DataPackError>)
+            .map_err(PackError::coerce)?;
 
         Ok(())
     }
@@ -102,7 +107,7 @@ impl Packable for DataPayload {
         let payload = Self { version, data };
 
         validate_payload_len(payload.packed_len()).map_err(|e| UnpackError::Packable(e.into()))?;
-    
+
         Ok(payload)
     }
 }

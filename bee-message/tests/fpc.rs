@@ -32,10 +32,7 @@ fn new_valid() {
 
 #[test]
 fn unpack_valid() {
-    let mut bytes = vec![
-        0u8,
-        3, 0, 0, 0,
-    ];
+    let mut bytes = vec![0u8, 3, 0, 0, 0];
 
     bytes.extend(rand_bytes_array::<32>());
     bytes.extend(vec![0, 0]);
@@ -53,7 +50,7 @@ fn unpack_valid() {
     bytes.extend(vec![1, 2]);
 
     let fpc = FpcPayload::unpack_from_slice(bytes);
-    
+
     assert!(fpc.is_ok());
 }
 

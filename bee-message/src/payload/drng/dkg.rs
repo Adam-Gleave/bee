@@ -3,10 +3,13 @@
 
 use crate::error::{MessagePackError, MessageUnpackError, ValidationError};
 
-use bee_packable::{error::{PackPrefixError, UnpackPrefixError}, Packable, Packer, PackError, Unpacker, UnpackError, VecPrefix};
+use bee_packable::{
+    error::{PackPrefixError, UnpackPrefixError},
+    PackError, Packable, Packer, UnpackError, Unpacker, VecPrefix,
+};
 
 use alloc::vec::Vec;
-use core::{fmt, convert::Infallible};
+use core::{convert::Infallible, fmt};
 
 #[derive(Debug)]
 pub enum DkgPackError {
@@ -104,18 +107,30 @@ impl Packable for EncryptedDeal {
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         let prefixed_dh_key: VecPrefix<u8, u32> = self.dh_key.clone().into();
-        prefixed_dh_key.pack(packer).map_err(PackError::coerce::<DkgPackError>).map_err(PackError::coerce)?;
+        prefixed_dh_key
+            .pack(packer)
+            .map_err(PackError::coerce::<DkgPackError>)
+            .map_err(PackError::coerce)?;
 
         let prefixed_nonce: VecPrefix<u8, u32> = self.nonce.clone().into();
-        prefixed_nonce.pack(packer).map_err(PackError::coerce::<DkgPackError>).map_err(PackError::coerce)?;
+        prefixed_nonce
+            .pack(packer)
+            .map_err(PackError::coerce::<DkgPackError>)
+            .map_err(PackError::coerce)?;
 
         let prefixed_encrypted_share: VecPrefix<u8, u32> = self.encrypted_share.clone().into();
-        prefixed_encrypted_share.pack(packer).map_err(PackError::coerce::<DkgPackError>).map_err(PackError::coerce)?;
+        prefixed_encrypted_share
+            .pack(packer)
+            .map_err(PackError::coerce::<DkgPackError>)
+            .map_err(PackError::coerce)?;
 
         self.threshold.pack(packer).map_err(PackError::infallible)?;
 
         let prefixed_commitments: VecPrefix<u8, u32> = self.commitments.clone().into();
-        prefixed_commitments.pack(packer).map_err(PackError::coerce::<DkgPackError>).map_err(PackError::coerce)?;
+        prefixed_commitments
+            .pack(packer)
+            .map_err(PackError::coerce::<DkgPackError>)
+            .map_err(PackError::coerce)?;
 
         Ok(())
     }
@@ -195,7 +210,9 @@ impl EncryptedDealBuilder {
     pub fn finish(self) -> Result<EncryptedDeal, ValidationError> {
         let dh_key = self.dh_key.ok_or(ValidationError::MissingField("dh_key"))?;
         let nonce = self.nonce.ok_or(ValidationError::MissingField("nonce"))?;
-        let encrypted_share = self.encrypted_share.ok_or(ValidationError::MissingField("encrypted_share"))?;
+        let encrypted_share = self
+            .encrypted_share
+            .ok_or(ValidationError::MissingField("encrypted_share"))?;
         let threshold = self.threshold.ok_or(ValidationError::MissingField("threshold"))?;
         let commitments = self.commitments.ok_or(ValidationError::MissingField("commitments"))?;
 

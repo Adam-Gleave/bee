@@ -6,7 +6,10 @@
 mod essence;
 mod transaction_id;
 
-use crate::{MessagePackError, MessageUnpackError, ValidationError, unlock::{UnlockBlocksPackError, UnlockBlocksUnpackError, UnlockBlocks}};
+use crate::{
+    unlock::{UnlockBlocks, UnlockBlocksPackError, UnlockBlocksUnpackError},
+    MessagePackError, MessageUnpackError, ValidationError,
+};
 
 pub use essence::{
     TransactionEssence, TransactionEssenceBuilder, TransactionEssencePackError, TransactionEssenceUnpackError,
@@ -26,7 +29,11 @@ pub enum TransactionPackError {
     UnlockBlocks(UnlockBlocksPackError),
 }
 
-impl_wrapped_variant!(TransactionPackError, UnlockBlocksPackError, TransactionPackError::UnlockBlocks);
+impl_wrapped_variant!(
+    TransactionPackError,
+    UnlockBlocksPackError,
+    TransactionPackError::UnlockBlocks
+);
 
 impl From<TransactionEssencePackError> for TransactionPackError {
     fn from(error: TransactionEssencePackError) -> Self {
@@ -37,7 +44,7 @@ impl From<TransactionEssencePackError> for TransactionPackError {
 impl From<PackPrefixError<Infallible, u16>> for TransactionPackError {
     fn from(error: PackPrefixError<Infallible, u16>) -> Self {
         match error {
-            PackPrefixError::Packable(e) => match e {}
+            PackPrefixError::Packable(e) => match e {},
             PackPrefixError::Prefix(_) => Self::InvalidUnlockBlocksPrefix,
         }
     }
@@ -46,7 +53,7 @@ impl From<PackPrefixError<Infallible, u16>> for TransactionPackError {
 impl fmt::Display for TransactionPackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidUnlockBlocksPrefix => write!(f, "Invalid unlock block vector prefix"),        
+            Self::InvalidUnlockBlocksPrefix => write!(f, "Invalid unlock block vector prefix"),
             Self::UnlockBlocks(e) => write!(f, "Error unpacking UnlockBlocks: {}", e),
             Self::TransactionEssence(e) => write!(f, "{}", e),
         }
@@ -61,8 +68,16 @@ pub enum TransactionUnpackError {
     ValidationError(ValidationError),
 }
 
-impl_wrapped_variant!(TransactionUnpackError, UnlockBlocksUnpackError, TransactionUnpackError::UnlockBlocksUnpack);
-impl_wrapped_variant!(TransactionUnpackError, ValidationError, TransactionUnpackError::ValidationError);
+impl_wrapped_variant!(
+    TransactionUnpackError,
+    UnlockBlocksUnpackError,
+    TransactionUnpackError::UnlockBlocksUnpack
+);
+impl_wrapped_variant!(
+    TransactionUnpackError,
+    ValidationError,
+    TransactionUnpackError::ValidationError
+);
 
 impl From<TransactionEssenceUnpackError> for TransactionUnpackError {
     fn from(error: TransactionEssenceUnpackError) -> Self {
@@ -188,7 +203,7 @@ impl TransactionPayloadBuilder {
 }
 
 fn validate_unlock_block_count(
-    essence: &TransactionEssence, 
+    essence: &TransactionEssence,
     unlock_blocks: &UnlockBlocks,
 ) -> Result<(), ValidationError> {
     if essence.inputs().len() != unlock_blocks.len() {

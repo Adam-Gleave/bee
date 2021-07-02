@@ -30,23 +30,19 @@ fn new_valid() {
         .with_signature(hex::decode(BEACON_SIGNATURE_1).unwrap().try_into().unwrap())
         .with_distributed_public_key(hex::decode(BEACON_DISTRIBUTED_PUBLIC_KEY).unwrap().try_into().unwrap())
         .finish();
-    
+
     assert!(beacon.is_ok());
 }
 
 #[test]
 fn unpack_valid() {
-    let mut bytes = vec![
-        0u8,
-        0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 1,
-    ];
+    let mut bytes = vec![0u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 
     bytes.extend(hex::decode(BEACON_SIGNATURE_0).unwrap());
     bytes.extend(hex::decode(BEACON_SIGNATURE_1).unwrap());
     bytes.extend(hex::decode(BEACON_DISTRIBUTED_PUBLIC_KEY).unwrap());
 
-    assert!(CollectiveBeaconPayload::unpack_from_slice(bytes).is_ok());    
+    assert!(CollectiveBeaconPayload::unpack_from_slice(bytes).is_ok());
 }
 
 #[test]

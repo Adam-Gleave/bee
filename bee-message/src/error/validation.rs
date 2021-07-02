@@ -1,10 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    address::Address,
-    input::UtxoInput,
-};
+use crate::{address::Address, input::UtxoInput};
 
 use crypto::Error as CryptoError;
 
@@ -68,7 +65,7 @@ impl fmt::Display for ValidationError {
             Self::InvalidAmount(amount) => write!(f, "Invalid amount: {}.", amount),
             Self::InvalidDustAllowanceAmount(amount) => write!(f, "Invalid dust allowance amount: {}.", amount),
             Self::InvalidHexadecimalChar(hex) => write!(f, "Invalid hexadecimal character: {}.", hex),
-            Self::InvalidHexadecimalLength(expected, actual) =>  {
+            Self::InvalidHexadecimalLength(expected, actual) => {
                 write!(f, "Invalid hexadecimal length: expected {} got {}.", expected, actual)
             }
             Self::InvalidIndexationDataLength(len) => {

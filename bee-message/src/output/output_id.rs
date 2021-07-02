@@ -7,12 +7,12 @@ use crate::{
     payload::transaction::{TransactionId, TRANSACTION_ID_LENGTH},
 };
 
-use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
+use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
 use alloc::borrow::ToOwned;
 use core::{
+    convert::{From, Infallible, TryFrom, TryInto},
     fmt,
-    convert::{Infallible, From, TryFrom, TryInto},
     str::FromStr,
 };
 
@@ -21,7 +21,11 @@ pub enum OutputIdUnpackError {
     ValidationError(ValidationError),
 }
 
-impl_wrapped_variant!(OutputIdUnpackError, ValidationError, OutputIdUnpackError::ValidationError);
+impl_wrapped_variant!(
+    OutputIdUnpackError,
+    ValidationError,
+    OutputIdUnpackError::ValidationError
+);
 
 impl fmt::Display for OutputIdUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -76,7 +80,7 @@ impl Packable for OutputId {
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         self.transaction_id.pack(packer).map_err(PackError::infallible)?;
         self.index.pack(packer).map_err(PackError::infallible)?;
-        
+
         Ok(())
     }
 

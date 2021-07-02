@@ -27,22 +27,18 @@ fn new_valid() {
         .with_partial_public_key(hex::decode(BEACON_PARTIAL_PUBLIC_KEY).unwrap().try_into().unwrap())
         .with_partial_signature(hex::decode(BEACON_SIGNATURE).unwrap().try_into().unwrap())
         .finish();
-    
+
     assert!(beacon.is_ok());
 }
 
 #[test]
 fn unpack_valid() {
-    let mut bytes = vec![
-        0u8,
-        0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 1,
-    ];
+    let mut bytes = vec![0u8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1];
 
     bytes.extend(hex::decode(BEACON_PARTIAL_PUBLIC_KEY).unwrap());
     bytes.extend(hex::decode(BEACON_SIGNATURE).unwrap());
 
-    assert!(BeaconPayload::unpack_from_slice(bytes).is_ok());    
+    assert!(BeaconPayload::unpack_from_slice(bytes).is_ok());
 }
 
 #[test]

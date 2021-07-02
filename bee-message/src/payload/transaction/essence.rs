@@ -1,12 +1,18 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{MessagePackError, MessageUnpackError, ValidationError, constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY}, input::Input, output::Output, payload::{Payload, PayloadPackError}, prelude::{SignatureLockedDustAllowanceOutput, SignatureLockedSingleOutput}};
+use crate::{
+    constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY},
+    input::Input,
+    output::Output,
+    payload::{Payload, PayloadPackError},
+    prelude::{SignatureLockedDustAllowanceOutput, SignatureLockedSingleOutput},
+    MessagePackError, MessageUnpackError, ValidationError,
+};
 
 use bee_ord::is_sorted;
 use bee_packable::{
-    error::UnpackPrefixError, PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker,
-    VecPrefix,
+    error::UnpackPrefixError, PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker, VecPrefix,
 };
 
 use alloc::vec::Vec;
@@ -20,7 +26,11 @@ pub enum TransactionEssencePackError {
     OptionalPayload(PayloadPackError),
 }
 
-impl_wrapped_variant!(TransactionEssencePackError, PayloadPackError, TransactionEssencePackError::OptionalPayload);
+impl_wrapped_variant!(
+    TransactionEssencePackError,
+    PayloadPackError,
+    TransactionEssencePackError::OptionalPayload
+);
 impl_from_infallible!(TransactionEssencePackError);
 
 impl fmt::Display for TransactionEssencePackError {
@@ -47,8 +57,8 @@ impl From<UnpackPrefixError<UnknownTagError<u8>, u32>> for TransactionEssenceUnp
         match error {
             UnpackPrefixError::Packable(error) => match error {
                 UnknownTagError(tag) => Self::InvalidOutputKind(tag),
-            }
-            UnpackPrefixError::Prefix(_) => Self::InvalidOutputPrefixLength, 
+            },
+            UnpackPrefixError::Prefix(_) => Self::InvalidOutputPrefixLength,
         }
     }
 }
@@ -166,10 +176,12 @@ impl Packable for TransactionEssence {
             match unpack_err {
                 UnpackError::Packable(e) => match e {
                     UnpackPrefixError::Packable(err) => return Err(UnpackError::Packable(err)),
-                    UnpackPrefixError::Prefix(_) => return Err(
-                        UnpackError::Packable(TransactionEssenceUnpackError::InvalidInputPrefixLength.into())
-                    ),
-                }
+                    UnpackPrefixError::Prefix(_) => {
+                        return Err(UnpackError::Packable(
+                            TransactionEssenceUnpackError::InvalidInputPrefixLength.into(),
+                        ));
+                    }
+                },
                 UnpackError::Unpacker(e) => return Err(UnpackError::Unpacker(e)),
             }
         } else {
@@ -187,10 +199,12 @@ impl Packable for TransactionEssence {
             match unpack_err {
                 UnpackError::Packable(e) => match e {
                     UnpackPrefixError::Packable(err) => return Err(UnpackError::Packable(err)),
-                    UnpackPrefixError::Prefix(_) => return Err(
-                        UnpackError::Packable(TransactionEssenceUnpackError::InvalidOutputPrefixLength.into())
-                    ),
-                }
+                    UnpackPrefixError::Prefix(_) => {
+                        return Err(UnpackError::Packable(
+                            TransactionEssenceUnpackError::InvalidOutputPrefixLength.into(),
+                        ));
+                    }
+                },
                 UnpackError::Unpacker(e) => return Err(UnpackError::Unpacker(e)),
             }
         } else {
@@ -199,12 +213,17 @@ impl Packable for TransactionEssence {
 
         validate_output_count(outputs_vec.len()).map_err(|e| UnpackError::Packable(e.into()))?;
         validate_output_total(
-            outputs_vec.iter().try_fold(0u64, |total, output| {
-                let amount = validate_output_variant(output, &outputs_vec)?;
-                total.checked_add(amount)
-                    .ok_or_else(|| ValidationError::InvalidAccumulatedOutput(total as u128 + amount as u128))
-            }).map_err(|e| UnpackError::Packable(e.into()))?
-        ).map_err(|e| UnpackError::Packable(e.into()))?;
+            outputs_vec
+                .iter()
+                .try_fold(0u64, |total, output| {
+                    let amount = validate_output_variant(output, &outputs_vec)?;
+                    total
+                        .checked_add(amount)
+                        .ok_or_else(|| ValidationError::InvalidAccumulatedOutput(total as u128 + amount as u128))
+                })
+                .map_err(|e| UnpackError::Packable(e.into()))?,
+        )
+        .map_err(|e| UnpackError::Packable(e.into()))?;
         validate_outputs_sorted(&outputs_vec).map_err(|e| UnpackError::Packable(e.into()))?;
 
         let payload = Option::<Payload>::unpack(unpacker).map_err(UnpackError::coerce)?;
@@ -312,13 +331,12 @@ impl TransactionEssenceBuilder {
 
         // Outputs syntactical validation
         validate_output_count(self.outputs.len())?;
-        validate_output_total(
-            self.outputs.iter().try_fold(0u64, |total, output| {
-                let amount = validate_output_variant(output, &self.outputs)?;
-                total.checked_add(amount)
-                    .ok_or_else(|| ValidationError::InvalidAccumulatedOutput(total as u128 + amount as u128))
-            })?
-        )?;
+        validate_output_total(self.outputs.iter().try_fold(0u64, |total, output| {
+            let amount = validate_output_variant(output, &self.outputs)?;
+            total
+                .checked_add(amount)
+                .ok_or_else(|| ValidationError::InvalidAccumulatedOutput(total as u128 + amount as u128))
+        })?)?;
         validate_outputs_sorted(&self.outputs)?;
 
         validate_payload(&self.payload)?;
@@ -394,8 +412,8 @@ fn validate_single(single: &SignatureLockedSingleOutput, outputs: &[Output]) -> 
 }
 
 fn validate_dust_allowance(
-    dust_allowance: &SignatureLockedDustAllowanceOutput, 
-    outputs: &[Output]
+    dust_allowance: &SignatureLockedDustAllowanceOutput,
+    outputs: &[Output],
 ) -> Result<u64, ValidationError> {
     if outputs
         .iter()

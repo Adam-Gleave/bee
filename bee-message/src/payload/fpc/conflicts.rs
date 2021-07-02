@@ -50,7 +50,11 @@ pub struct Conflict {
 
 impl Conflict {
     pub fn new(transaction_id: TransactionId, opinion: u8, round: u8) -> Self {
-        Self { transaction_id, opinion, round }
+        Self {
+            transaction_id,
+            opinion,
+            round,
+        }
     }
 
     /// Returns the ID of the conflicting transaction.

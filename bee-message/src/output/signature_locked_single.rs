@@ -1,11 +1,11 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{MessageUnpackError, address::Address, constants::IOTA_SUPPLY, error::ValidationError};
+use crate::{address::Address, constants::IOTA_SUPPLY, error::ValidationError, MessageUnpackError};
 
-use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError, UnknownTagError};
+use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker};
 
-use core::{fmt, convert::Infallible, ops::RangeInclusive};
+use core::{convert::Infallible, fmt, ops::RangeInclusive};
 
 /// Valid amounts for a signature locked single output.
 pub const SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT: RangeInclusive<u64> = 1..=IOTA_SUPPLY;
@@ -17,14 +17,14 @@ pub enum SignatureLockedSingleUnpackError {
 }
 
 impl_wrapped_variant!(
-    SignatureLockedSingleUnpackError, 
-    ValidationError, 
+    SignatureLockedSingleUnpackError,
+    ValidationError,
     SignatureLockedSingleUnpackError::ValidationError
 );
 
 impl From<UnknownTagError<u8>> for SignatureLockedSingleUnpackError {
     fn from(error: UnknownTagError<u8>) -> Self {
-        Self::InvalidAddressKind(error.0) 
+        Self::InvalidAddressKind(error.0)
     }
 }
 
@@ -69,7 +69,7 @@ impl SignatureLockedSingleOutput {
 
 impl Packable for SignatureLockedSingleOutput {
     type PackError = Infallible;
-    type UnpackError = MessageUnpackError; 
+    type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
         self.address.packed_len() + self.amount.packed_len()

@@ -1,18 +1,25 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{MessageUnpackError, constants::INPUT_OUTPUT_INDEX_RANGE, error::ValidationError};
+use crate::{constants::INPUT_OUTPUT_INDEX_RANGE, error::ValidationError, MessageUnpackError};
 
-use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
+use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
-use core::{fmt, convert::{Infallible, TryFrom}};
+use core::{
+    convert::{Infallible, TryFrom},
+    fmt,
+};
 
 #[derive(Debug)]
 pub enum ReferenceUnlockUnpackError {
     ValidationError(ValidationError),
 }
 
-impl_wrapped_variant!(ReferenceUnlockUnpackError, ValidationError, ReferenceUnlockUnpackError::ValidationError);
+impl_wrapped_variant!(
+    ReferenceUnlockUnpackError,
+    ValidationError,
+    ReferenceUnlockUnpackError::ValidationError
+);
 
 impl fmt::Display for ReferenceUnlockUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

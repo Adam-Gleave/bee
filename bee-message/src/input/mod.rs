@@ -7,9 +7,9 @@ pub use utxo::UtxoInput;
 
 use crate::error::{MessageUnpackError, ValidationError};
 
-use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
+use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
-use core::{fmt, convert::Infallible};
+use core::{convert::Infallible, fmt};
 
 #[derive(Debug)]
 pub enum InputUnpackError {
@@ -52,16 +52,17 @@ impl Packable for Input {
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
-        self.kind().packed_len() + match self {
-            Self::Utxo(utxo) => utxo.packed_len() 
-        }
+        self.kind().packed_len()
+            + match self {
+                Self::Utxo(utxo) => utxo.packed_len(),
+            }
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         self.kind().pack(packer).map_err(PackError::infallible)?;
-        
+
         match self {
-            Self::Utxo(utxo) => utxo.pack(packer).map_err(PackError::infallible)?
+            Self::Utxo(utxo) => utxo.pack(packer).map_err(PackError::infallible)?,
         }
 
         Ok(())

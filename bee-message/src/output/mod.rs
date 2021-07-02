@@ -9,20 +9,16 @@ pub use crate::error::{MessageUnpackError, ValidationError};
 
 pub use output_id::{OutputId, OutputIdUnpackError, OUTPUT_ID_LENGTH};
 pub use signature_locked_dust_allowance::{
-    SignatureLockedDustAllowanceOutput,
-    SignatureLockedDustAllowanceUnpackError,
-    DUST_THRESHOLD, 
+    SignatureLockedDustAllowanceOutput, SignatureLockedDustAllowanceUnpackError, DUST_THRESHOLD,
     SIGNATURE_LOCKED_DUST_ALLOWANCE_OUTPUT_AMOUNT,
 };
 pub use signature_locked_single::{
-    SignatureLockedSingleOutput,
-    SignatureLockedSingleUnpackError,
-    SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT,
+    SignatureLockedSingleOutput, SignatureLockedSingleUnpackError, SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT,
 };
 
 use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker};
 
-use core::{fmt, convert::Infallible};
+use core::{convert::Infallible, fmt};
 
 #[derive(Debug)]
 pub enum OutputUnpackError {
@@ -62,7 +58,11 @@ pub enum Output {
 }
 
 impl_wrapped_variant!(Output, SignatureLockedSingleOutput, Output::SignatureLockedSingle);
-impl_wrapped_variant!(Output, SignatureLockedDustAllowanceOutput, Output::SignatureLockedDustAllowance);
+impl_wrapped_variant!(
+    Output,
+    SignatureLockedDustAllowanceOutput,
+    Output::SignatureLockedDustAllowance
+);
 
 impl Output {
     /// Return the output kind of an `Output`.
@@ -77,12 +77,13 @@ impl Output {
 impl Packable for Output {
     type PackError = Infallible;
     type UnpackError = MessageUnpackError;
-    
+
     fn packed_len(&self) -> usize {
-        0u8.packed_len() + match self {
-            Self::SignatureLockedSingle(output) => output.packed_len(),
-            Self::SignatureLockedDustAllowance(output) => output.packed_len(),
-        }
+        0u8.packed_len()
+            + match self {
+                Self::SignatureLockedSingle(output) => output.packed_len(),
+                Self::SignatureLockedDustAllowance(output) => output.packed_len(),
+            }
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
@@ -100,13 +101,15 @@ impl Packable for Output {
         let kind = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
 
         let variant = match kind {
-            SignatureLockedSingleOutput::KIND => Self::SignatureLockedSingle(
-                SignatureLockedSingleOutput::unpack(unpacker)?
-            ),
-            SignatureLockedDustAllowanceOutput::KIND => Self::SignatureLockedDustAllowance(
-                SignatureLockedDustAllowanceOutput::unpack(unpacker)?
-            ),
-            tag => Err(UnpackError::Packable(OutputUnpackError::InvalidOutputKind(tag))).map_err(UnpackError::coerce)?,
+            SignatureLockedSingleOutput::KIND => {
+                Self::SignatureLockedSingle(SignatureLockedSingleOutput::unpack(unpacker)?)
+            }
+            SignatureLockedDustAllowanceOutput::KIND => {
+                Self::SignatureLockedDustAllowance(SignatureLockedDustAllowanceOutput::unpack(unpacker)?)
+            }
+            tag => {
+                Err(UnpackError::Packable(OutputUnpackError::InvalidOutputKind(tag))).map_err(UnpackError::coerce)?
+            }
         };
 
         Ok(variant)
