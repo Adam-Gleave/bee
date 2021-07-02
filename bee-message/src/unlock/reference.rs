@@ -71,6 +71,6 @@ impl Packable for ReferenceUnlock {
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
         let index = u16::unpack(unpacker).map_err(UnpackError::infallible)?;
 
-        Ok(ReferenceUnlock::new(index).map_err(|e| UnpackError::Packable(e.into()))?)
+        ReferenceUnlock::new(index).map_err(|e| UnpackError::Packable(e.into()))
     }
 }

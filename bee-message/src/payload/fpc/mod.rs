@@ -124,6 +124,7 @@ impl Packable for FpcPayload {
 }
 
 /// A builder to build an `FpcPayload`.
+#[derive(Default)]
 pub struct FpcPayloadBuilder {
     version: Option<u8>,
     conflicts: Conflicts,
@@ -133,11 +134,7 @@ pub struct FpcPayloadBuilder {
 impl FpcPayloadBuilder {
     /// Creates a new `FpcPayloadBuilder`.
     pub fn new() -> Self {
-        Self {
-            version: None,
-            conflicts: Default::default(),
-            timestamps: Default::default(),
-        }
+        Self::default()
     }
 
     /// Adds a version number to the `FpcPayloadBuilder`.

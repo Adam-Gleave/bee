@@ -328,8 +328,8 @@ impl TransactionEssenceBuilder {
             timestamp,
             access_pledge_id,
             consensus_pledge_id,
-            inputs: self.inputs.into(),
-            outputs: self.outputs.into(),
+            inputs: self.inputs,
+            outputs: self.outputs,
             payload: self.payload,
         })
     }

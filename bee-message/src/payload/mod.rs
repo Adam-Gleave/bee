@@ -259,7 +259,7 @@ impl Packable for Payload {
                 Box::new(SaltDeclarationPayload::unpack(unpacker)?,
             )),
             TransactionPayload::KIND => Payload::Transaction(Box::new(TransactionPayload::unpack(unpacker)?)),
-            tag => Err(UnpackError::Packable(PayloadUnpackError::InvalidPayloadKind(tag).into()))?,
+            tag => return Err(UnpackError::Packable(PayloadUnpackError::InvalidPayloadKind(tag).into())),
         };
 
         Ok(payload)

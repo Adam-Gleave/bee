@@ -240,7 +240,7 @@ fn validate_unlock_block_count(len: usize) -> Result<(), ValidationError> {
     }
 }
 
-fn validate_unlock_block_variants(unlock_blocks: &Vec<UnlockBlock>) -> Result<(), ValidationError> {
+fn validate_unlock_block_variants(unlock_blocks: &[UnlockBlock]) -> Result<(), ValidationError> {
     let mut seen = HashSet::new();
 
     for (idx, unlock_block) in unlock_blocks.iter().enumerate() {
@@ -259,7 +259,7 @@ fn validate_unlock_block_variants(unlock_blocks: &Vec<UnlockBlock>) -> Result<()
 fn validate_unlock_block_variant(
     idx: usize, 
     unlock_block: &UnlockBlock, 
-    unlock_blocks: &Vec<UnlockBlock>,
+    unlock_blocks: &[UnlockBlock],
 ) -> Result<Option<SignatureUnlock>, ValidationError> {
     match unlock_block {
         UnlockBlock::Reference(r) => validate_unlock_block_reference(&r, idx, unlock_blocks).map(|_| None),
@@ -270,7 +270,7 @@ fn validate_unlock_block_variant(
 fn validate_unlock_block_reference(
     reference: &ReferenceUnlock, 
     idx: usize, 
-    unlock_blocks: &Vec<UnlockBlock>,
+    unlock_blocks: &[UnlockBlock],
 ) -> Result<(), ValidationError> {
     let r_idx = reference.index();
 

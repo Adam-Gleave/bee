@@ -63,10 +63,7 @@ pub struct Salt {
 
 impl Salt {
     pub fn new(bytes: Vec<u8>, expiry_time: u64) -> Self {
-        Self {
-            bytes: bytes.into(),
-            expiry_time,
-        }
+        Self { bytes, expiry_time }
     }
 }
 

@@ -101,7 +101,7 @@ impl Packable for SignatureLockedDustAllowanceOutput {
 
 fn validate_amount(amount: u64) -> Result<(), ValidationError> {
     if !SIGNATURE_LOCKED_DUST_ALLOWANCE_OUTPUT_AMOUNT.contains(&amount) {
-        return Err(ValidationError::InvalidDustAllowanceAmount(amount))
+        Err(ValidationError::InvalidDustAllowanceAmount(amount))
     } else {
         Ok(())
     }

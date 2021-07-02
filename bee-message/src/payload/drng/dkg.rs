@@ -136,7 +136,7 @@ impl Packable for EncryptedDeal {
             .map_err(UnpackError::coerce)?
             .into();
 
-        let threshold = u32::unpack(unpacker).map_err(UnpackError::infallible)?.into();
+        let threshold = u32::unpack(unpacker).map_err(UnpackError::infallible)?;
 
         let commitments = VecPrefix::<u8, u32>::unpack(unpacker)
             .map_err(UnpackError::coerce::<DkgUnpackError>)

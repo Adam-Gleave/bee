@@ -40,7 +40,7 @@ fn unpack_valid() {
     bytes.extend(vec![0, 0, 0, 0, 0, 0, 0, 0]);
     bytes.extend(rand_bytes_array::<32>());
 
-    let salt_declaration = SaltDeclarationPayload::unpack_from_slice(bytes.clone());
+    let salt_declaration = SaltDeclarationPayload::unpack_from_slice(bytes);
 
     assert!(salt_declaration.is_ok());
 }

@@ -85,24 +85,14 @@ impl Parents {
     pub fn strong_iter(&self) -> impl Iterator<Item = &MessageId> + '_ {
         self.inner
             .iter()
-            .filter(|parent| { 
-                match parent {
-                    Parent::Strong(_) => true,
-                    _ => false,
-                } 
-            })
+            .filter(|parent| matches!(parent, Parent::Strong(_)))
             .map(Parent::id)
     }
 
     pub fn weak_iter(&self) -> impl Iterator<Item = &MessageId> + '_ {
         self.inner
             .iter()
-            .filter(|parent| {
-                match parent {
-                    Parent::Weak(_) => true,
-                    _ => false,
-                }
-            })
+            .filter(|parent| matches!(parent, Parent::Weak(_)))
             .map(Parent::id)
     }
 }
@@ -123,11 +113,7 @@ impl Packable for Parents {
         let mut bits = bitarr![Lsb0, u8; 0; 8];
 
         for (i, parent) in self.iter().enumerate() {
-            let is_strong = match parent {
-                Parent::Strong(_) => true,
-                _ => false,
-            };
-
+            let is_strong = matches!(parent, Parent::Strong(_));
             bits.set(i, is_strong);
         }
 
@@ -185,7 +171,7 @@ fn validate_strong_parents_count(count: usize) -> Result<(), ValidationError> {
     }
 }
 
-fn validate_parents_unique_sorted(parents: &Vec<Parent>) -> Result<(), ValidationError> {
+fn validate_parents_unique_sorted(parents: &[Parent]) -> Result<(), ValidationError> {
     if !is_unique_sorted(parents.iter().map(|parent| parent.id().as_ref())) {
         Err(ValidationError::ParentsNotUniqueSorted)
     } else {

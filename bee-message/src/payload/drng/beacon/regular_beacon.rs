@@ -43,6 +43,7 @@ impl BeaconPayload {
     }
 }
 
+#[derive(Default)]
 pub struct BeaconPayloadBuilder {
     version: Option<u8>,
     instance_id: Option<u32>,
@@ -53,13 +54,7 @@ pub struct BeaconPayloadBuilder {
 
 impl BeaconPayloadBuilder {
     pub fn new() -> Self {
-        Self {
-            version: None,
-            instance_id: None,
-            round: None,
-            partial_public_key: None,
-            partial_signature: None,
-        }
+        Self::default()
     }
 
     pub fn with_version(mut self, version: u8) -> Self {
