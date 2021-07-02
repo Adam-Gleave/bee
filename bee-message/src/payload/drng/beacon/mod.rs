@@ -1,3 +1,6 @@
+// Copyright 2021 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
 pub mod collective_beacon;
 pub mod regular_beacon;
 
