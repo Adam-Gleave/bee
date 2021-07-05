@@ -103,6 +103,7 @@ impl fmt::Display for TransactionUnpackError {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TransactionPayload {
+    version: u8,
     essence: TransactionEssence,
     unlock_blocks: UnlockBlocks,
 }
@@ -128,6 +129,11 @@ impl TransactionPayload {
         TransactionId::new(hasher.finalize().into())
     }
 
+    /// Return the version of a `TransactionPayload`.
+    pub fn version(&self) -> u8 {
+        self.version
+    }
+
     /// Return the essence of a `TransactionPayload`.
     pub fn essence(&self) -> &TransactionEssence {
         &self.essence
@@ -144,10 +150,13 @@ impl Packable for TransactionPayload {
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
-        self.essence.packed_len() + self.unlock_blocks.packed_len()
+        self.version.packed_len() 
+            + self.essence.packed_len()
+            + self.unlock_blocks.packed_len()
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
+        self.version.pack(packer).map_err(PackError::infallible)?;
         self.essence.pack(packer)?;
         self.unlock_blocks.pack(packer)?;
 
@@ -155,18 +164,24 @@ impl Packable for TransactionPayload {
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
+        let version = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
         let essence = TransactionEssence::unpack(unpacker)?;
         let unlock_blocks = UnlockBlocks::unpack(unpacker)?;
 
         validate_unlock_block_count(&essence, &unlock_blocks).map_err(|e| UnpackError::Packable(e.into()))?;
 
-        Ok(Self { essence, unlock_blocks })
+        Ok(Self { 
+            version, 
+            essence, 
+            unlock_blocks,
+        })
     }
 }
 
 /// A builder to build a `TransactionPayload`.
 #[derive(Debug, Default)]
 pub struct TransactionPayloadBuilder {
+    version: Option<u8>,
     essence: Option<TransactionEssence>,
     unlock_blocks: Option<UnlockBlocks>,
 }
@@ -175,6 +190,12 @@ impl TransactionPayloadBuilder {
     /// Creates a new `TransactionPayloadBuilder`.
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Assigns a version to a `TransactionPayloadBuilder`.
+    pub fn with_version(mut self, version: u8) -> Self {
+        self.version.replace(version);
+        self
     }
 
     /// Adds an essence to a `TransactionPayloadBuilder`.
@@ -191,6 +212,7 @@ impl TransactionPayloadBuilder {
 
     /// Finishes a `TransactionPayloadBuilder` into a `TransactionPayload`.
     pub fn finish(self) -> Result<TransactionPayload, ValidationError> {
+        let version = self.version.ok_or(ValidationError::MissingField("version"))?;
         let essence = self.essence.ok_or(ValidationError::MissingField("essence"))?;
         let unlock_blocks = self
             .unlock_blocks
@@ -198,7 +220,7 @@ impl TransactionPayloadBuilder {
 
         validate_unlock_block_count(&essence, &unlock_blocks)?;
 
-        Ok(TransactionPayload { essence, unlock_blocks })
+        Ok(TransactionPayload { version, essence, unlock_blocks })
     }
 }
 

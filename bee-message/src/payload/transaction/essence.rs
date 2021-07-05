@@ -11,9 +11,7 @@ use crate::{
 };
 
 use bee_ord::is_sorted;
-use bee_packable::{
-    error::UnpackPrefixError, PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker, VecPrefix,
-};
+use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker, VecPrefix, error::{PackPrefixError, UnpackPrefixError}};
 
 use alloc::vec::Vec;
 use core::{convert::Infallible, fmt};
@@ -23,6 +21,8 @@ pub const PLEDGE_ID_LENGTH: usize = 32;
 
 #[derive(Debug)]
 pub enum TransactionEssencePackError {
+    InvalidInputPrefixLength,
+    InvalidOutputPrefixLength,
     OptionalPayload(PayloadPackError),
 }
 
@@ -33,9 +33,17 @@ impl_wrapped_variant!(
 );
 impl_from_infallible!(TransactionEssencePackError);
 
+impl From<PackPrefixError<Infallible, u32>> for TransactionEssencePackError {
+    fn from(_: PackPrefixError<Infallible, u32>) -> Self {
+        Self::InvalidInputPrefixLength
+    }
+}
+
 impl fmt::Display for TransactionEssencePackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::InvalidInputPrefixLength => write!(f, "Invalid input prefix length"),
+            Self::InvalidOutputPrefixLength => write!(f, "Invalid output prefix length"),
             Self::OptionalPayload(e) => write!(f, "Error packing payload: {}", e),
         }
     }
@@ -79,8 +87,6 @@ impl fmt::Display for TransactionEssenceUnpackError {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TransactionEssence {
-    /// Transaction essence version number.
-    version: u8,
     /// Timestamp of the transaction.
     timestamp: u64,
     /// Node ID to which the access mana of the transaction is pledged.
@@ -99,11 +105,6 @@ impl TransactionEssence {
     /// Create a new `TransactionEssenceBuilder` to build a `TransactionEssence`.
     pub fn builder() -> TransactionEssenceBuilder {
         TransactionEssenceBuilder::new()
-    }
-
-    /// Return the version number of a Transaction Essence.
-    pub fn version(&self) -> u8 {
-        self.version
     }
 
     /// Return the timestamp of a Transaction Essence.
@@ -142,8 +143,7 @@ impl Packable for TransactionEssence {
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
-        self.version.packed_len()
-            + self.timestamp.packed_len()
+        self.timestamp.packed_len()
             + self.access_pledge_id.packed_len()
             + self.consensus_pledge_id.packed_len()
             + VecPrefix::<Input, u32>::from(self.inputs.clone()).packed_len()
@@ -152,19 +152,27 @@ impl Packable for TransactionEssence {
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
-        self.version.pack(packer).map_err(PackError::infallible)?;
         self.timestamp.pack(packer).map_err(PackError::infallible)?;
         self.access_pledge_id.pack(packer).map_err(PackError::infallible)?;
         self.consensus_pledge_id.pack(packer).map_err(PackError::infallible)?;
-        self.inputs.pack(packer).map_err(PackError::coerce)?;
-        self.outputs.pack(packer).map_err(PackError::coerce)?;
+        
+        let input_prefixed = VecPrefix::<Input, u32>::from(self.inputs.clone());
+        let output_prefixed = VecPrefix::<Output, u32>::from(self.outputs.clone());
+
+        input_prefixed.pack(packer)
+            .map_err(PackError::coerce::<TransactionEssencePackError>)
+            .map_err(PackError::coerce)?;
+
+        output_prefixed.pack(packer)
+            .map_err(PackError::coerce::<TransactionEssencePackError>)
+            .map_err(PackError::coerce)?;
+
         self.payload.pack(packer).map_err(PackError::coerce)?;
 
         Ok(())
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
-        let version = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
         let timestamp = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
         let access_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
         let consensus_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
@@ -230,7 +238,6 @@ impl Packable for TransactionEssence {
         validate_payload(&payload).map_err(|e| UnpackError::Packable(e.into()))?;
 
         Ok(Self {
-            version,
             timestamp,
             access_pledge_id,
             consensus_pledge_id,
@@ -244,7 +251,6 @@ impl Packable for TransactionEssence {
 /// A builder to build a `TransactionEssence`.
 #[derive(Debug, Default)]
 pub struct TransactionEssenceBuilder {
-    version: Option<u8>,
     timestamp: Option<u64>,
     access_pledge_id: Option<[u8; PLEDGE_ID_LENGTH]>,
     consensus_pledge_id: Option<[u8; PLEDGE_ID_LENGTH]>,
@@ -257,12 +263,6 @@ impl TransactionEssenceBuilder {
     /// Creates a new `TransactionEssenceBuilder`.
     pub fn new() -> Self {
         Self::default()
-    }
-
-    /// Adds a version number to a `TransactionEssenceBuilder`.
-    pub fn with_version(mut self, version: u8) -> Self {
-        self.version = Some(version);
-        self
     }
 
     /// Adds a timestamp to a `TransactionEssenceBuilder`.
@@ -315,7 +315,6 @@ impl TransactionEssenceBuilder {
 
     /// Finishes a `TransactionEssenceBuilder` into a `TransactionEssence`.
     pub fn finish(self) -> Result<TransactionEssence, ValidationError> {
-        let version = self.version.ok_or(ValidationError::MissingField("version"))?;
         let timestamp = self.timestamp.ok_or(ValidationError::MissingField("timestamp"))?;
         let access_pledge_id = self
             .access_pledge_id
@@ -342,7 +341,6 @@ impl TransactionEssenceBuilder {
         validate_payload(&self.payload)?;
 
         Ok(TransactionEssence {
-            version,
             timestamp,
             access_pledge_id,
             consensus_pledge_id,
