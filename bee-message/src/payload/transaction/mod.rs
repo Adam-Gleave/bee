@@ -107,8 +107,11 @@ impl fmt::Display for TransactionUnpackError {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TransactionPayload {
+    /// The version of the `TransactionPayload`.
     version: u8,
+    /// The essence data making up a transaction.
     essence: TransactionEssence,
+    /// Collection of unlock blocks relating to the transaction inputs.
     unlock_blocks: UnlockBlocks,
 }
 

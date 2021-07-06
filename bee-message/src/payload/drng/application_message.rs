@@ -7,7 +7,9 @@ use bee_packable::Packable;
 #[derive(Clone, Debug, Eq, PartialEq, Packable)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ApplicationMessagePayload {
+    /// The version of the `ApplicationMessagePayload`.
     version: u8,
+    /// The identifier of the dRNG instance.
     instance_id: u32,
 }
 

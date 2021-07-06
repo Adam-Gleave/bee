@@ -80,8 +80,11 @@ impl fmt::Display for IndexationUnpackError {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IndexationPayload {
+    /// The version of the `IndexationPayload`.
     version: u8,
+    /// The index key of the message.
     index: Vec<u8>,
+    /// The data attached to this index.
     data: Vec<u8>,
 }
 

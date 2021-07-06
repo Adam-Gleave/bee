@@ -65,10 +65,15 @@ impl fmt::Display for DkgUnpackError {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EncryptedDeal {
+    /// An ephemeral Diffie-Hellman key.
     dh_key: Vec<u8>,
+    /// The nonce used.
     nonce: Vec<u8>,
+    /// The ciphertext of the share.
     encrypted_share: Vec<u8>,
+    /// The threshold of the secret sharing protocol.
     threshold: u32,
+    /// The commitments of the polynomial used to derive the share.
     commitments: Vec<u8>,
 }
 
@@ -249,10 +254,15 @@ impl EncryptedDealBuilder {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DkgPayload {
+    /// The version of the `DkgPayload`.
     version: u8,
+    /// The identifier of the dRNG instance.
     instance_id: u32,
+    /// The index of the dealer.
     from_index: u32,
+    /// The index of the verifier.
     to_index: u32,
+    /// The encrypted share struct.
     deal: EncryptedDeal,
 }
 

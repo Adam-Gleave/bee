@@ -13,10 +13,15 @@ use core::convert::{Infallible, TryInto};
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BeaconPayload {
+    /// The version of the `BeaconPayload`.
     version: u8,
+    /// The identifier of the dRNG instance.
     instance_id: u32,
+    /// The round of the current beacon.
     round: u64,
+    /// The public key of the issuer.
     partial_public_key: Box<[u8]>,
+    /// The collective signature of the current beacon.
     partial_signature: Box<[u8]>,
 }
 

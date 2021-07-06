@@ -60,7 +60,9 @@ impl fmt::Display for DataUnpackError {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DataPayload {
+    /// The version of the `DataPayload`.
     version: u8,
+    /// The raw data in bytes.
     data: Vec<u8>,
 }
 

@@ -67,7 +67,9 @@ impl fmt::Display for SaltDeclarationUnpackError {
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Salt {
+    /// The value of the salt.
     bytes: Vec<u8>,
+    /// The expiration time of the salt.
     expiry_time: u64,
 }
 
@@ -114,10 +116,15 @@ impl Packable for Salt {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SaltDeclarationPayload {
+    /// The version of the `SaltDeclarationPayload`.
     version: u8,
+    /// The declaring node ID (which may be different from the node ID of the message issuer).
     node_id: u32,
+    /// The public salt of the requester.
     salt: Salt,
+    /// The timestamp of the payload.
     timestamp: u64,
+    /// The node signature.
     signature: [u8; ED25519_PUBLIC_KEY_LENGTH],
 }
 
