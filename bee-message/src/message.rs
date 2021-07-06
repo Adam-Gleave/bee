@@ -160,7 +160,7 @@ impl Packable for Message {
         let nonce = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
         let signature = <[u8; MESSAGE_SIGNATURE_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
 
-        Ok(Self {
+        let message = Self {
             parents,
             issuer_public_key,
             issue_timestamp,
@@ -168,7 +168,12 @@ impl Packable for Message {
             payload,
             nonce,
             signature,
-        })
+        };
+
+        let len = message.pack_to_vec().unwrap().len();
+        validate_message_len(len).map_err(|e| UnpackError::Packable(e.into()))?;
+
+        Ok(message)
     }
 }
 
@@ -247,15 +252,6 @@ impl MessageBuilder {
             .sequence_number
             .ok_or(ValidationError::MissingField("sequence_number"))?;
 
-        // FIXME payload types
-        if !matches!(
-            self.payload,
-            None | Some(Payload::Transaction(_)) | Some(Payload::Indexation(_))
-        ) {
-            // Safe to unwrap here, since it's known not to be None.
-            return Err(ValidationError::InvalidPayloadKind(self.payload.unwrap().kind()));
-        }
-
         let nonce = self.nonce.ok_or(ValidationError::MissingField("nonce"))?;
         let signature = self.signature.ok_or(ValidationError::MissingField("signature"))?;
 
@@ -269,12 +265,16 @@ impl MessageBuilder {
             signature,
         };
 
-        let bytes = message.pack_to_vec().unwrap();
-
-        if bytes.len() > MESSAGE_LENGTH_MAX {
-            return Err(ValidationError::InvalidMessageLength(bytes.len()));
-        }
+        validate_message_len(message.pack_to_vec().unwrap().len())?;
 
         Ok(message)
+    }
+}
+
+fn validate_message_len(len: usize) -> Result<(), ValidationError> {
+    if len > MESSAGE_LENGTH_MAX || len < MESSAGE_LENGTH_MIN {
+        Err(ValidationError::InvalidMessageLength(len))
+    } else {
+        Ok(())
     }
 }
