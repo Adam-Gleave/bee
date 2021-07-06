@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
+pub use crate::{
     input::InputUnpackError,
     output::{
         OutputIdUnpackError, OutputUnpackError, SignatureLockedDustAllowanceUnpackError,
@@ -23,7 +23,7 @@ use crate::{
     ValidationError,
 };
 
-use bee_packable::UnpackOptionError;
+pub use bee_packable::UnpackOptionError;
 
 use core::{convert::Infallible, fmt};
 
