@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-//! Module describing dRNG payloads. 
+//! Module describing dRNG payloads.
 
 mod application_message;
 mod beacon;
