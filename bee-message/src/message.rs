@@ -1,11 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    parents::Parents,
-    payload::Payload,
-    MessageId, MessagePackError, MessageUnpackError, ValidationError,
-};
+use crate::{parents::Parents, payload::Payload, MessageId, MessagePackError, MessageUnpackError, ValidationError};
 
 use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
@@ -15,13 +11,10 @@ use crypto::{
 };
 
 use alloc::{boxed::Box, vec::Vec};
-use core::convert::TryInto;
+use core::{convert::TryInto, ops::RangeInclusive};
 
-/// The minimum number of bytes in a message.
-pub const MESSAGE_LENGTH_MIN: usize = 53;
-
-/// The maximum number of bytes in a message.
-pub const MESSAGE_LENGTH_MAX: usize = 32768;
+/// Range (in bytes) of a valid message length.
+pub const MESSAGE_LENGTH_RANGE: RangeInclusive<usize> = 53..=32768;
 
 /// Length (in bytes) of a public key.
 pub const MESSAGE_PUBLIC_KEY_LENGTH: usize = 32;
@@ -160,7 +153,9 @@ impl Packable for Message {
         let sequence_number = u32::unpack(unpacker).map_err(UnpackError::infallible)?;
         let payload = Option::<Payload>::unpack(unpacker).map_err(UnpackError::coerce)?;
         let nonce = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
-        let signature = <[u8; MESSAGE_SIGNATURE_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?.into();
+        let signature = <[u8; MESSAGE_SIGNATURE_LENGTH]>::unpack(unpacker)
+            .map_err(UnpackError::infallible)?
+            .into();
 
         let message = Self {
             parents,
@@ -241,9 +236,7 @@ impl MessageBuilder {
 
     /// Finished the `MessageBuilder`, consuming it to build a `Message`.
     pub fn finish(self) -> Result<Message, ValidationError> {
-        let parents = self
-            .parents
-            .ok_or(ValidationError::MissingField("parents"))?;
+        let parents = self.parents.ok_or(ValidationError::MissingField("parents"))?;
         let issuer_public_key = self
             .issuer_public_key
             .ok_or(ValidationError::MissingField("issuer_public_key"))?;
@@ -274,7 +267,7 @@ impl MessageBuilder {
 }
 
 fn validate_message_len(len: usize) -> Result<(), ValidationError> {
-    if len > MESSAGE_LENGTH_MAX || len < MESSAGE_LENGTH_MIN {
+    if !MESSAGE_LENGTH_RANGE.contains(&len) {
         Err(ValidationError::InvalidMessageLength(len))
     } else {
         Ok(())

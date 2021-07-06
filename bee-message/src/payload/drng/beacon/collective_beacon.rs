@@ -4,7 +4,7 @@
 use super::{BEACON_DISTRIBUTED_PUBLIC_KEY_LENGTH, BEACON_SIGNATURE_LENGTH};
 use crate::ValidationError;
 
-use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
+use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
 use alloc::boxed::Box;
 use core::convert::{Infallible, TryInto};
@@ -70,25 +70,17 @@ impl Packable for CollectiveBeaconPayload {
         self.instance_id.pack(packer).map_err(PackError::infallible)?;
         self.round.pack(packer).map_err(PackError::infallible)?;
 
-        // The size of `self.prev_signature` is known to be 96 bytes. 
-        let prev_sig_bytes: [u8; BEACON_SIGNATURE_LENGTH] = self.prev_signature
-            .to_vec()
-            .try_into()
-            .unwrap();
+        // The size of `self.prev_signature` is known to be 96 bytes.
+        let prev_sig_bytes: [u8; BEACON_SIGNATURE_LENGTH] = self.prev_signature.to_vec().try_into().unwrap();
         prev_sig_bytes.pack(packer).map_err(PackError::infallible)?;
 
         // The size of `self.signature` is known to be 96 bytes.
-        let sig_bytes: [u8; BEACON_SIGNATURE_LENGTH] = self.signature
-            .to_vec()
-            .try_into()
-            .unwrap();
+        let sig_bytes: [u8; BEACON_SIGNATURE_LENGTH] = self.signature.to_vec().try_into().unwrap();
         sig_bytes.pack(packer).map_err(PackError::infallible)?;
 
         // The size of `self.distributed_public_key` is known to be 48 bytes.
-        let distributed_pk_bytes: [u8; BEACON_DISTRIBUTED_PUBLIC_KEY_LENGTH] = self.distributed_public_key
-            .to_vec()
-            .try_into()
-            .unwrap();
+        let distributed_pk_bytes: [u8; BEACON_DISTRIBUTED_PUBLIC_KEY_LENGTH] =
+            self.distributed_public_key.to_vec().try_into().unwrap();
         distributed_pk_bytes.pack(packer).map_err(PackError::infallible)?;
 
         Ok(())

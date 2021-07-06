@@ -1,10 +1,10 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::ValidationError;
 use super::{BEACON_PARTIAL_PUBLIC_KEY_LENGTH, BEACON_SIGNATURE_LENGTH};
+use crate::ValidationError;
 
-use bee_packable::{Packable, Packer, PackError, Unpacker, UnpackError};
+use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
 use alloc::boxed::Box;
 use core::convert::{Infallible, TryInto};
@@ -65,17 +65,12 @@ impl Packable for BeaconPayload {
         self.round.pack(packer).map_err(PackError::infallible)?;
 
         // The size of `self.partial_public_key` is known to be 96 bytes.
-        let partial_pk_bytes: [u8; BEACON_PARTIAL_PUBLIC_KEY_LENGTH] = self.partial_public_key
-            .to_vec()
-            .try_into()
-            .unwrap();
+        let partial_pk_bytes: [u8; BEACON_PARTIAL_PUBLIC_KEY_LENGTH] =
+            self.partial_public_key.to_vec().try_into().unwrap();
         partial_pk_bytes.pack(packer).map_err(PackError::infallible)?;
 
         // The size of `self.partial_signature` is known to be 96 bytes.
-        let partial_sig_bytes: [u8; BEACON_SIGNATURE_LENGTH] = self.partial_signature
-            .to_vec()
-            .try_into()
-            .unwrap();
+        let partial_sig_bytes: [u8; BEACON_SIGNATURE_LENGTH] = self.partial_signature.to_vec().try_into().unwrap();
         partial_sig_bytes.pack(packer).map_err(PackError::infallible)?;
 
         Ok(())

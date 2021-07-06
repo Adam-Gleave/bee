@@ -20,14 +20,9 @@ fn kind() {
 
 #[test]
 fn invalid_no_essence() {
-    let payload = TransactionPayload::builder()
-        .with_version(0)
-        .finish();
+    let payload = TransactionPayload::builder().with_version(0).finish();
 
-    assert!(matches!(
-        payload.unwrap_err(), 
-        ValidationError::MissingField("essence"),
-    ));
+    assert!(matches!(payload.unwrap_err(), ValidationError::MissingField("essence"),));
 }
 
 #[test]
@@ -36,12 +31,12 @@ fn invalid_no_unlock_blocks() {
 
     let input1 = Input::Utxo(UtxoInput::new(txid, 0).unwrap());
     let input2 = Input::Utxo(UtxoInput::new(txid, 1).unwrap());
-    
+
     let bytes: [u8; 32] = hex::decode(ED25519_ADDRESS).unwrap().try_into().unwrap();
     let address = Address::from(Ed25519Address::new(bytes));
     let amount = 1_000_000;
     let output = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address, amount).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())
@@ -68,12 +63,12 @@ fn invalid_too_few_unlock_blocks() {
 
     let input1 = Input::Utxo(UtxoInput::new(txid, 0).unwrap());
     let input2 = Input::Utxo(UtxoInput::new(txid, 1).unwrap());
-    
+
     let bytes: [u8; 32] = hex::decode(ED25519_ADDRESS).unwrap().try_into().unwrap();
     let address = Address::from(Ed25519Address::new(bytes));
     let amount = 1_000_000;
     let output = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address, amount).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())
@@ -107,12 +102,12 @@ fn invalid_too_many_unlock_blocks() {
     let txid = TransactionId::new(hex::decode(TRANSACTION_ID).unwrap().try_into().unwrap());
 
     let input = Input::Utxo(UtxoInput::new(txid, 0).unwrap());
-    
+
     let bytes: [u8; 32] = hex::decode(ED25519_ADDRESS).unwrap().try_into().unwrap();
     let address = Address::from(Ed25519Address::new(bytes));
     let amount = 1_000_000;
     let output = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address, amount).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())
@@ -148,12 +143,12 @@ fn packed_len() {
 
     let input1 = Input::Utxo(UtxoInput::new(txid, 0).unwrap());
     let input2 = Input::Utxo(UtxoInput::new(txid, 1).unwrap());
-    
+
     let bytes: [u8; 32] = hex::decode(ED25519_ADDRESS).unwrap().try_into().unwrap();
     let address = Address::from(Ed25519Address::new(bytes));
     let amount = 1_000_000;
     let output = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address, amount).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())
@@ -179,11 +174,7 @@ fn packed_len() {
 
     assert_eq!(
         payload.packed_len(),
-        1 + 8 + 32 + 32
-            + 4 + 2 * (1 + 32 + 2) 
-            + 4 + 1 + 1 + 32 + 8
-            + 1
-            + 2 + 1 + 1 + 32 + 64 + 1 + 2,
+        1 + 8 + 32 + 32 + 4 + 2 * (1 + 32 + 2) + 4 + 1 + 1 + 32 + 8 + 1 + 2 + 1 + 1 + 32 + 64 + 1 + 2,
     )
 }
 
@@ -193,12 +184,12 @@ fn round_trip() {
 
     let input1 = Input::Utxo(UtxoInput::new(txid, 0).unwrap());
     let input2 = Input::Utxo(UtxoInput::new(txid, 1).unwrap());
-    
+
     let bytes: [u8; 32] = hex::decode(ED25519_ADDRESS).unwrap().try_into().unwrap();
     let address = Address::from(Ed25519Address::new(bytes));
     let amount = 1_000_000;
     let output = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address, amount).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())

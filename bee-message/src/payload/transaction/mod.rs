@@ -150,9 +150,7 @@ impl Packable for TransactionPayload {
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
-        self.version.packed_len() 
-            + self.essence.packed_len()
-            + self.unlock_blocks.packed_len()
+        self.version.packed_len() + self.essence.packed_len() + self.unlock_blocks.packed_len()
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
@@ -170,9 +168,9 @@ impl Packable for TransactionPayload {
 
         validate_unlock_block_count(&essence, &unlock_blocks).map_err(|e| UnpackError::Packable(e.into()))?;
 
-        Ok(Self { 
-            version, 
-            essence, 
+        Ok(Self {
+            version,
+            essence,
             unlock_blocks,
         })
     }
@@ -220,7 +218,11 @@ impl TransactionPayloadBuilder {
 
         validate_unlock_block_count(&essence, &unlock_blocks)?;
 
-        Ok(TransactionPayload { version, essence, unlock_blocks })
+        Ok(TransactionPayload {
+            version,
+            essence,
+            unlock_blocks,
+        })
     }
 }
 

@@ -5,7 +5,7 @@
 
 mod padded;
 
-use crate::{MessagePackError, MessageUnpackError, ValidationError, MESSAGE_LENGTH_MAX};
+use crate::{MessagePackError, MessageUnpackError, ValidationError, MESSAGE_LENGTH_RANGE};
 
 pub use padded::{PaddedIndex, INDEXATION_PADDED_INDEX_LENGTH};
 
@@ -120,7 +120,7 @@ fn validate_index(index: &[u8]) -> Result<(), ValidationError> {
 }
 
 fn validate_data(data: &[u8]) -> Result<(), ValidationError> {
-    if data.len() > MESSAGE_LENGTH_MAX {
+    if data.len() > *MESSAGE_LENGTH_RANGE.end() {
         Err(ValidationError::InvalidIndexationDataLength(data.len()))
     } else {
         Ok(())

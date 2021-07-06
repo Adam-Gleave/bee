@@ -17,12 +17,12 @@ fn new_valid() {
 
     let input1 = Input::Utxo(UtxoInput::new(txid, 0).unwrap());
     let input2 = Input::Utxo(UtxoInput::new(txid, 1).unwrap());
-    
+
     let bytes: [u8; 32] = hex::decode(ED25519_ADDRESS_1).unwrap().try_into().unwrap();
     let address = Address::from(Ed25519Address::new(bytes));
     let amount = 1_000_000;
     let output = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address, amount).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())
@@ -40,7 +40,7 @@ fn invalid_input_count() {
     let address = Address::from(Ed25519Address::new(bytes));
     let amount = 1_000_000;
     let output = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address, amount).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())
@@ -49,10 +49,7 @@ fn invalid_input_count() {
         .with_outputs(vec![output])
         .finish();
 
-    assert!(matches!(
-        essence.err().unwrap(),
-        ValidationError::InvalidInputCount(0),
-    ));
+    assert!(matches!(essence.err().unwrap(), ValidationError::InvalidInputCount(0),));
 }
 
 #[test]
@@ -61,12 +58,12 @@ fn invalid_duplicate_utxo() {
     let utxo_input = UtxoInput::new(txid, 0).unwrap();
     let input1 = Input::Utxo(utxo_input.clone());
     let input2 = Input::Utxo(utxo_input.clone());
-    
+
     let bytes: [u8; 32] = hex::decode(ED25519_ADDRESS_1).unwrap().try_into().unwrap();
     let address = Address::from(Ed25519Address::new(bytes));
     let amount = 1_000_000;
     let output = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address, amount).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())
@@ -87,12 +84,12 @@ fn invalid_inputs_not_sorted() {
 
     let input1 = Input::Utxo(UtxoInput::new(txid, 1).unwrap());
     let input2 = Input::Utxo(UtxoInput::new(txid, 0).unwrap());
-    
+
     let bytes: [u8; 32] = hex::decode(ED25519_ADDRESS_1).unwrap().try_into().unwrap();
     let address = Address::from(Ed25519Address::new(bytes));
     let amount = 1_000_000;
     let output = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address, amount).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())
@@ -113,7 +110,7 @@ fn invalid_output_count() {
 
     let input1 = Input::Utxo(UtxoInput::new(txid, 0).unwrap());
     let input2 = Input::Utxo(UtxoInput::new(txid, 1).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())
@@ -122,10 +119,7 @@ fn invalid_output_count() {
         .with_outputs(vec![])
         .finish();
 
-    assert!(matches!(
-        essence.err().unwrap(),
-        ValidationError::InvalidOutputCount(0),
-    ));
+    assert!(matches!(essence.err().unwrap(), ValidationError::InvalidOutputCount(0),));
 }
 
 #[test]
@@ -134,7 +128,7 @@ fn invalid_output_accumulated_amount() {
 
     let input1 = Input::Utxo(UtxoInput::new(txid, 0).unwrap());
     let input2 = Input::Utxo(UtxoInput::new(txid, 1).unwrap());
-    
+
     let bytes1: [u8; 32] = hex::decode(ED25519_ADDRESS_1).unwrap().try_into().unwrap();
     let address1 = Address::from(Ed25519Address::new(bytes1));
 
@@ -143,7 +137,7 @@ fn invalid_output_accumulated_amount() {
 
     let output1 = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address1, IOTA_SUPPLY).unwrap());
     let output2 = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address2, 1).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())
@@ -164,13 +158,13 @@ fn invalid_duplicate_output_address() {
 
     let input1 = Input::Utxo(UtxoInput::new(txid, 0).unwrap());
     let input2 = Input::Utxo(UtxoInput::new(txid, 1).unwrap());
-    
+
     let bytes: [u8; 32] = hex::decode(ED25519_ADDRESS_1).unwrap().try_into().unwrap();
     let address = Address::from(Ed25519Address::new(bytes));
 
     let output1 = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address, 1000).unwrap());
     let output2 = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address, 1000).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())
@@ -191,7 +185,7 @@ fn invalid_outputs_not_sorted() {
 
     let input1 = Input::Utxo(UtxoInput::new(txid, 0).unwrap());
     let input2 = Input::Utxo(UtxoInput::new(txid, 1).unwrap());
-    
+
     let bytes1: [u8; 32] = hex::decode(ED25519_ADDRESS_1).unwrap().try_into().unwrap();
     let address1 = Address::from(Ed25519Address::new(bytes1));
 
@@ -200,7 +194,7 @@ fn invalid_outputs_not_sorted() {
 
     let output1 = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address1, 1000).unwrap());
     let output2 = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address2, 1000).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())
@@ -221,12 +215,12 @@ fn packed_len() {
 
     let input1 = Input::Utxo(UtxoInput::new(txid, 0).unwrap());
     let input2 = Input::Utxo(UtxoInput::new(txid, 1).unwrap());
-    
+
     let bytes: [u8; 32] = hex::decode(ED25519_ADDRESS_1).unwrap().try_into().unwrap();
     let address = Address::from(Ed25519Address::new(bytes));
     let amount = 1_000_000;
     let output = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address, amount).unwrap());
-    
+
     let essence = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())
@@ -238,10 +232,7 @@ fn packed_len() {
 
     assert_eq!(
         essence.packed_len(),
-        8 + 32 + 32
-            + 4 + 2 * (1 + 32 + 2) 
-            + 4 + 1 + 1 + 32 + 8
-            + 1,
+        8 + 32 + 32 + 4 + 2 * (1 + 32 + 2) + 4 + 1 + 1 + 32 + 8 + 1,
     );
 }
 
@@ -251,12 +242,12 @@ fn round_trip() {
 
     let input1 = Input::Utxo(UtxoInput::new(txid, 0).unwrap());
     let input2 = Input::Utxo(UtxoInput::new(txid, 1).unwrap());
-    
+
     let bytes: [u8; 32] = hex::decode(ED25519_ADDRESS_1).unwrap().try_into().unwrap();
     let address = Address::from(Ed25519Address::new(bytes));
     let amount = 1_000_000;
     let output = Output::SignatureLockedSingle(SignatureLockedSingleOutput::new(address, amount).unwrap());
-    
+
     let essence_a = TransactionEssence::builder()
         .with_timestamp(rand_number())
         .with_access_pledge_id(rand_bytes_array())

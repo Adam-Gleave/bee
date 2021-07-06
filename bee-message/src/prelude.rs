@@ -18,6 +18,6 @@ pub use crate::{
     },
     signature::{Ed25519Signature, SignatureUnlock},
     unlock::{ReferenceUnlock, UnlockBlock, UnlockBlocks},
-    Message, MessageBuilder, MessageId, MessagePackError, MessageUnpackError, ValidationError, MESSAGE_ID_LENGTH, 
-    MESSAGE_LENGTH_MAX, MESSAGE_LENGTH_MIN,
+    Message, MessageBuilder, MessageId, MessagePackError, MessageUnpackError, ValidationError, MESSAGE_ID_LENGTH,
+    MESSAGE_LENGTH_RANGE,
 };

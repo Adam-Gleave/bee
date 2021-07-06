@@ -35,5 +35,5 @@ pub mod signature;
 pub mod unlock;
 
 pub use error::{MessagePackError, MessageUnpackError, ValidationError};
-pub use message::{Message, MessageBuilder, MESSAGE_LENGTH_MAX, MESSAGE_LENGTH_MIN};
+pub use message::{Message, MessageBuilder, MESSAGE_LENGTH_RANGE};
 pub use message_id::{MessageId, MESSAGE_ID_LENGTH};

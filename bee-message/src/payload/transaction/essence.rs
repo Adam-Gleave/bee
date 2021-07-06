@@ -11,7 +11,10 @@ use crate::{
 };
 
 use bee_ord::is_sorted;
-use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker, VecPrefix, error::{PackPrefixError, UnpackPrefixError}};
+use bee_packable::{
+    error::{PackPrefixError, UnpackPrefixError},
+    PackError, Packable, Packer, UnknownTagError, UnpackError, Unpacker, VecPrefix,
+};
 
 use alloc::vec::Vec;
 use core::{convert::Infallible, fmt};
@@ -155,15 +158,17 @@ impl Packable for TransactionEssence {
         self.timestamp.pack(packer).map_err(PackError::infallible)?;
         self.access_pledge_id.pack(packer).map_err(PackError::infallible)?;
         self.consensus_pledge_id.pack(packer).map_err(PackError::infallible)?;
-        
+
         let input_prefixed = VecPrefix::<Input, u32>::from(self.inputs.clone());
         let output_prefixed = VecPrefix::<Output, u32>::from(self.outputs.clone());
 
-        input_prefixed.pack(packer)
+        input_prefixed
+            .pack(packer)
             .map_err(PackError::coerce::<TransactionEssencePackError>)
             .map_err(PackError::coerce)?;
 
-        output_prefixed.pack(packer)
+        output_prefixed
+            .pack(packer)
             .map_err(PackError::coerce::<TransactionEssencePackError>)
             .map_err(PackError::coerce)?;
 
