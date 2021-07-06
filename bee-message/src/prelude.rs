@@ -6,7 +6,7 @@ pub use crate::{
     constants::IOTA_SUPPLY,
     input::{Input, UtxoInput},
     output::{Output, OutputId, SignatureLockedDustAllowanceOutput, SignatureLockedSingleOutput, OUTPUT_ID_LENGTH},
-    parents::{Parents, MESSAGE_PARENTS_RANGE},
+    parents::{Parent, Parents, MESSAGE_PARENTS_RANGE},
     payload::{
         data::DataPayload,
         drng::{ApplicationMessagePayload, BeaconPayload, CollectiveBeaconPayload, DkgPayload, EncryptedDeal},
@@ -18,6 +18,6 @@ pub use crate::{
     },
     signature::{Ed25519Signature, SignatureUnlock},
     unlock::{ReferenceUnlock, UnlockBlock, UnlockBlocks},
-    Message, MessageId, MessagePackError, MessageUnpackError, ValidationError, MESSAGE_ID_LENGTH, MESSAGE_LENGTH_MAX,
-    MESSAGE_LENGTH_MIN,
+    Message, MessageBuilder, MessageId, MessagePackError, MessageUnpackError, ValidationError, MESSAGE_ID_LENGTH, 
+    MESSAGE_LENGTH_MAX, MESSAGE_LENGTH_MIN,
 };

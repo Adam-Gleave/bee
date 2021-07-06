@@ -33,10 +33,8 @@ pub const MESSAGE_SIGNATURE_LENGTH: usize = 64;
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Message {
-    /// Message [Parents] in which the past cone is "Liked".
-    strong_parents: Parents,
-    /// Message [Parents] in which the past cone is "Disliked", but the parents themselves are "Liked".
-    weak_parents: Parents,
+    /// Message [Parents].
+    parents: Parents,
     /// The public key of the issuing node.
     issuer_public_key: [u8; MESSAGE_PUBLIC_KEY_LENGTH],
     /// The Unix timestamp at the moment of issue.
@@ -66,14 +64,9 @@ impl Message {
         (MessageId::new(id.into()), bytes)
     }
 
-    /// Returns the strong parents of a `Message`.
-    pub fn strong_parents(&self) -> &Parents {
-        &self.strong_parents
-    }
-
-    /// Returns the weak parents of a `Message`.
-    pub fn weak_parents(&self) -> &Parents {
-        &self.weak_parents
+    /// Returns the parents of a `Message`.
+    pub fn parents(&self) -> &Parents {
+        &self.parents
     }
 
     /// Returns the `Message` issuer public key.
@@ -137,8 +130,7 @@ impl Packable for Message {
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
-        self.strong_parents.packed_len()
-            + self.weak_parents.packed_len()
+        self.parents.packed_len()
             + self.issuer_public_key.packed_len()
             + self.issue_timestamp.packed_len()
             + self.sequence_number.packed_len()
@@ -148,8 +140,7 @@ impl Packable for Message {
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
-        self.strong_parents.pack(packer)?;
-        self.weak_parents.pack(packer)?;
+        self.parents.pack(packer)?;
         self.issuer_public_key.pack(packer).map_err(PackError::infallible)?;
         self.issue_timestamp.pack(packer).map_err(PackError::infallible)?;
         self.sequence_number.pack(packer).map_err(PackError::infallible)?;
@@ -161,8 +152,7 @@ impl Packable for Message {
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
-        let strong_parents = Parents::unpack(unpacker)?;
-        let weak_parents = Parents::unpack(unpacker)?;
+        let parents = Parents::unpack(unpacker)?;
         let issuer_public_key = <[u8; MESSAGE_PUBLIC_KEY_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
         let issue_timestamp = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
         let sequence_number = u32::unpack(unpacker).map_err(UnpackError::infallible)?;
@@ -171,8 +161,7 @@ impl Packable for Message {
         let signature = <[u8; MESSAGE_SIGNATURE_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
 
         Ok(Self {
-            strong_parents,
-            weak_parents,
+            parents,
             issuer_public_key,
             issue_timestamp,
             sequence_number,
@@ -186,8 +175,7 @@ impl Packable for Message {
 /// A builder to build a `Message`.
 #[derive(Default)]
 pub struct MessageBuilder {
-    strong_parents: Option<Parents>,
-    weak_parents: Option<Parents>,
+    parents: Option<Parents>,
     issuer_public_key: Option<[u8; MESSAGE_PUBLIC_KEY_LENGTH]>,
     issue_timestamp: Option<u64>,
     sequence_number: Option<u32>,
@@ -202,15 +190,9 @@ impl MessageBuilder {
         Default::default()
     }
 
-    /// Adds strong parents to a `MessageBuilder`.
-    pub fn with_strong_parents(mut self, strong_parents: Parents) -> Self {
-        self.strong_parents = Some(strong_parents);
-        self
-    }
-
-    /// Adds weak parents to a `MessageBuilder`.
-    pub fn with_weak_parents(mut self, weak_parents: Parents) -> Self {
-        self.weak_parents = Some(weak_parents);
+    /// Adds parents to a `MessageBuilder`.
+    pub fn with_parents(mut self, parents: Parents) -> Self {
+        self.parents = Some(parents);
         self
     }
 
@@ -252,10 +234,9 @@ impl MessageBuilder {
 
     /// Finished the `MessageBuilder`, consuming it to build a `Message`.
     pub fn finish(self) -> Result<Message, ValidationError> {
-        let strong_parents = self
-            .strong_parents
-            .ok_or(ValidationError::MissingField("strong_parents"))?;
-        let weak_parents = self.weak_parents.ok_or(ValidationError::MissingField("weak_parents"))?;
+        let parents = self
+            .parents
+            .ok_or(ValidationError::MissingField("parents"))?;
         let issuer_public_key = self
             .issuer_public_key
             .ok_or(ValidationError::MissingField("issuer_public_key"))?;
@@ -279,8 +260,7 @@ impl MessageBuilder {
         let signature = self.signature.ok_or(ValidationError::MissingField("signature"))?;
 
         let message = Message {
-            strong_parents,
-            weak_parents,
+            parents,
             issuer_public_key,
             issue_timestamp,
             sequence_number,
