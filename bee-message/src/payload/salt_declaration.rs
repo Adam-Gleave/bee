@@ -194,27 +194,27 @@ impl SaltDeclarationPayloadBuilder {
     }
 
     pub fn with_version(mut self, version: u8) -> Self {
-        self.version = Some(version);
+        self.version.replace(version);
         self
     }
 
     pub fn with_node_id(mut self, node_id: u32) -> Self {
-        self.node_id = Some(node_id);
+        self.node_id.replace(node_id);
         self
     }
 
     pub fn with_salt(mut self, salt: Salt) -> Self {
-        self.salt = Some(salt);
+        self.salt.replace(salt);
         self
     }
 
     pub fn with_timestamp(mut self, timestamp: u64) -> Self {
-        self.timestamp = Some(timestamp);
+        self.timestamp.replace(timestamp);
         self
     }
 
     pub fn with_signature(mut self, signature: [u8; ED25519_PUBLIC_KEY_LENGTH]) -> Self {
-        self.signature = Some(signature);
+        self.signature.replace(signature);
         self
     }
 

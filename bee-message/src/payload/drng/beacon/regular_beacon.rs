@@ -58,27 +58,27 @@ impl BeaconPayloadBuilder {
     }
 
     pub fn with_version(mut self, version: u8) -> Self {
-        self.version = Some(version);
+        self.version.replace(version);
         self
     }
 
     pub fn with_instance_id(mut self, instance_id: u32) -> Self {
-        self.instance_id = Some(instance_id);
+        self.instance_id.replace(instance_id);
         self
     }
 
     pub fn with_round(mut self, round: u64) -> Self {
-        self.round = Some(round);
+        self.round.replace(round);
         self
     }
 
     pub fn with_partial_public_key(mut self, partial_public_key: [u8; BEACON_PARTIAL_PUBLIC_KEY_LENGTH]) -> Self {
-        self.partial_public_key = Some(partial_public_key);
+        self.partial_public_key.replace(partial_public_key);
         self
     }
 
     pub fn with_partial_signature(mut self, partial_signature: [u8; BEACON_SIGNATURE_LENGTH]) -> Self {
-        self.partial_signature = Some(partial_signature);
+        self.partial_signature.replace(partial_signature);
         self
     }
 

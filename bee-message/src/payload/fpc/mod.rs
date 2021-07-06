@@ -145,7 +145,7 @@ impl FpcPayloadBuilder {
 
     /// Adds a version number to the `FpcPayloadBuilder`.
     pub fn with_version(mut self, version: u8) -> Self {
-        self.version = Some(version);
+        self.version.replace(version);
         self
     }
 

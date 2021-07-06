@@ -183,27 +183,27 @@ impl EncryptedDealBuilder {
     }
 
     pub fn with_dh_key(mut self, dh_key: Vec<u8>) -> Self {
-        self.dh_key = Some(dh_key);
+        self.dh_key.replace(dh_key);
         self
     }
 
     pub fn with_nonce(mut self, nonce: Vec<u8>) -> Self {
-        self.nonce = Some(nonce);
+        self.nonce.replace(nonce);
         self
     }
 
     pub fn with_encrypted_share(mut self, encrypted_share: Vec<u8>) -> Self {
-        self.encrypted_share = Some(encrypted_share);
+        self.encrypted_share.replace(encrypted_share);
         self
     }
 
     pub fn with_threshold(mut self, threshold: u32) -> Self {
-        self.threshold = Some(threshold);
+        self.threshold.replace(threshold);
         self
     }
 
     pub fn with_commitments(mut self, commitments: Vec<u8>) -> Self {
-        self.commitments = Some(commitments);
+        self.commitments.replace(commitments);
         self
     }
 
@@ -319,27 +319,27 @@ impl DkgPayloadBuilder {
     }
 
     pub fn with_version(mut self, version: u8) -> Self {
-        self.version = Some(version);
+        self.version.replace(version);
         self
     }
 
     pub fn with_instance_id(mut self, instance_id: u32) -> Self {
-        self.instance_id = Some(instance_id);
+        self.instance_id.replace(instance_id);
         self
     }
 
     pub fn with_from_index(mut self, from_index: u32) -> Self {
-        self.from_index = Some(from_index);
+        self.from_index.replace(from_index);
         self
     }
 
     pub fn with_to_index(mut self, to_index: u32) -> Self {
-        self.to_index = Some(to_index);
+        self.to_index.replace(to_index);
         self
     }
 
     pub fn with_deal(mut self, deal: EncryptedDeal) -> Self {
-        self.deal = Some(deal);
+        self.deal.replace(deal);
         self
     }
 

@@ -267,19 +267,19 @@ impl TransactionEssenceBuilder {
 
     /// Adds a timestamp to a `TransactionEssenceBuilder`.
     pub fn with_timestamp(mut self, timestamp: u64) -> Self {
-        self.timestamp = Some(timestamp);
+        self.timestamp.replace(timestamp);
         self
     }
 
     /// Adds an access pledge ID to a `TransactionEssenceBuilder`.
     pub fn with_access_pledge_id(mut self, access_pledge_id: [u8; PLEDGE_ID_LENGTH]) -> Self {
-        self.access_pledge_id = Some(access_pledge_id);
+        self.access_pledge_id.replace(access_pledge_id);
         self
     }
 
     /// Adds a consensus pledge ID to a `TransactionEssenceBuilder`.
     pub fn with_consensus_pledge_id(mut self, consensus_pledge_id: [u8; PLEDGE_ID_LENGTH]) -> Self {
-        self.consensus_pledge_id = Some(consensus_pledge_id);
+        self.consensus_pledge_id.replace(consensus_pledge_id);
         self
     }
 
@@ -309,7 +309,7 @@ impl TransactionEssenceBuilder {
 
     /// Add a payload to a `TransactionEssenceBuilder`.
     pub fn with_payload(mut self, payload: Payload) -> Self {
-        self.payload = Some(payload);
+        self.payload.replace(payload);
         self
     }
 
