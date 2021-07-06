@@ -20,7 +20,9 @@ use hashbrown::HashSet;
 use alloc::vec::Vec;
 use core::{convert::Infallible, fmt, ops::Deref};
 
+/// Error encountered unpacking an `UnlockBlock`.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum UnlockBlockUnpackError {
     InvalidUnlockBlockKind(u8),
     ValidationError(ValidationError),
@@ -110,7 +112,9 @@ impl Packable for UnlockBlock {
     }
 }
 
+/// Error encountered while packing `UnlockBlocks`.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum UnlockBlocksPackError {
     InvalidPrefixLength,
 }
@@ -132,7 +136,9 @@ impl fmt::Display for UnlockBlocksPackError {
     }
 }
 
+/// Error encountered while unpacking `UnlockBlocks`.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum UnlockBlocksUnpackError {
     InvalidPrefixLength,
     UnlockBlockUnpack(UnlockBlockUnpackError),

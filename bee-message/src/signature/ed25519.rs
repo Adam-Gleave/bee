@@ -6,7 +6,10 @@ use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 use alloc::boxed::Box;
 use core::convert::{Infallible, TryInto};
 
+/// Length (in bytes) of an Ed25519 public key.
 pub const ED25519_PUBLIC_KEY_LENGTH: usize = 32;
+
+/// Length (in bytes) of an Ed26618 signature.
 pub const ED25519_SIGNATURE_LENGTH: usize = 64;
 
 /// An Ed25519 signature.

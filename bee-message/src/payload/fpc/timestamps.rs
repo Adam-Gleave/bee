@@ -31,6 +31,7 @@ impl Deref for Timestamps {
 }
 
 impl Timestamps {
+    /// Creates a new `Conflicts` instance from a vector of `Conflict`s.
     pub fn new(inner: Vec<Timestamp>) -> Self {
         Self { inner }
     }
@@ -49,6 +50,7 @@ pub struct Timestamp {
 }
 
 impl Timestamp {
+    /// Creates a new `Timestamp`.
     pub fn new(message_id: MessageId, opinion: u8, round: u8) -> Self {
         Self {
             message_id,

@@ -18,7 +18,9 @@ use bee_packable::{
 
 use core::{convert::Infallible, fmt};
 
+/// Error encountered packing FPC payload.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum FpcPackError {
     InvalidPrefixLength,
 }
@@ -42,7 +44,9 @@ impl fmt::Display for FpcPackError {
     }
 }
 
+/// Error encountered unpacking FPC payload.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum FpcUnpackError {
     InvalidPrefixLength,
 }
@@ -79,7 +83,7 @@ pub struct FpcPayload {
 }
 
 impl FpcPayload {
-    /// The payload kind of an `FpcPayload` (Using the same type as GoShimmer here).
+    /// The payload kind of an `FpcPayload`.
     pub const KIND: u32 = 2;
 
     /// Returns a new `FpcPayloadBuilder` in order to build an `FpcPayload`.

@@ -20,7 +20,9 @@ use core::{convert::Infallible, fmt, ops::RangeInclusive};
 /// Valid lengths for an indexation payload index.
 pub const INDEXATION_INDEX_LENGTH_RANGE: RangeInclusive<usize> = 1..=INDEXATION_PADDED_INDEX_LENGTH;
 
+/// Error encountered packing an indexation payload.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum IndexationPackError {
     InvalidPrefixLength,
 }
@@ -42,7 +44,9 @@ impl fmt::Display for IndexationPackError {
     }
 }
 
+/// Error encountered unpacking an indexation payload.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum IndexationUnpackError {
     InvalidPrefixLength,
     ValidationError(ValidationError),

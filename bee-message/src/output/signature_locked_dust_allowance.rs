@@ -16,7 +16,9 @@ pub const DUST_THRESHOLD: u64 = 1_000_000;
 /// Valid amounts for a signature locked dust allowance output.
 pub const SIGNATURE_LOCKED_DUST_ALLOWANCE_OUTPUT_AMOUNT: RangeInclusive<u64> = DUST_THRESHOLD..=IOTA_SUPPLY;
 
+/// Error encountered unpacking a `SignatureLockedDustAllowanceOutput`.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum SignatureLockedDustAllowanceUnpackError {
     InvalidAddressKind(u8),
     ValidationError(ValidationError),

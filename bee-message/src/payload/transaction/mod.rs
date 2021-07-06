@@ -22,7 +22,9 @@ use crypto::hashes::{blake2b::Blake2b256, Digest};
 use alloc::boxed::Box;
 use core::{convert::Infallible, fmt};
 
+/// Error encountered packing a transaction payload.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum TransactionPackError {
     InvalidUnlockBlocksPrefix,
     TransactionEssence(Box<TransactionEssencePackError>),
@@ -60,7 +62,9 @@ impl fmt::Display for TransactionPackError {
     }
 }
 
+/// Error encountered unpacking a transaction payload.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum TransactionUnpackError {
     InvalidUnlockBlocksPrefix,
     TransactionEssence(Box<TransactionEssenceUnpackError>),

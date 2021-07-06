@@ -11,7 +11,9 @@ use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
 use core::{convert::Infallible, fmt};
 
+/// Error encountered unpacking a `SignatureUnlock`.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum SignatureUnlockUnpackError {
     InvalidSignatureUnlockKind(u8),
 }

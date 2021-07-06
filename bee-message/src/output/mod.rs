@@ -20,7 +20,9 @@ use bee_packable::{PackError, Packable, Packer, UnknownTagError, UnpackError, Un
 
 use core::{convert::Infallible, fmt};
 
+/// Error encountered unpacking a transaction output.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum OutputUnpackError {
     InvalidAddressKind(u8),
     InvalidOutputKind(u8),

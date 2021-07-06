@@ -31,6 +31,7 @@ impl Deref for Conflicts {
 }
 
 impl Conflicts {
+    /// Creates a new `Conflicts` instance from a vector of `Conflict`s.
     pub fn new(inner: Vec<Conflict>) -> Self {
         Self { inner }
     }
@@ -49,6 +50,7 @@ pub struct Conflict {
 }
 
 impl Conflict {
+    /// Creates a new `Conflict`.
     pub fn new(transaction_id: TransactionId, opinion: u8, round: u8) -> Self {
         Self {
             transaction_id,

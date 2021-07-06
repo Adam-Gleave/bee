@@ -6,6 +6,7 @@
 //#![deny(missing_docs, warnings)]
 
 #![no_std]
+#![warn(missing_docs)]
 
 extern crate alloc;
 

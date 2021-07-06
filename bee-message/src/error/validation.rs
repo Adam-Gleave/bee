@@ -9,6 +9,7 @@ use alloc::string::String;
 use core::fmt;
 
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum ValidationError {
     CryptoError(CryptoError),
     DuplicateAddress(Address),

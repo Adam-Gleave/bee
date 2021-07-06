@@ -22,7 +22,9 @@ use core::{convert::Infallible, fmt};
 /// Length (in bytes) of Transaction Essence pledge IDs (node IDs relating to pledge mana).
 pub const PLEDGE_ID_LENGTH: usize = 32;
 
+/// Error encountered packing a Transaction Essence.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum TransactionEssencePackError {
     InvalidInputPrefixLength,
     InvalidOutputPrefixLength,
@@ -52,7 +54,9 @@ impl fmt::Display for TransactionEssencePackError {
     }
 }
 
+/// Error encountered unpacking a Transaction Essence.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum TransactionEssenceUnpackError {
     InvalidInputPrefixLength,
     InvalidOutputKind(u8),

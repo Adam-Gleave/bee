@@ -11,7 +11,9 @@ use bee_packable::{
 use alloc::vec::Vec;
 use core::{convert::Infallible, fmt};
 
+/// Error packing a DKG payload.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum DkgPackError {
     InvalidPrefixLength,
 }
@@ -33,7 +35,9 @@ impl fmt::Display for DkgPackError {
     }
 }
 
+/// Error unpacking a DKG payload.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum DkgUnpackError {
     InvalidPrefixLength,
 }
@@ -57,6 +61,7 @@ impl fmt::Display for DkgUnpackError {
     }
 }
 
+/// Encrypted share structure for a `DkgPayload`.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EncryptedDeal {
@@ -68,26 +73,32 @@ pub struct EncryptedDeal {
 }
 
 impl EncryptedDeal {
+    /// Creates a new `EncryptedDealBuilder`.
     pub fn builder() -> EncryptedDealBuilder {
         EncryptedDealBuilder::new()
     }
 
+    /// Returns the Diffie-Hellman key of the `EncryptedDeal`.
     pub fn dh_key(&self) -> &[u8] {
         self.dh_key.as_slice()
     }
 
+    /// Returns the nonce of the `EncryptedDeal`.
     pub fn nonce(&self) -> &[u8] {
         self.nonce.as_slice()
     }
 
+    /// Returns the encrypted share of the `EncryptedDeal`.
     pub fn encrypted_share(&self) -> &[u8] {
         self.encrypted_share.as_slice()
     }
 
+    /// Returns the threshold of the `EncryptedDeal`.
     pub fn threshold(&self) -> u32 {
         self.threshold
     }
 
+    /// Adds commitments to an `EncryptedDealBuilder`.
     pub fn commitments(&self) -> &[u8] {
         self.commitments.as_slice()
     }
@@ -168,6 +179,7 @@ impl Packable for EncryptedDeal {
     }
 }
 
+/// A builder that builds an `EncryptedDeal`.
 #[derive(Default)]
 pub struct EncryptedDealBuilder {
     dh_key: Option<Vec<u8>>,
@@ -178,35 +190,42 @@ pub struct EncryptedDealBuilder {
 }
 
 impl EncryptedDealBuilder {
+    /// Creates a new `EncryptedDeal`.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Adds a Diffie-Hellman key to an `EncryptedDeal`.
     pub fn with_dh_key(mut self, dh_key: Vec<u8>) -> Self {
         self.dh_key.replace(dh_key);
         self
     }
 
+    /// Adds a nonce to an `EncryptedDeal`.
     pub fn with_nonce(mut self, nonce: Vec<u8>) -> Self {
         self.nonce.replace(nonce);
         self
     }
 
+    /// Adds an encrypted share to an `EncryptedDeal`.
     pub fn with_encrypted_share(mut self, encrypted_share: Vec<u8>) -> Self {
         self.encrypted_share.replace(encrypted_share);
         self
     }
 
+    /// Adds a threshold to an `EncryptedDeal`.
     pub fn with_threshold(mut self, threshold: u32) -> Self {
         self.threshold.replace(threshold);
         self
     }
 
+    /// Adds commitments to an `EncryptedDeal`.
     pub fn with_commitments(mut self, commitments: Vec<u8>) -> Self {
         self.commitments.replace(commitments);
         self
     }
 
+    /// Consumes the `EncryptedDealBuilder` and builds a new `EncryptedDeal`.
     pub fn finish(self) -> Result<EncryptedDeal, ValidationError> {
         let dh_key = self.dh_key.ok_or(ValidationError::MissingField("dh_key"))?;
         let nonce = self.nonce.ok_or(ValidationError::MissingField("nonce"))?;
@@ -226,6 +245,7 @@ impl EncryptedDealBuilder {
     }
 }
 
+/// The `Deal` messages exchanged to produce a public/private collective key during the DKG phase of dRNG.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DkgPayload {
@@ -237,29 +257,35 @@ pub struct DkgPayload {
 }
 
 impl DkgPayload {
-    // TODO verify values with goshimmer.
+    /// The payload kind of a `DkgPayload`.
     pub const KIND: u32 = 4;
 
+    /// Creates a new `DkgPayloadBuilder`.
     pub fn builder() -> DkgPayloadBuilder {
         DkgPayloadBuilder::new()
     }
 
+    /// Returns the version of a `DkgPayload`.
     pub fn version(&self) -> u8 {
         self.version
     }
 
+    /// Returns the instance ID of a `DkgPayload`.
     pub fn instance_id(&self) -> u32 {
         self.instance_id
     }
 
+    /// Returns the "from index" of a `DkgPayload`.
     pub fn from_index(&self) -> u32 {
         self.from_index
     }
 
+    /// Returns the "to index" of a `DkgPayload`.
     pub fn to_index(&self) -> u32 {
         self.to_index
     }
 
+    /// Returns the encrypted deal of a `DkgPayload`.
     pub fn deal(&self) -> &EncryptedDeal {
         &self.deal
     }
@@ -304,6 +330,7 @@ impl Packable for DkgPayload {
     }
 }
 
+/// A builder that builds a `DkgPayload`.
 #[derive(Default)]
 pub struct DkgPayloadBuilder {
     version: Option<u8>,
@@ -314,35 +341,42 @@ pub struct DkgPayloadBuilder {
 }
 
 impl DkgPayloadBuilder {
+    /// Creates a new `DkgPayloadBuilder`.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Adds a version to a `DkgPayloadBuilder`.
     pub fn with_version(mut self, version: u8) -> Self {
         self.version.replace(version);
         self
     }
 
+    /// Adds an instance ID to a `DkgPayloadBuilder`.
     pub fn with_instance_id(mut self, instance_id: u32) -> Self {
         self.instance_id.replace(instance_id);
         self
     }
 
+    /// Adds the dealer index to a `DkgPayloadBuilder`.
     pub fn with_from_index(mut self, from_index: u32) -> Self {
         self.from_index.replace(from_index);
         self
     }
 
+    /// Adds the verifier index to a `DkgPayloadBuilder`.
     pub fn with_to_index(mut self, to_index: u32) -> Self {
         self.to_index.replace(to_index);
         self
     }
 
+    /// Adds an encrypted deal to a `DkgPayloadBuilder`.
     pub fn with_deal(mut self, deal: EncryptedDeal) -> Self {
         self.deal.replace(deal);
         self
     }
 
+    /// Consumes the `DkgPayloadBuilder` and builds a new `DkgPayload`.
     pub fn finish(self) -> Result<DkgPayload, ValidationError> {
         let version = self.version.ok_or(ValidationError::MissingField("version"))?;
         let instance_id = self.instance_id.ok_or(ValidationError::MissingField("instance_id"))?;

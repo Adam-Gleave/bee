@@ -27,7 +27,9 @@ use bee_packable::UnpackOptionError;
 
 use core::{convert::Infallible, fmt};
 
+/// Error encountered while serializing with `Packable`.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum MessagePackError {
     Data(DataPackError),
     Dkg(DkgPackError),
@@ -75,7 +77,9 @@ impl fmt::Display for MessagePackError {
     }
 }
 
+/// Error encountered while deserializing with `Packable`.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum MessageUnpackError {
     Data(DataUnpackError),
     Dkg(DkgUnpackError),

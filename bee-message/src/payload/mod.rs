@@ -26,9 +26,12 @@ use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 use alloc::boxed::Box;
 use core::{convert::Infallible, fmt};
 
+/// Maximum length (in bytes) of a message payload.
 pub const PAYLOAD_LENGTH_MAX: usize = 65157;
 
+/// Error encountered packing a payload.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum PayloadPackError {
     Data(DataPackError),
     Dkg(DkgPackError),
@@ -63,7 +66,9 @@ impl fmt::Display for PayloadPackError {
     }
 }
 
+/// Error encountered unpacking a payload.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum PayloadUnpackError {
     Data(DataUnpackError),
     Dkg(DkgUnpackError),

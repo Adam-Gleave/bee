@@ -11,7 +11,9 @@ use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
 use core::{convert::Infallible, fmt};
 
+/// Error encountered unpacking an input.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum InputUnpackError {
     InvalidInputKind(u8),
     ValidationError(ValidationError),

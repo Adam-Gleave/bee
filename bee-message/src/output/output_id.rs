@@ -16,7 +16,9 @@ use core::{
     str::FromStr,
 };
 
+/// Error encountered unpacking an `OutputId`.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum OutputIdUnpackError {
     ValidationError(ValidationError),
 }

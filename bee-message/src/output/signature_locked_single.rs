@@ -10,7 +10,9 @@ use core::{convert::Infallible, fmt, ops::RangeInclusive};
 /// Valid amounts for a signature locked single output.
 pub const SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT: RangeInclusive<u64> = 1..=IOTA_SUPPLY;
 
+/// Error encountered unpacking a `SignatureLockedSingleOutput`.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum SignatureLockedSingleUnpackError {
     InvalidAddressKind(u8),
     ValidationError(ValidationError),

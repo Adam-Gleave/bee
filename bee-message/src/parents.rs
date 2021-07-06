@@ -17,8 +17,10 @@ use alloc::{vec, vec::Vec};
 /// The range representing the valid number of parents.
 pub const MESSAGE_PARENTS_RANGE: RangeInclusive<usize> = 1..=8;
 
+/// Minimum number of strong parents for a valid message.
 pub const MESSAGE_MIN_STRONG_PARENTS: usize = 1;
 
+/// An individual message parent, which can be categorized as "strong" or "weak".
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(
     feature = "serde",
@@ -26,11 +28,14 @@ pub const MESSAGE_MIN_STRONG_PARENTS: usize = 1;
     serde(tag = "type", content = "data")
 )]
 pub enum Parent {
+    /// Message parents in which the past cone is "Liked".
     Strong(MessageId),
+    /// Message parents in which the past cone is "Disliked", but the parents themselves are "Liked".
     Weak(MessageId),
 }
 
 impl Parent {
+    /// Returns the `MessageId` of this `Parent`.
     pub fn id(&self) -> &MessageId {
         match self {
             Self::Strong(id) => id,
@@ -39,12 +44,12 @@ impl Parent {
     }
 }
 
-// /// A [`Message`]'s `Parents` are the [`MessageId`]s of the messages it directly approves.
-// ///
-// /// Parents must be:
-// /// * in the `MESSAGE_PARENTS_RANGE` range;
-// /// * lexicographically sorted;
-// /// * unique;
+/// A [`Message`]'s `Parents` are the [`MessageId`]s of the messages it directly approves.
+///
+/// Parents must be:
+/// * in the `MESSAGE_PARENTS_RANGE` range;
+/// * lexicographically sorted;
+/// * unique;
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Parents {
@@ -60,6 +65,7 @@ impl Deref for Parents {
 }
 
 impl Parents {
+    /// Creates a new `Parents` instance from a given collection.
     pub fn new(inner: Vec<Parent>) -> Result<Self, ValidationError> {
         validate_parents_count(inner.len())?;
         validate_parents_unique_sorted(&inner)?;
@@ -74,14 +80,17 @@ impl Parents {
         Ok(Self { inner })
     }
 
+    /// Returns the number of message parents.
     pub fn len(&self) -> usize {
         self.inner.len()
     }
 
+    /// Returns true if the collection is empty.
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
 
+    /// Returns an `Iterator` over the strong parents of a message.
     pub fn strong_iter(&self) -> impl Iterator<Item = &MessageId> + '_ {
         self.inner
             .iter()
@@ -89,6 +98,7 @@ impl Parents {
             .map(Parent::id)
     }
 
+    /// Returns an `Iterator` over the weak parents of a message.
     pub fn weak_iter(&self) -> impl Iterator<Item = &MessageId> + '_ {
         self.inner
             .iter()

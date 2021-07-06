@@ -1,6 +1,8 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+//! Module describing a generic data payload.
+
 use super::PAYLOAD_LENGTH_MAX;
 use crate::{MessagePackError, MessageUnpackError, ValidationError};
 
@@ -12,7 +14,9 @@ use bee_packable::{
 use alloc::vec::Vec;
 use core::{convert::Infallible, fmt};
 
+/// Error encountered packing a data payload.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum DataPackError {
     InvalidPrefixLength,
 }
@@ -31,7 +35,9 @@ impl fmt::Display for DataPackError {
     }
 }
 
+/// Error encountered unpacking a data payload.
 #[derive(Debug)]
+#[allow(missing_docs)]
 pub enum DataUnpackError {
     InvalidPrefixLength,
 }
@@ -50,6 +56,7 @@ impl fmt::Display for DataUnpackError {
     }
 }
 
+/// Generic data payload, containing a collection of bytes.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DataPayload {
@@ -58,8 +65,10 @@ pub struct DataPayload {
 }
 
 impl DataPayload {
+    /// The payload kind of a `DataPayload`.
     pub const KIND: u32 = 1;
 
+    /// Creates a new `DataPayload`.
     pub fn new(version: u8, data: Vec<u8>) -> Result<Self, ValidationError> {
         let payload = Self { version, data };
 
@@ -68,10 +77,12 @@ impl DataPayload {
         Ok(payload)
     }
 
+    /// Returns the version of a `DataPayload`.
     pub fn version(&self) -> u8 {
         self.version
     }
 
+    /// Returns the "data" bytes of a `DataPayload`.
     pub fn data(&self) -> &[u8] {
         self.data.as_slice()
     }
