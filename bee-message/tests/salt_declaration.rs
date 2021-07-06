@@ -4,7 +4,7 @@
 use bee_message::prelude::*;
 use bee_packable::Packable;
 
-use bee_test::rand::{bytes::rand_bytes_array, number::rand_number};
+use bee_test::rand::{bytes::{rand_bytes, rand_bytes_array}, number::rand_number};
 
 #[test]
 fn kind() {
@@ -16,9 +16,9 @@ fn new_valid() {
     let salt_declaration = SaltDeclarationPayload::builder()
         .with_version(0)
         .with_node_id(32)
-        .with_salt(Salt::new(rand_bytes_array::<64>().to_vec(), rand_number::<u64>()))
-        .with_timestamp(rand_number::<u64>())
-        .with_signature(rand_bytes_array::<32>())
+        .with_salt(Salt::new(rand_bytes(64), rand_number()))
+        .with_timestamp(rand_number())
+        .with_signature(rand_bytes_array())
         .finish();
 
     assert!(salt_declaration.is_ok());
@@ -43,9 +43,9 @@ fn packed_len() {
     let salt_declaration = SaltDeclarationPayload::builder()
         .with_version(0)
         .with_node_id(32)
-        .with_salt(Salt::new(rand_bytes_array::<64>().to_vec(), rand_number::<u64>()))
-        .with_timestamp(rand_number::<u64>())
-        .with_signature(rand_bytes_array::<32>())
+        .with_salt(Salt::new(rand_bytes(64), rand_number()))
+        .with_timestamp(rand_number())
+        .with_signature(rand_bytes_array())
         .finish()
         .unwrap();
 
@@ -57,9 +57,9 @@ fn round_trip() {
     let salt_declaration_a = SaltDeclarationPayload::builder()
         .with_version(0)
         .with_node_id(32)
-        .with_salt(Salt::new(rand_bytes_array::<64>().to_vec(), rand_number::<u64>()))
-        .with_timestamp(rand_number::<u64>())
-        .with_signature(rand_bytes_array::<32>())
+        .with_salt(Salt::new(rand_bytes(64), rand_number()))
+        .with_timestamp(rand_number())
+        .with_signature(rand_bytes_array())
         .finish()
         .unwrap();
 

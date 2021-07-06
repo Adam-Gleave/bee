@@ -9,8 +9,8 @@ use bee_test::rand::bytes::rand_bytes_array;
 fn kind() {
     assert_eq!(
         UnlockBlock::from(SignatureUnlock::from(Ed25519Signature::new(
-            rand_bytes_array::<32>(),
-            rand_bytes_array::<64>(),
+            rand_bytes_array(),
+            rand_bytes_array(),
         )))
         .kind(),
         0
