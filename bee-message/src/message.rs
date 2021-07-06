@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    error::{MessagePackError, MessageUnpackError, ValidationError},
     parents::Parents,
     payload::Payload,
-    MessageId,
+    MessageId, MessagePackError, MessageUnpackError, ValidationError,
 };
 
 use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
@@ -15,7 +14,8 @@ use crypto::{
     signatures::ed25519,
 };
 
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
+use core::convert::TryInto;
 
 /// The minimum number of bytes in a message.
 pub const MESSAGE_LENGTH_MIN: usize = 53;
@@ -46,7 +46,7 @@ pub struct Message {
     /// The result of the Proof of Work in order for the message to be accepted into the tangle.
     nonce: u64,
     /// Signature signing the above message fields.
-    signature: [u8; MESSAGE_SIGNATURE_LENGTH],
+    signature: Box<[u8]>,
 }
 
 impl Message {
@@ -95,7 +95,7 @@ impl Message {
     }
 
     /// Returns the `Message` signature.
-    pub fn signature(&self) -> &[u8; MESSAGE_SIGNATURE_LENGTH] {
+    pub fn signature(&self) -> &[u8] {
         &self.signature
     }
 
@@ -113,7 +113,7 @@ impl Message {
         let ed25519_public_key = ed25519::PublicKey::from_compressed_bytes(self.issuer_public_key)?;
 
         // Unwrapping is okay here, since the length of the signature is already known to be correct.
-        let ed25519_signature = ed25519::Signature::from_bytes(self.signature);
+        let ed25519_signature = ed25519::Signature::from_bytes(self.signature.to_vec().try_into().unwrap());
 
         let hash = self.hash();
 
@@ -146,7 +146,9 @@ impl Packable for Message {
         self.sequence_number.pack(packer).map_err(PackError::infallible)?;
         self.payload.pack(packer)?;
         self.nonce.pack(packer).map_err(PackError::infallible)?;
-        self.signature.pack(packer).map_err(PackError::infallible)?;
+
+        let sig_bytes: [u8; MESSAGE_SIGNATURE_LENGTH] = self.signature.to_vec().try_into().unwrap();
+        sig_bytes.pack(packer).map_err(PackError::infallible)?;
 
         Ok(())
     }
@@ -158,7 +160,7 @@ impl Packable for Message {
         let sequence_number = u32::unpack(unpacker).map_err(UnpackError::infallible)?;
         let payload = Option::<Payload>::unpack(unpacker).map_err(UnpackError::coerce)?;
         let nonce = u64::unpack(unpacker).map_err(UnpackError::infallible)?;
-        let signature = <[u8; MESSAGE_SIGNATURE_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
+        let signature = <[u8; MESSAGE_SIGNATURE_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?.into();
 
         let message = Self {
             parents,
@@ -253,7 +255,7 @@ impl MessageBuilder {
             .ok_or(ValidationError::MissingField("sequence_number"))?;
 
         let nonce = self.nonce.ok_or(ValidationError::MissingField("nonce"))?;
-        let signature = self.signature.ok_or(ValidationError::MissingField("signature"))?;
+        let signature = self.signature.ok_or(ValidationError::MissingField("signature"))?.into();
 
         let message = Message {
             parents,

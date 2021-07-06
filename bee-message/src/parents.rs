@@ -20,6 +20,11 @@ pub const MESSAGE_PARENTS_RANGE: RangeInclusive<usize> = 1..=8;
 pub const MESSAGE_MIN_STRONG_PARENTS: usize = 1;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize),
+    serde(tag = "type", content = "data")
+)]
 pub enum Parent {
     Strong(MessageId),
     Weak(MessageId),

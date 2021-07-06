@@ -116,7 +116,6 @@ impl From<TransactionUnpackError> for PayloadUnpackError {
 }
 
 /// A generic payload that can represent different types defining message payloads.
-#[non_exhaustive]
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(
     feature = "serde",

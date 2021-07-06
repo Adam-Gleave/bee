@@ -40,6 +40,7 @@ pub const OUTPUT_ID_LENGTH: usize = TRANSACTION_ID_LENGTH + core::mem::size_of::
 
 /// The identifier of an `Output`.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct OutputId {
     transaction_id: TransactionId,
     index: u16,
