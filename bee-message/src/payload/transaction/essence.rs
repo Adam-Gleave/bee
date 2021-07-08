@@ -4,9 +4,8 @@
 use crate::{
     constants::{INPUT_OUTPUT_COUNT_RANGE, IOTA_SUPPLY},
     input::Input,
-    output::Output,
+    output::{Output, SignatureLockedSingleOutput},
     payload::{Payload, PayloadPackError},
-    prelude::{SignatureLockedDustAllowanceOutput, SignatureLockedSingleOutput},
     MessagePackError, MessageUnpackError, ValidationError,
 };
 
@@ -401,7 +400,6 @@ fn validate_output_count(len: usize) -> Result<(), ValidationError> {
 fn validate_output_variant(output: &Output, outputs: &[Output]) -> Result<u64, ValidationError> {
     match output {
         Output::SignatureLockedSingle(single) => validate_single(single, outputs),
-        Output::SignatureLockedDustAllowance(dust_allowance) => validate_dust_allowance(dust_allowance, outputs),
     }
 }
 
@@ -415,22 +413,6 @@ fn validate_single(single: &SignatureLockedSingleOutput, outputs: &[Output]) -> 
         Err(ValidationError::DuplicateAddress(*single.address()))
     } else {
         Ok(single.amount())
-    }
-}
-
-fn validate_dust_allowance(
-    dust_allowance: &SignatureLockedDustAllowanceOutput,
-    outputs: &[Output],
-) -> Result<u64, ValidationError> {
-    if outputs
-        .iter()
-        .filter(|o| matches!(o, Output::SignatureLockedDustAllowance(s) if s.address() == dust_allowance.address()))
-        .count()
-        > 1
-    {
-        Err(ValidationError::DuplicateAddress(*dust_allowance.address()))
-    } else {
-        Ok(dust_allowance.amount())
     }
 }
 

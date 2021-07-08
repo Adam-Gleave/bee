@@ -3,10 +3,7 @@
 
 pub use crate::{
     input::InputUnpackError,
-    output::{
-        OutputIdUnpackError, OutputUnpackError, SignatureLockedDustAllowanceUnpackError,
-        SignatureLockedSingleUnpackError,
-    },
+    output::{OutputIdUnpackError, OutputUnpackError, SignatureLockedSingleUnpackError},
     payload::{
         data::{DataPackError, DataUnpackError},
         drng::{DkgPackError, DkgUnpackError},
@@ -92,7 +89,6 @@ pub enum MessageUnpackError {
     OutputId(OutputIdUnpackError),
     Payload(PayloadUnpackError),
     SaltDeclaration(SaltDeclarationUnpackError),
-    SignatureLockedDustAllowance(SignatureLockedDustAllowanceUnpackError),
     SignatureLockedSingle(SignatureLockedSingleUnpackError),
     SignatureUnlock(SignatureUnlockUnpackError),
     Transaction(TransactionUnpackError),
@@ -119,11 +115,6 @@ impl_wrapped_validated!(
     MessageUnpackError,
     TransactionEssenceUnpackError,
     MessageUnpackError::TransactionEssence
-);
-impl_wrapped_validated!(
-    MessageUnpackError,
-    SignatureLockedDustAllowanceUnpackError,
-    MessageUnpackError::SignatureLockedDustAllowance
 );
 impl_wrapped_validated!(
     MessageUnpackError,
@@ -179,7 +170,6 @@ impl fmt::Display for MessageUnpackError {
             Self::OutputId(e) => write!(f, "Error unpacking OutputId: {}", e),
             Self::Payload(e) => write!(f, "Error unpacking payload: {}", e),
             Self::SaltDeclaration(e) => write!(f, "Error unpacking SaltDeclaration payload: {}", e),
-            Self::SignatureLockedDustAllowance(e) => write!(f, "Error unpacking SignatureLockedDustAllowance: {}", e),
             Self::SignatureLockedSingle(e) => write!(f, "Error unpacking SignatureLockedSingle: {}", e),
             Self::SignatureUnlock(e) => write!(f, "Error unpacking SignatureUnlock: {}", e),
             Self::Transaction(e) => write!(f, "Error unpacking Transaction payload: {}", e),

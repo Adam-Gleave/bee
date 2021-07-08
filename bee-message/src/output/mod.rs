@@ -2,16 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 mod output_id;
-mod signature_locked_dust_allowance;
 mod signature_locked_single;
 
 pub use crate::error::{MessageUnpackError, ValidationError};
 
 pub use output_id::{OutputId, OutputIdUnpackError, OUTPUT_ID_LENGTH};
-pub use signature_locked_dust_allowance::{
-    SignatureLockedDustAllowanceOutput, SignatureLockedDustAllowanceUnpackError, DUST_THRESHOLD,
-    SIGNATURE_LOCKED_DUST_ALLOWANCE_OUTPUT_AMOUNT,
-};
 pub use signature_locked_single::{
     SignatureLockedSingleOutput, SignatureLockedSingleUnpackError, SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT,
 };
@@ -55,23 +50,15 @@ impl fmt::Display for OutputUnpackError {
 pub enum Output {
     /// A signature locked single output.
     SignatureLockedSingle(SignatureLockedSingleOutput),
-    /// A signature locked dust allowance output.
-    SignatureLockedDustAllowance(SignatureLockedDustAllowanceOutput),
 }
 
 impl_wrapped_variant!(Output, SignatureLockedSingleOutput, Output::SignatureLockedSingle);
-impl_wrapped_variant!(
-    Output,
-    SignatureLockedDustAllowanceOutput,
-    Output::SignatureLockedDustAllowance
-);
 
 impl Output {
     /// Return the output kind of an `Output`.
     pub fn kind(&self) -> u8 {
         match self {
             Self::SignatureLockedSingle(_) => SignatureLockedSingleOutput::KIND,
-            Self::SignatureLockedDustAllowance(_) => SignatureLockedDustAllowanceOutput::KIND,
         }
     }
 }
@@ -84,7 +71,6 @@ impl Packable for Output {
         0u8.packed_len()
             + match self {
                 Self::SignatureLockedSingle(output) => output.packed_len(),
-                Self::SignatureLockedDustAllowance(output) => output.packed_len(),
             }
     }
 
@@ -93,7 +79,6 @@ impl Packable for Output {
 
         match self {
             Self::SignatureLockedSingle(output) => output.pack(packer).map_err(PackError::infallible)?,
-            Self::SignatureLockedDustAllowance(output) => output.pack(packer).map_err(PackError::infallible)?,
         }
 
         Ok(())
@@ -105,9 +90,6 @@ impl Packable for Output {
         let variant = match kind {
             SignatureLockedSingleOutput::KIND => {
                 Self::SignatureLockedSingle(SignatureLockedSingleOutput::unpack(unpacker)?)
-            }
-            SignatureLockedDustAllowanceOutput::KIND => {
-                Self::SignatureLockedDustAllowance(SignatureLockedDustAllowanceOutput::unpack(unpacker)?)
             }
             tag => {
                 Err(UnpackError::Packable(OutputUnpackError::InvalidOutputKind(tag))).map_err(UnpackError::coerce)?
