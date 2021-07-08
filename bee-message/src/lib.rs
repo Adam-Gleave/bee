@@ -18,6 +18,8 @@ mod message_id;
 
 /// A module that provides types and syntactic validations of addresses.
 pub mod address;
+/// A module containing a convenient builder for `Message` construction.
+pub mod builder;
 /// A module that contains constants related to messages.
 pub mod constants;
 /// A module that provides types and syntactic validations of inputs.
@@ -35,6 +37,7 @@ pub mod signature;
 /// A module that provides types and syntactic validations of unlock blocks.
 pub mod unlock;
 
+pub use builder::MessageBuilder;
 pub use error::*;
-pub use message::{Message, MessageBuilder, MESSAGE_LENGTH_RANGE};
+pub use message::{Message, MESSAGE_LENGTH_RANGE};
 pub use message_id::{MessageId, MESSAGE_ID_LENGTH};

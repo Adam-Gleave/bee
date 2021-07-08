@@ -27,27 +27,22 @@ pub const MESSAGE_SIGNATURE_LENGTH: usize = 64;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Message {
     /// Message [Parents].
-    parents: Parents,
+    pub(crate) parents: Parents,
     /// The public key of the issuing node.
-    issuer_public_key: [u8; MESSAGE_PUBLIC_KEY_LENGTH],
+    pub(crate) issuer_public_key: [u8; MESSAGE_PUBLIC_KEY_LENGTH],
     /// The Unix timestamp at the moment of issue.
-    issue_timestamp: u64,
+    pub(crate) issue_timestamp: u64,
     /// The sequence number of the message, indicating the marker sequence it belongs to.
-    sequence_number: u32,
+    pub(crate) sequence_number: u32,
     /// The optional [Payload] of the message.
-    payload: Option<Payload>,
+    pub(crate) payload: Option<Payload>,
     /// The result of the Proof of Work in order for the message to be accepted into the tangle.
-    nonce: u64,
+    pub(crate) nonce: u64,
     /// Signature signing the above message fields.
-    signature: Box<[u8]>,
+    pub(crate) signature: Box<[u8]>,
 }
 
 impl Message {
-    /// Creates a new `MessageBuilder` to construct an instance of a `Message`.
-    pub fn builder() -> MessageBuilder {
-        MessageBuilder::new()
-    }
-
     /// Computes the identifier of the message.
     pub fn id(&self) -> (MessageId, Vec<u8>) {
         let bytes = self.pack_to_vec().unwrap();
@@ -174,99 +169,7 @@ impl Packable for Message {
     }
 }
 
-/// A builder to build a `Message`.
-#[derive(Default)]
-pub struct MessageBuilder {
-    parents: Option<Parents>,
-    issuer_public_key: Option<[u8; MESSAGE_PUBLIC_KEY_LENGTH]>,
-    issue_timestamp: Option<u64>,
-    sequence_number: Option<u32>,
-    payload: Option<Payload>,
-    nonce: Option<u64>,
-    signature: Option<[u8; MESSAGE_SIGNATURE_LENGTH]>,
-}
-
-impl MessageBuilder {
-    /// Creates a new `MessageBuilder`.
-    pub fn new() -> Self {
-        Default::default()
-    }
-
-    /// Adds parents to a `MessageBuilder`.
-    pub fn with_parents(mut self, parents: Parents) -> Self {
-        self.parents.replace(parents);
-        self
-    }
-
-    /// Adds an issuer public key to a `MessageBuilder`.
-    pub fn with_issuer_public_key(mut self, issuer_public_key: [u8; MESSAGE_PUBLIC_KEY_LENGTH]) -> Self {
-        self.issuer_public_key.replace(issuer_public_key);
-        self
-    }
-
-    /// Adds an issuance timestamp to a `MessageBuilder`.
-    pub fn with_issue_timestamp(mut self, issue_timestamp: u64) -> Self {
-        self.issue_timestamp.replace(issue_timestamp);
-        self
-    }
-
-    /// Adds a sequence number to a `MessageBuilder`.
-    pub fn with_sequence_number(mut self, sequence_number: u32) -> Self {
-        self.sequence_number.replace(sequence_number);
-        self
-    }
-
-    /// Adds a payload to a `MessageBuilder`.
-    pub fn with_payload(mut self, payload: Payload) -> Self {
-        self.payload.replace(payload);
-        self
-    }
-
-    /// Adds a nonce provider to a `MessageBuilder`.
-    pub fn with_nonce(mut self, nonce: u64) -> Self {
-        self.nonce.replace(nonce);
-        self
-    }
-
-    /// Adds a signature to a `MessageBuilder`.
-    pub fn with_signature(mut self, signature: [u8; MESSAGE_SIGNATURE_LENGTH]) -> Self {
-        self.signature.replace(signature);
-        self
-    }
-
-    /// Finished the `MessageBuilder`, consuming it to build a `Message`.
-    pub fn finish(self) -> Result<Message, ValidationError> {
-        let parents = self.parents.ok_or(ValidationError::MissingField("parents"))?;
-        let issuer_public_key = self
-            .issuer_public_key
-            .ok_or(ValidationError::MissingField("issuer_public_key"))?;
-        let issue_timestamp = self
-            .issue_timestamp
-            .ok_or(ValidationError::MissingField("issue_timestap"))?;
-        let sequence_number = self
-            .sequence_number
-            .ok_or(ValidationError::MissingField("sequence_number"))?;
-
-        let nonce = self.nonce.ok_or(ValidationError::MissingField("nonce"))?;
-        let signature = self.signature.ok_or(ValidationError::MissingField("signature"))?.into();
-
-        let message = Message {
-            parents,
-            issuer_public_key,
-            issue_timestamp,
-            sequence_number,
-            payload: self.payload,
-            nonce,
-            signature,
-        };
-
-        validate_message_len(message.pack_to_vec().unwrap().len())?;
-
-        Ok(message)
-    }
-}
-
-fn validate_message_len(len: usize) -> Result<(), ValidationError> {
+pub(crate) fn validate_message_len(len: usize) -> Result<(), ValidationError> {
     if !MESSAGE_LENGTH_RANGE.contains(&len) {
         Err(ValidationError::InvalidMessageLength(len))
     } else {
