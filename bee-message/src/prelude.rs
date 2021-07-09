@@ -5,7 +5,10 @@ pub use crate::{
     address::{Address, Ed25519Address, ED25519_ADDRESS_LENGTH},
     constants::IOTA_SUPPLY,
     input::{Input, UtxoInput},
-    output::{Output, OutputId, SignatureLockedSingleOutput, OUTPUT_ID_LENGTH},
+    output::{
+        AssetBalance, Output, OutputId, SignatureLockedAssetAllowanceOutput, SignatureLockedSingleOutput,
+        OUTPUT_ID_LENGTH,
+    },
     parents::{Parent, Parents, MESSAGE_PARENTS_RANGE},
     payload::{
         data::DataPayload,

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    message::{self, Message, MESSAGE_PUBLIC_KEY_LENGTH, MESSAGE_SIGNATURE_LENGTH}, 
-    parents::Parents, 
+    message::{self, Message, MESSAGE_PUBLIC_KEY_LENGTH, MESSAGE_SIGNATURE_LENGTH},
+    parents::Parents,
     payload::Payload,
     ValidationError,
 };

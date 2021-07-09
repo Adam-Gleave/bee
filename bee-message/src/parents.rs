@@ -91,7 +91,7 @@ impl Parents {
     }
 
     /// Returns an `Iterator` over the strong parents of a message.
-    pub fn strong_iter(&self) -> impl Iterator<Item = &MessageId> + '_ {
+    pub fn strong_iter(&self) -> impl Iterator<Item = &MessageId> {
         self.inner
             .iter()
             .filter(|parent| matches!(parent, Parent::Strong(_)))
@@ -99,7 +99,7 @@ impl Parents {
     }
 
     /// Returns an `Iterator` over the weak parents of a message.
-    pub fn weak_iter(&self) -> impl Iterator<Item = &MessageId> + '_ {
+    pub fn weak_iter(&self) -> impl Iterator<Item = &MessageId> {
         self.inner
             .iter()
             .filter(|parent| matches!(parent, Parent::Weak(_)))

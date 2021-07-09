@@ -3,7 +3,10 @@
 
 pub use crate::{
     input::InputUnpackError,
-    output::{OutputIdUnpackError, OutputUnpackError, SignatureLockedSingleUnpackError},
+    output::{
+        OutputIdUnpackError, OutputUnpackError, SignatureLockedAssetAllowancePackError,
+        SignatureLockedAssetAllowanceUnpackError, SignatureLockedSingleUnpackError,
+    },
     payload::{
         data::{DataPackError, DataUnpackError},
         drng::{DkgPackError, DkgUnpackError},
@@ -34,6 +37,7 @@ pub enum MessagePackError {
     Indexation(IndexationPackError),
     Payload(PayloadPackError),
     SaltDeclaration(SaltDeclarationPackError),
+    SignatureLockedAssetAllowance(SignatureLockedAssetAllowancePackError),
     Transaction(TransactionPackError),
     TransactionEssence(TransactionEssencePackError),
     UnlockBlocks(UnlockBlocksPackError),
@@ -48,6 +52,11 @@ impl_wrapped_variant!(
     MessagePackError,
     SaltDeclarationPackError,
     MessagePackError::SaltDeclaration
+);
+impl_wrapped_variant!(
+    MessagePackError,
+    SignatureLockedAssetAllowancePackError,
+    MessagePackError::SignatureLockedAssetAllowance
 );
 impl_wrapped_variant!(MessagePackError, TransactionPackError, MessagePackError::Transaction);
 impl_wrapped_variant!(
@@ -67,6 +76,7 @@ impl fmt::Display for MessagePackError {
             Self::Indexation(e) => write!(f, "Error packing Indexation payload: {}", e),
             Self::Payload(e) => write!(f, "Error packing payload: {}", e),
             Self::SaltDeclaration(e) => write!(f, "Error packing SaltDeclaration payload: {}", e),
+            Self::SignatureLockedAssetAllowance(e) => write!(f, "Error packing SignatureLockedAssetAllowance: {}", e),
             Self::Transaction(e) => write!(f, "Error packing Transaction payload: {}", e),
             Self::TransactionEssence(e) => write!(f, "Error packing TransactionEssence: {}", e),
             Self::UnlockBlocks(e) => write!(f, "Error packing UnlockBlocks: {}", e),
@@ -89,6 +99,7 @@ pub enum MessageUnpackError {
     OutputId(OutputIdUnpackError),
     Payload(PayloadUnpackError),
     SaltDeclaration(SaltDeclarationUnpackError),
+    SignatureLockedAssetAllowance(SignatureLockedAssetAllowanceUnpackError),
     SignatureLockedSingle(SignatureLockedSingleUnpackError),
     SignatureUnlock(SignatureUnlockUnpackError),
     Transaction(TransactionUnpackError),
@@ -115,6 +126,11 @@ impl_wrapped_validated!(
     MessageUnpackError,
     TransactionEssenceUnpackError,
     MessageUnpackError::TransactionEssence
+);
+impl_wrapped_validated!(
+    MessageUnpackError,
+    SignatureLockedAssetAllowanceUnpackError,
+    MessageUnpackError::SignatureLockedAssetAllowance
 );
 impl_wrapped_validated!(
     MessageUnpackError,
@@ -170,6 +186,7 @@ impl fmt::Display for MessageUnpackError {
             Self::OutputId(e) => write!(f, "Error unpacking OutputId: {}", e),
             Self::Payload(e) => write!(f, "Error unpacking payload: {}", e),
             Self::SaltDeclaration(e) => write!(f, "Error unpacking SaltDeclaration payload: {}", e),
+            Self::SignatureLockedAssetAllowance(e) => write!(f, "Error unpacking SignatureLockedAssetAllowance: {}", e),
             Self::SignatureLockedSingle(e) => write!(f, "Error unpacking SignatureLockedSingle: {}", e),
             Self::SignatureUnlock(e) => write!(f, "Error unpacking SignatureUnlock: {}", e),
             Self::Transaction(e) => write!(f, "Error unpacking Transaction payload: {}", e),
