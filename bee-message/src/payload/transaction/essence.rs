@@ -89,7 +89,16 @@ impl fmt::Display for TransactionEssenceUnpackError {
     }
 }
 
-/// A transaction regular essence consuming inputs, creating outputs and carrying an optional payload.
+/// A `TransactionEssence` consuming `Input`s, creating `Output`s and carrying an optional `Payload`.
+///
+/// A `TransactionEssence` must:
+/// * Contain a number of `Input`s within `INPUT_OUTPUT_COUNT_RANGE`.
+/// * Ensure that all `UtxoInput`s are unique.
+/// * Ensure that `Input`s are sorted lexicographically in their serialized forms.
+/// * Contain a number of `Output`s within `INPUT_OUTPUT_COUNT_RANGE`.
+/// * Ensure that `Output` amounts to not total above `IOTA_SUPPLY`.
+/// * Ensure that `Output`s are sorted lexicographically in their serialized formns.
+/// * Ensure that the optional `Payload` is of `Indexation` type.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TransactionEssence {

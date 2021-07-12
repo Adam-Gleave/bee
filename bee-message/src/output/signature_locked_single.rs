@@ -40,6 +40,9 @@ impl fmt::Display for SignatureLockedSingleUnpackError {
 }
 
 /// An output type which can be unlocked via a signature. It deposits onto one single address.
+///
+/// A `SignatureLockedSingleOutput` must:
+/// * Contain an amount <= `IOTA_SUPPLY`.
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SignatureLockedSingleOutput {

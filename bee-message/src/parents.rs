@@ -10,9 +10,8 @@ use bee_packable::{PackError, Packable, Packer, UnpackError, Unpacker};
 
 use bitvec::prelude::*;
 
-use core::ops::{Deref, RangeInclusive};
-
 use alloc::{vec, vec::Vec};
+use core::ops::{Deref, RangeInclusive};
 
 /// The range representing the valid number of parents.
 pub const MESSAGE_PARENTS_RANGE: RangeInclusive<usize> = 1..=8;
@@ -44,12 +43,13 @@ impl Parent {
     }
 }
 
-/// A [`Message`]'s `Parents` are the [`MessageId`]s of the messages it directly approves.
+/// A `Message`'s `Parents` are the `MessageId`s of the messages it directly approves.
 ///
-/// Parents must be:
-/// * in the `MESSAGE_PARENTS_RANGE` range;
-/// * lexicographically sorted;
-/// * unique;
+/// `Parents` must:
+/// * Have length within the `MESSAGE_PARENTS_RANGE` range;
+/// * Contain `MESSAGE_MIN_STRONG_PARENTS` strong `Parent`s;
+/// * Be lexicographically sorted;
+/// * Be unique;
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Parents {
@@ -64,6 +64,7 @@ impl Deref for Parents {
     }
 }
 
+#[allow(clippy::len_without_is_empty)]
 impl Parents {
     /// Creates a new `Parents` instance from a given collection.
     pub fn new(inner: Vec<Parent>) -> Result<Self, ValidationError> {
@@ -83,11 +84,6 @@ impl Parents {
     /// Returns the number of message parents.
     pub fn len(&self) -> usize {
         self.inner.len()
-    }
-
-    /// Returns true if the collection is empty.
-    pub fn is_empty(&self) -> bool {
-        self.inner.is_empty()
     }
 
     /// Returns an `Iterator` over the strong parents of a message.
@@ -146,10 +142,12 @@ impl Packable for Parents {
         validate_strong_parents_count(bits.count_ones()).map_err(|e| UnpackError::Packable(e.into()))?;
 
         let mut parents = vec![];
+        parents.reserve(count as usize);
 
         for i in 0..count {
             let id = MessageId::unpack(unpacker).map_err(UnpackError::infallible)?;
 
+            // Unwrap is fine here, since `i` has already been validated to be in `MESSAGE_PARENTS_RANGE`.
             if *bits.get(i as usize).unwrap() {
                 parents.push(Parent::Strong(id))
             } else {

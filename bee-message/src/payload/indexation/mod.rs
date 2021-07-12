@@ -77,6 +77,10 @@ impl fmt::Display for IndexationUnpackError {
 }
 
 /// A payload which holds an index and associated data.
+///
+/// An `IndexationPayload` must:
+/// * Contain an index of within `INDEXATION_INDEX_LENGTH_RANGE` bytes.
+/// * Contain data that does not exceed maximum message length in bytes.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IndexationPayload {

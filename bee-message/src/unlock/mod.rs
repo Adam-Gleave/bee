@@ -180,6 +180,11 @@ impl fmt::Display for UnlockBlocksUnpackError {
 }
 
 /// A collection of unlock blocks.
+///
+/// An `UnlockBlocks` collection must:
+/// * Contain a number of `UnlockBlock`s within `UNLOCK_BLOCKS_COUNT_RANGE`.
+/// * Ensure all signatures in `Signature` blocks are unique across the collection.
+/// * Ensure `Reference` blocks specify a previous existing `Signature` block.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UnlockBlocks {

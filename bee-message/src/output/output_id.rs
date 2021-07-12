@@ -41,6 +41,9 @@ impl fmt::Display for OutputIdUnpackError {
 pub const OUTPUT_ID_LENGTH: usize = TRANSACTION_ID_LENGTH + core::mem::size_of::<u16>();
 
 /// The identifier of an `Output`.
+///
+/// An `OutputId` must:
+/// * Have an `index` that falls within `INPUT_OUTPUT_INDEX_RANGE`.
 #[derive(Clone, Copy, Eq, PartialEq, Hash, Ord, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct OutputId {

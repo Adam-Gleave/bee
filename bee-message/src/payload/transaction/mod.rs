@@ -104,6 +104,9 @@ impl fmt::Display for TransactionUnpackError {
 }
 
 /// A transaction to move funds.
+///
+/// A `TransactionPayload` must:
+/// * Ensure the number of `UnlockBlock`s matches the number of `Input`s.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TransactionPayload {

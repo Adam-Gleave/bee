@@ -22,7 +22,11 @@ pub const MESSAGE_PUBLIC_KEY_LENGTH: usize = 32;
 /// Length (in bytes) of a message signature.
 pub const MESSAGE_SIGNATURE_LENGTH: usize = 64;
 
-/// Represent the object that nodes gossip around the network.
+/// Represents the object that nodes gossip around the network.
+///
+/// `Message`s must:
+/// * Have a length (in bytes) within `MESSAGE_LENGTH_RANGE`.
+/// * Ensure all applicable data is appropriately validated.
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Message {
