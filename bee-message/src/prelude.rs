@@ -6,8 +6,7 @@ pub use crate::{
     constants::IOTA_SUPPLY,
     input::{Input, UtxoInput},
     output::{
-        AssetBalance, Output, OutputId, SignatureLockedAssetAllowanceOutput, SignatureLockedSingleOutput,
-        OUTPUT_ID_LENGTH,
+        AssetBalance, Output, OutputId, SignatureLockedAssetOutput, SignatureLockedSingleOutput, OUTPUT_ID_LENGTH,
     },
     parents::{Parent, Parents, MESSAGE_PARENTS_RANGE},
     payload::{

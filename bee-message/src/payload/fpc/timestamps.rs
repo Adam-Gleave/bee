@@ -1,7 +1,7 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::MessageId;
+use crate::{payload::PAYLOAD_LENGTH_MAX, MessageId, MESSAGE_ID_LENGTH};
 
 use bee_packable::{
     error::{PackPrefixError, UnpackPrefixError},
@@ -11,6 +11,9 @@ use bee_packable::{
 use alloc::vec::Vec;
 use core::{convert::Infallible, ops::Deref};
 
+/// No `Vec` max length specified, so use `PAYLOAD_LENGTH_MAX` / length of `Conflict`.
+const PREFIXED_TIMESTAMPS_LENGTH_MAX: usize = PAYLOAD_LENGTH_MAX / (MESSAGE_ID_LENGTH + 2 * core::mem::size_of::<u8>());
+
 /// Provides a convenient collection of `Timestamp`s.
 /// Describes a vote in a given round for a message timestamp.
 #[derive(Clone, Default, Debug, Eq, PartialEq, Packable)]
@@ -18,7 +21,7 @@ use core::{convert::Infallible, ops::Deref};
 #[packable(pack_error = PackPrefixError<Infallible, u32>)]
 #[packable(unpack_error = UnpackPrefixError<Infallible, u32>)]
 pub struct Timestamps {
-    #[packable(wrapper = VecPrefix<Timestamp, u32>)]
+    #[packable(wrapper = VecPrefix<Timestamp, u32, PREFIXED_TIMESTAMPS_LENGTH_MAX>)]
     inner: Vec<Timestamp>,
 }
 

@@ -19,7 +19,9 @@ pub enum ValidationError {
     InvalidAccumulatedOutput(u128),
     InvalidAddress,
     InvalidAmount(u64),
+    InvalidAssetAllowanceBalanceLength(usize),
     InvalidDustAllowanceAmount(u64),
+    InvalidEncryptedDealLength(usize),
     InvalidHexadecimalChar(String),
     InvalidHexadecimalLength(usize, usize),
     InvalidIndexationDataLength(usize),
@@ -32,6 +34,7 @@ pub enum ValidationError {
     InvalidPayloadKind(u32),
     InvalidPayloadLength(usize),
     InvalidReferenceIndex(u16),
+    InvalidSaltDeclarationBytesLength(usize),
     InvalidSignature,
     InvalidStrongParentsCount(usize),
     InvalidUnlockBlockCount(usize),
@@ -59,8 +62,12 @@ impl fmt::Display for ValidationError {
             }
             Self::InvalidAccumulatedOutput(value) => write!(f, "invalid accumulated output balance: {}", value),
             Self::InvalidAddress => write!(f, "invalid address provided"),
+            Self::InvalidAssetAllowanceBalanceLength(len) => {
+                write!(f, "invalid asset allowance balance count: {}", len)
+            }
             Self::InvalidAmount(amount) => write!(f, "invalid amount: {}", amount),
             Self::InvalidDustAllowanceAmount(amount) => write!(f, "invalid dust allowance amount: {}", amount),
+            Self::InvalidEncryptedDealLength(len) => write!(f, "invalid encrypted deal length: {}", len),
             Self::InvalidHexadecimalChar(hex) => write!(f, "invalid hexadecimal character: {}", hex),
             Self::InvalidHexadecimalLength(expected, actual) => {
                 write!(f, "invalid hexadecimal length: expected {} got {}", expected, actual)
@@ -79,6 +86,9 @@ impl fmt::Display for ValidationError {
             Self::InvalidPayloadKind(kind) => write!(f, "invalid payload kind: {}", kind),
             Self::InvalidPayloadLength(len) => write!(f, "invalid payload length: {}", len),
             Self::InvalidReferenceIndex(index) => write!(f, "invalid reference index: {}", index),
+            Self::InvalidSaltDeclarationBytesLength(len) => {
+                write!(f, "invalid salt deeclaration bytes length: {}", len)
+            }
             Self::InvalidSignature => write!(f, "invalid signature provided"),
             Self::InvalidStrongParentsCount(count) => write!(f, "invalid strong parents count: {}", count),
             Self::InvalidUnlockBlockCount(count) => write!(f, "invalid unlock block count: {}", count),

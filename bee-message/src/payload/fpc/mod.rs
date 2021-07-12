@@ -22,7 +22,7 @@ use core::{convert::Infallible, fmt};
 #[derive(Debug)]
 #[allow(missing_docs)]
 pub enum FpcPackError {
-    InvalidPrefixLength,
+    InvalidPrefix,
 }
 
 impl_from_infallible!(FpcPackError);
@@ -31,7 +31,7 @@ impl From<PackPrefixError<Infallible, u32>> for FpcPackError {
     fn from(error: PackPrefixError<Infallible, u32>) -> Self {
         match error {
             PackPrefixError::Packable(e) => match e {},
-            PackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
+            PackPrefixError::Prefix(_) => Self::InvalidPrefix,
         }
     }
 }
@@ -39,7 +39,7 @@ impl From<PackPrefixError<Infallible, u32>> for FpcPackError {
 impl fmt::Display for FpcPackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for conflicts/timestamps"),
+            Self::InvalidPrefix => write!(f, "invalid prefix for conflicts/timestamps"),
         }
     }
 }
@@ -48,7 +48,8 @@ impl fmt::Display for FpcPackError {
 #[derive(Debug)]
 #[allow(missing_docs)]
 pub enum FpcUnpackError {
-    InvalidPrefixLength,
+    InvalidPrefix,
+    InvalidPrefixLength(usize),
 }
 
 impl_from_infallible!(FpcUnpackError);
@@ -56,7 +57,10 @@ impl_from_infallible!(FpcUnpackError);
 impl fmt::Display for FpcUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for conflicts/timestamps"),
+            Self::InvalidPrefix => write!(f, "invalid prefix for conflicts/timestamps"),
+            Self::InvalidPrefixLength(len) => {
+                write!(f, "unpacked conflicts/timestamps prefix larger than maximum specified: {}", len)
+            }
         }
     }
 }
@@ -64,8 +68,9 @@ impl fmt::Display for FpcUnpackError {
 impl From<UnpackPrefixError<Infallible, u32>> for FpcUnpackError {
     fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
         match error {
+            UnpackPrefixError::InvalidPrefixLength(len) => Self::InvalidPrefixLength(len),
             UnpackPrefixError::Packable(e) => match e {},
-            UnpackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
+            UnpackPrefixError::Prefix(_) => Self::InvalidPrefix,
         }
     }
 }

@@ -9,8 +9,7 @@ pub use crate::error::{MessageUnpackError, ValidationError};
 
 pub use output_id::{OutputId, OutputIdUnpackError, OUTPUT_ID_LENGTH};
 pub use signature_locked_asset_allowance::{
-    AssetBalance, SignatureLockedAssetAllowanceOutput, SignatureLockedAssetAllowancePackError,
-    SignatureLockedAssetAllowanceUnpackError,
+    AssetBalance, SignatureLockedAssetOutput, SignatureLockedAssetPackError, SignatureLockedAssetUnpackError,
 };
 pub use signature_locked_single::{
     SignatureLockedSingleOutput, SignatureLockedSingleUnpackError, SIGNATURE_LOCKED_SINGLE_OUTPUT_AMOUNT,

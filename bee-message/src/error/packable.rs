@@ -4,8 +4,8 @@
 pub use crate::{
     input::InputUnpackError,
     output::{
-        OutputIdUnpackError, OutputUnpackError, SignatureLockedAssetAllowancePackError,
-        SignatureLockedAssetAllowanceUnpackError, SignatureLockedSingleUnpackError,
+        OutputIdUnpackError, OutputUnpackError, SignatureLockedAssetPackError, SignatureLockedAssetUnpackError,
+        SignatureLockedSingleUnpackError,
     },
     payload::{
         data::{DataPackError, DataUnpackError},
@@ -37,7 +37,7 @@ pub enum MessagePackError {
     Indexation(IndexationPackError),
     Payload(PayloadPackError),
     SaltDeclaration(SaltDeclarationPackError),
-    SignatureLockedAssetAllowance(SignatureLockedAssetAllowancePackError),
+    SignatureLockedAssetAllowance(SignatureLockedAssetPackError),
     Transaction(TransactionPackError),
     TransactionEssence(TransactionEssencePackError),
     UnlockBlocks(UnlockBlocksPackError),
@@ -55,7 +55,7 @@ impl_wrapped_variant!(
 );
 impl_wrapped_variant!(
     MessagePackError,
-    SignatureLockedAssetAllowancePackError,
+    SignatureLockedAssetPackError,
     MessagePackError::SignatureLockedAssetAllowance
 );
 impl_wrapped_variant!(MessagePackError, TransactionPackError, MessagePackError::Transaction);
@@ -99,7 +99,7 @@ pub enum MessageUnpackError {
     OutputId(OutputIdUnpackError),
     Payload(PayloadUnpackError),
     SaltDeclaration(SaltDeclarationUnpackError),
-    SignatureLockedAssetAllowance(SignatureLockedAssetAllowanceUnpackError),
+    SignatureLockedAssetAllowance(SignatureLockedAssetUnpackError),
     SignatureLockedSingle(SignatureLockedSingleUnpackError),
     SignatureUnlock(SignatureUnlockUnpackError),
     Transaction(TransactionUnpackError),
@@ -129,7 +129,7 @@ impl_wrapped_validated!(
 );
 impl_wrapped_validated!(
     MessageUnpackError,
-    SignatureLockedAssetAllowanceUnpackError,
+    SignatureLockedAssetUnpackError,
     MessageUnpackError::SignatureLockedAssetAllowance
 );
 impl_wrapped_validated!(

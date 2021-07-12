@@ -16,17 +16,22 @@ use bee_packable::{
 };
 
 use alloc::vec::Vec;
-use core::{convert::Infallible, fmt};
+use core::{
+    convert::{Infallible, TryInto},
+    fmt,
+};
 
 /// Length (in bytes) of Transaction Essence pledge IDs (node IDs relating to pledge mana).
 pub const PLEDGE_ID_LENGTH: usize = 32;
+
+const PREFIXED_INPUTS_OUTPUTS_LENGTH_MAX: usize = *INPUT_OUTPUT_COUNT_RANGE.end();
 
 /// Error encountered packing a Transaction Essence.
 #[derive(Debug)]
 #[allow(missing_docs)]
 pub enum TransactionEssencePackError {
-    InvalidInputPrefixLength,
-    InvalidOutputPrefixLength,
+    InvalidInputPrefix,
+    InvalidOutputPrefix,
     OptionalPayload(PayloadPackError),
 }
 
@@ -39,15 +44,15 @@ impl_from_infallible!(TransactionEssencePackError);
 
 impl From<PackPrefixError<Infallible, u32>> for TransactionEssencePackError {
     fn from(_: PackPrefixError<Infallible, u32>) -> Self {
-        Self::InvalidInputPrefixLength
+        Self::InvalidInputPrefix
     }
 }
 
 impl fmt::Display for TransactionEssencePackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidInputPrefixLength => write!(f, "Invalid input prefix length"),
-            Self::InvalidOutputPrefixLength => write!(f, "Invalid output prefix length"),
+            Self::InvalidInputPrefix => write!(f, "Invalid input prefix"),
+            Self::InvalidOutputPrefix => write!(f, "Invalid output prefix"),
             Self::OptionalPayload(e) => write!(f, "Error packing payload: {}", e),
         }
     }
@@ -57,9 +62,11 @@ impl fmt::Display for TransactionEssencePackError {
 #[derive(Debug)]
 #[allow(missing_docs)]
 pub enum TransactionEssenceUnpackError {
-    InvalidInputPrefixLength,
+    InvalidInputPrefix,
+    InvalidInputPrefixLength(usize),
     InvalidOutputKind(u8),
-    InvalidOutputPrefixLength,
+    InvalidOutputPrefix,
+    InvalidOutputPrefixLength(usize),
     InvalidOptionTag(u8),
     ValidationError(ValidationError),
 }
@@ -69,10 +76,11 @@ impl_from_infallible!(TransactionEssenceUnpackError);
 impl From<UnpackPrefixError<UnknownTagError<u8>, u32>> for TransactionEssenceUnpackError {
     fn from(error: UnpackPrefixError<UnknownTagError<u8>, u32>) -> Self {
         match error {
+            UnpackPrefixError::InvalidPrefixLength(len) => Self::InvalidOutputPrefixLength(len),
             UnpackPrefixError::Packable(error) => match error {
                 UnknownTagError(tag) => Self::InvalidOutputKind(tag),
             },
-            UnpackPrefixError::Prefix(_) => Self::InvalidOutputPrefixLength,
+            UnpackPrefixError::Prefix(_) => Self::InvalidOutputPrefix,
         }
     }
 }
@@ -80,10 +88,16 @@ impl From<UnpackPrefixError<UnknownTagError<u8>, u32>> for TransactionEssenceUnp
 impl fmt::Display for TransactionEssenceUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidInputPrefixLength => write!(f, "Invalid input prefix length"),
-            Self::InvalidOutputKind(kind) => write!(f, "Invalid output kind: {}", kind),
-            Self::InvalidOutputPrefixLength => write!(f, "Invalid output prefix length"),
-            Self::InvalidOptionTag(tag) => write!(f, "Invalid tag for Option: {} is not 0 or 1", tag),
+            Self::InvalidInputPrefix => write!(f, "invalid input prefix length"),
+            Self::InvalidInputPrefixLength(len) => {
+                write!(f, "unpacked input prefix larger than maximum specified: {}", len)
+            }
+            Self::InvalidOutputKind(kind) => write!(f, "invalid output kind: {}", kind),
+            Self::InvalidOutputPrefix => write!(f, "invalid output prefix length"),
+            Self::InvalidOutputPrefixLength(len) => {
+                write!(f, "unpacked output prefix larger than maximum specified: {}", len)
+            }
+            Self::InvalidOptionTag(tag) => write!(f, "invalid tag for Option: {} is not 0 or 1", tag),
             Self::ValidationError(e) => write!(f, "{}", e),
         }
     }
@@ -158,11 +172,16 @@ impl Packable for TransactionEssence {
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
+        // Unwraps are safe, since inputs/outputs lengths are alread validated.
         self.timestamp.packed_len()
             + self.access_pledge_id.packed_len()
             + self.consensus_pledge_id.packed_len()
-            + VecPrefix::<Input, u32>::from(self.inputs.clone()).packed_len()
-            + VecPrefix::<Output, u32>::from(self.outputs.clone()).packed_len()
+            + VecPrefix::<Input, u32, PREFIXED_INPUTS_OUTPUTS_LENGTH_MAX>::from(self.inputs.clone().try_into().unwrap())
+                .packed_len()
+            + VecPrefix::<Output, u32, PREFIXED_INPUTS_OUTPUTS_LENGTH_MAX>::from(
+                self.outputs.clone().try_into().unwrap(),
+            )
+            .packed_len()
             + self.payload.packed_len()
     }
 
@@ -171,8 +190,12 @@ impl Packable for TransactionEssence {
         self.access_pledge_id.pack(packer).map_err(PackError::infallible)?;
         self.consensus_pledge_id.pack(packer).map_err(PackError::infallible)?;
 
-        let input_prefixed = VecPrefix::<Input, u32>::from(self.inputs.clone());
-        let output_prefixed = VecPrefix::<Output, u32>::from(self.outputs.clone());
+        // Unwraps are safe, since inputs/outputs lengths are already validated.
+        let input_prefixed =
+            VecPrefix::<Input, u32, PREFIXED_INPUTS_OUTPUTS_LENGTH_MAX>::from(self.inputs.clone().try_into().unwrap());
+        let output_prefixed = VecPrefix::<Output, u32, PREFIXED_INPUTS_OUTPUTS_LENGTH_MAX>::from(
+            self.outputs.clone().try_into().unwrap(),
+        );
 
         input_prefixed
             .pack(packer)
@@ -195,15 +218,20 @@ impl Packable for TransactionEssence {
         let consensus_pledge_id = <[u8; PLEDGE_ID_LENGTH]>::unpack(unpacker).map_err(UnpackError::infallible)?;
 
         // Inputs syntactical validation
-        let inputs = VecPrefix::<Input, u32>::unpack(unpacker);
+        let inputs = VecPrefix::<Input, u32, PREFIXED_INPUTS_OUTPUTS_LENGTH_MAX>::unpack(unpacker);
 
         let inputs_vec: Vec<Input> = if let Err(unpack_err) = inputs {
             match unpack_err {
                 UnpackError::Packable(e) => match e {
+                    UnpackPrefixError::InvalidPrefixLength(len) => {
+                        return Err(UnpackError::Packable(
+                            TransactionEssenceUnpackError::InvalidInputPrefixLength(len).into(),
+                        ));
+                    }
                     UnpackPrefixError::Packable(err) => return Err(UnpackError::Packable(err)),
                     UnpackPrefixError::Prefix(_) => {
                         return Err(UnpackError::Packable(
-                            TransactionEssenceUnpackError::InvalidInputPrefixLength.into(),
+                            TransactionEssenceUnpackError::InvalidInputPrefix.into(),
                         ));
                     }
                 },
@@ -218,15 +246,20 @@ impl Packable for TransactionEssence {
         validate_inputs_sorted(&inputs_vec).map_err(|e| UnpackError::Packable(e.into()))?;
 
         // Outputs syntactical validation
-        let outputs = VecPrefix::<Output, u32>::unpack(unpacker);
+        let outputs = VecPrefix::<Output, u32, PREFIXED_INPUTS_OUTPUTS_LENGTH_MAX>::unpack(unpacker);
 
         let outputs_vec: Vec<Output> = if let Err(unpack_err) = outputs {
             match unpack_err {
                 UnpackError::Packable(e) => match e {
+                    UnpackPrefixError::InvalidPrefixLength(len) => {
+                        return Err(UnpackError::Packable(
+                            TransactionEssenceUnpackError::InvalidOutputPrefixLength(len).into(),
+                        ));
+                    }
                     UnpackPrefixError::Packable(err) => return Err(UnpackError::Packable(err)),
                     UnpackPrefixError::Prefix(_) => {
                         return Err(UnpackError::Packable(
-                            TransactionEssenceUnpackError::InvalidOutputPrefixLength.into(),
+                            TransactionEssenceUnpackError::InvalidOutputPrefix.into(),
                         ));
                     }
                 },

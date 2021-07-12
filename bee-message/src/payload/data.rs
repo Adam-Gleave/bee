@@ -12,25 +12,30 @@ use bee_packable::{
 };
 
 use alloc::vec::Vec;
-use core::{convert::Infallible, fmt};
+use core::{
+    convert::{Infallible, TryInto},
+    fmt,
+};
+
+const PREFIXED_DATA_LENGTH_MAX: usize = PAYLOAD_LENGTH_MAX;
 
 /// Error encountered packing a data payload.
 #[derive(Debug)]
 #[allow(missing_docs)]
 pub enum DataPackError {
-    InvalidPrefixLength,
+    InvalidPrefix,
 }
 
 impl From<PackPrefixError<Infallible, u32>> for DataPackError {
     fn from(_: PackPrefixError<Infallible, u32>) -> Self {
-        Self::InvalidPrefixLength
+        Self::InvalidPrefix
     }
 }
 
 impl fmt::Display for DataPackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for data"),
+            Self::InvalidPrefix => write!(f, "invalid prefix for data"),
         }
     }
 }
@@ -39,19 +44,25 @@ impl fmt::Display for DataPackError {
 #[derive(Debug)]
 #[allow(missing_docs)]
 pub enum DataUnpackError {
-    InvalidPrefixLength,
+    InvalidPrefix,
+    InvalidPrefixLength(usize),
 }
 
 impl From<UnpackPrefixError<Infallible, u32>> for DataUnpackError {
-    fn from(_: UnpackPrefixError<Infallible, u32>) -> Self {
-        Self::InvalidPrefixLength
+    fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
+        match error {
+            UnpackPrefixError::InvalidPrefixLength(len) => Self::InvalidPrefixLength(len),
+            UnpackPrefixError::Packable(e) => match e {},
+            UnpackPrefixError::Prefix(_) => Self::InvalidPrefix,
+        }
     }
 }
 
 impl fmt::Display for DataUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for data"),
+            Self::InvalidPrefix => write!(f, "invalid prefix for data"),
+            Self::InvalidPrefixLength(len) => write!(f, "unpacked prefix larger than maximum specified: {}", len),
         }
     }
 }
@@ -98,13 +109,16 @@ impl Packable for DataPayload {
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
-        self.version.packed_len() + VecPrefix::<u8, u32>::from(self.data.clone()).packed_len()
+        // Unwrap is safe, since the data length has already been validated.
+        self.version.packed_len()
+            + VecPrefix::<u8, u32, PREFIXED_DATA_LENGTH_MAX>::from(self.data.clone().try_into().unwrap()).packed_len()
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
         self.version.pack(packer).map_err(PackError::infallible)?;
 
-        let prefixed_data: VecPrefix<u8, u32> = self.data.clone().into();
+        // Unwrap is safe, since the data length has already been validated.
+        let prefixed_data: VecPrefix<u8, u32, PREFIXED_DATA_LENGTH_MAX> = self.data.clone().try_into().unwrap();
         prefixed_data
             .pack(packer)
             .map_err(PackError::coerce::<DataPackError>)
@@ -115,7 +129,7 @@ impl Packable for DataPayload {
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
         let version = u8::unpack(unpacker).map_err(UnpackError::infallible)?;
-        let data = VecPrefix::<u8, u32>::unpack(unpacker)
+        let data = VecPrefix::<u8, u32, PREFIXED_DATA_LENGTH_MAX>::unpack(unpacker)
             .map_err(UnpackError::coerce::<DataUnpackError>)
             .map_err(UnpackError::coerce)?
             .into();

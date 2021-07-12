@@ -1,7 +1,10 @@
 // Copyright 2021 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::error::{MessagePackError, MessageUnpackError, ValidationError};
+use crate::{
+    error::{MessagePackError, MessageUnpackError, ValidationError},
+    payload::PAYLOAD_LENGTH_MAX,
+};
 
 use bee_packable::{
     error::{PackPrefixError, UnpackPrefixError},
@@ -9,20 +12,26 @@ use bee_packable::{
 };
 
 use alloc::vec::Vec;
-use core::{convert::Infallible, fmt};
+use core::{
+    convert::{Infallible, TryInto},
+    fmt,
+};
+
+/// All `Vec` sizes are unconstrained, so use payload max as upper limit.
+const PREFIXED_LENGTH_MAX: usize = PAYLOAD_LENGTH_MAX;
 
 /// Error packing a DKG payload.
 #[derive(Debug)]
 #[allow(missing_docs)]
 pub enum DkgPackError {
-    InvalidPrefixLength,
+    InvalidPrefix,
 }
 
 impl From<PackPrefixError<Infallible, u32>> for DkgPackError {
     fn from(error: PackPrefixError<Infallible, u32>) -> Self {
         match error {
             PackPrefixError::Packable(e) => match e {},
-            PackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
+            PackPrefixError::Prefix(_) => Self::InvalidPrefix,
         }
     }
 }
@@ -30,7 +39,7 @@ impl From<PackPrefixError<Infallible, u32>> for DkgPackError {
 impl fmt::Display for DkgPackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for encrypted deal data"),
+            Self::InvalidPrefix => write!(f, "invalid prefix for encrypted deal data"),
         }
     }
 }
@@ -39,7 +48,8 @@ impl fmt::Display for DkgPackError {
 #[derive(Debug)]
 #[allow(missing_docs)]
 pub enum DkgUnpackError {
-    InvalidPrefixLength,
+    InvalidPrefix,
+    InvalidPrefixLength(usize),
 }
 
 impl_from_infallible!(DkgUnpackError);
@@ -47,8 +57,9 @@ impl_from_infallible!(DkgUnpackError);
 impl From<UnpackPrefixError<Infallible, u32>> for DkgUnpackError {
     fn from(error: UnpackPrefixError<Infallible, u32>) -> Self {
         match error {
+            UnpackPrefixError::InvalidPrefixLength(len) => Self::InvalidPrefixLength(len),
             UnpackPrefixError::Packable(e) => match e {},
-            UnpackPrefixError::Prefix(_) => Self::InvalidPrefixLength,
+            UnpackPrefixError::Prefix(_) => Self::InvalidPrefix,
         }
     }
 }
@@ -56,7 +67,8 @@ impl From<UnpackPrefixError<Infallible, u32>> for DkgUnpackError {
 impl fmt::Display for DkgUnpackError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidPrefixLength => write!(f, "Invalid prefix length for salt bytes"),
+            Self::InvalidPrefix => write!(f, "invalid prefix for salt bytes"),
+            Self::InvalidPrefixLength(len) => write!(f, "unpacked prefix larger than maximum specified: {}", len),
         }
     }
 }
@@ -114,27 +126,31 @@ impl Packable for EncryptedDeal {
     type UnpackError = MessageUnpackError;
 
     fn packed_len(&self) -> usize {
-        VecPrefix::<u8, u32>::from(self.dh_key.clone()).packed_len()
-            + VecPrefix::<u8, u32>::from(self.nonce.clone()).packed_len()
-            + VecPrefix::<u8, u32>::from(self.encrypted_share.clone()).packed_len()
+        // Unwrap is safe, since the `EncryptedDeal` length has been validated.
+        VecPrefix::<u8, u32, PREFIXED_LENGTH_MAX>::from(self.dh_key.clone().try_into().unwrap()).packed_len()
+            + VecPrefix::<u8, u32, PREFIXED_LENGTH_MAX>::from(self.nonce.clone().try_into().unwrap()).packed_len()
+            + VecPrefix::<u8, u32, PREFIXED_LENGTH_MAX>::from(self.encrypted_share.clone().try_into().unwrap())
+                .packed_len()
             + self.threshold.packed_len()
-            + VecPrefix::<u8, u32>::from(self.commitments.clone()).packed_len()
+            + VecPrefix::<u8, u32, PREFIXED_LENGTH_MAX>::from(self.commitments.clone().try_into().unwrap()).packed_len()
     }
 
     fn pack<P: Packer>(&self, packer: &mut P) -> Result<(), PackError<Self::PackError, P::Error>> {
-        let prefixed_dh_key: VecPrefix<u8, u32> = self.dh_key.clone().into();
+        // The following unwraps are safe, since the `EncryptedDeal` length has been validated.
+        let prefixed_dh_key: VecPrefix<u8, u32, PREFIXED_LENGTH_MAX> = self.dh_key.clone().try_into().unwrap();
         prefixed_dh_key
             .pack(packer)
             .map_err(PackError::coerce::<DkgPackError>)
             .map_err(PackError::coerce)?;
 
-        let prefixed_nonce: VecPrefix<u8, u32> = self.nonce.clone().into();
+        let prefixed_nonce: VecPrefix<u8, u32, PREFIXED_LENGTH_MAX> = self.nonce.clone().try_into().unwrap();
         prefixed_nonce
             .pack(packer)
             .map_err(PackError::coerce::<DkgPackError>)
             .map_err(PackError::coerce)?;
 
-        let prefixed_encrypted_share: VecPrefix<u8, u32> = self.encrypted_share.clone().into();
+        let prefixed_encrypted_share: VecPrefix<u8, u32, PREFIXED_LENGTH_MAX> =
+            self.encrypted_share.clone().try_into().unwrap();
         prefixed_encrypted_share
             .pack(packer)
             .map_err(PackError::coerce::<DkgPackError>)
@@ -142,7 +158,8 @@ impl Packable for EncryptedDeal {
 
         self.threshold.pack(packer).map_err(PackError::infallible)?;
 
-        let prefixed_commitments: VecPrefix<u8, u32> = self.commitments.clone().into();
+        let prefixed_commitments: VecPrefix<u8, u32, PREFIXED_LENGTH_MAX> =
+            self.commitments.clone().try_into().unwrap();
         prefixed_commitments
             .pack(packer)
             .map_err(PackError::coerce::<DkgPackError>)
@@ -152,35 +169,39 @@ impl Packable for EncryptedDeal {
     }
 
     fn unpack<U: Unpacker>(unpacker: &mut U) -> Result<Self, UnpackError<Self::UnpackError, U::Error>> {
-        let dh_key = VecPrefix::<u8, u32>::unpack(unpacker)
+        let dh_key = VecPrefix::<u8, u32, PREFIXED_LENGTH_MAX>::unpack(unpacker)
             .map_err(UnpackError::coerce::<DkgUnpackError>)
             .map_err(UnpackError::coerce)?
             .into();
 
-        let nonce = VecPrefix::<u8, u32>::unpack(unpacker)
+        let nonce = VecPrefix::<u8, u32, PREFIXED_LENGTH_MAX>::unpack(unpacker)
             .map_err(UnpackError::coerce::<DkgUnpackError>)
             .map_err(UnpackError::coerce)?
             .into();
 
-        let encrypted_share = VecPrefix::<u8, u32>::unpack(unpacker)
+        let encrypted_share = VecPrefix::<u8, u32, PREFIXED_LENGTH_MAX>::unpack(unpacker)
             .map_err(UnpackError::coerce::<DkgUnpackError>)
             .map_err(UnpackError::coerce)?
             .into();
 
         let threshold = u32::unpack(unpacker).map_err(UnpackError::infallible)?;
 
-        let commitments = VecPrefix::<u8, u32>::unpack(unpacker)
+        let commitments = VecPrefix::<u8, u32, PREFIXED_LENGTH_MAX>::unpack(unpacker)
             .map_err(UnpackError::coerce::<DkgUnpackError>)
             .map_err(UnpackError::coerce)?
             .into();
 
-        Ok(Self {
+        let deal = EncryptedDeal {
             dh_key,
             nonce,
             encrypted_share,
             threshold,
             commitments,
-        })
+        };
+
+        validate_encrypted_deal_length(deal.packed_len()).map_err(|e| UnpackError::Packable(e.into()))?;
+
+        Ok(deal)
     }
 }
 
@@ -240,13 +261,25 @@ impl EncryptedDealBuilder {
         let threshold = self.threshold.ok_or(ValidationError::MissingField("threshold"))?;
         let commitments = self.commitments.ok_or(ValidationError::MissingField("commitments"))?;
 
-        Ok(EncryptedDeal {
+        let deal = EncryptedDeal {
             dh_key,
             nonce,
             encrypted_share,
             threshold,
             commitments,
-        })
+        };
+
+        validate_encrypted_deal_length(deal.packed_len())?;
+
+        Ok(deal)
+    }
+}
+
+fn validate_encrypted_deal_length(len: usize) -> Result<(), ValidationError> {
+    if len > PREFIXED_LENGTH_MAX {
+        Err(ValidationError::InvalidEncryptedDealLength(len))
+    } else {
+        Ok(())
     }
 }
 
