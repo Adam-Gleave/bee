@@ -48,61 +48,57 @@ impl_wrapped_variant!(ValidationError, CryptoError, ValidationError::CryptoError
 impl fmt::Display for ValidationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::CryptoError(e) => write!(f, "Cryptographic error: {}.", e),
-            Self::DuplicateAddress(address) => write!(f, "Duplicate address {:?} in outputs.", address),
+            Self::CryptoError(e) => write!(f, "cryptographic error: {}", e),
+            Self::DuplicateAddress(address) => write!(f, "duplicate address {:?} in outputs", address),
             Self::DuplicateSignature(index) => {
-                write!(f, "Duplicate signature at index: {}.", index)
+                write!(f, "duplicate signature at index: {}", index)
             }
-            Self::DuplicateUtxo(utxo) => write!(f, "Duplicate UTX {:?} in inputs.", utxo),
+            Self::DuplicateUtxo(utxo) => write!(f, "duplicate UTX {:?} in inputs", utxo),
             Self::InputUnlockBlockCountMismatch(input, block) => {
-                write!(
-                    f,
-                    "Input countr and unlock block count mismatch: {} != {}.",
-                    input, block,
-                )
+                write!(f, "input count and unlock block count mismatch: {} != {}", input, block,)
             }
-            Self::InvalidAccumulatedOutput(value) => write!(f, "Invalid accumulated output balance: {}.", value),
-            Self::InvalidAddress => write!(f, "Invalid address provided."),
-            Self::InvalidAmount(amount) => write!(f, "Invalid amount: {}.", amount),
-            Self::InvalidDustAllowanceAmount(amount) => write!(f, "Invalid dust allowance amount: {}.", amount),
-            Self::InvalidHexadecimalChar(hex) => write!(f, "Invalid hexadecimal character: {}.", hex),
+            Self::InvalidAccumulatedOutput(value) => write!(f, "invalid accumulated output balance: {}", value),
+            Self::InvalidAddress => write!(f, "invalid address provided"),
+            Self::InvalidAmount(amount) => write!(f, "invalid amount: {}", amount),
+            Self::InvalidDustAllowanceAmount(amount) => write!(f, "invalid dust allowance amount: {}", amount),
+            Self::InvalidHexadecimalChar(hex) => write!(f, "invalid hexadecimal character: {}", hex),
             Self::InvalidHexadecimalLength(expected, actual) => {
-                write!(f, "Invalid hexadecimal length: expected {} got {}.", expected, actual)
+                write!(f, "invalid hexadecimal length: expected {} got {}", expected, actual)
             }
             Self::InvalidIndexationDataLength(len) => {
-                write!(f, "Invalid indexation data length: {}.", len)
+                write!(f, "invalid indexation data length: {}", len)
             }
             Self::InvalidIndexationIndexLength(len) => {
-                write!(f, "Invalid indexation index length: {}.", len)
+                write!(f, "invalid indexation index length: {}", len)
             }
-            Self::InvalidInputCount(count) => write!(f, "Invalid input count: {}.", count),
-            Self::InvalidMessageLength(len) => write!(f, "Invalid message length: {}.", len),
-            Self::InvalidOutputCount(count) => write!(f, "Invalid output count: {}.", count),
-            Self::InvalidOutputIndex(index) => write!(f, "Inavlid output index: {}.", index),
-            Self::InvalidParentsCount(count) => write!(f, "Invalid parents count: {}.", count),
-            Self::InvalidPayloadKind(kind) => write!(f, "Invalid payload kind: {}.", kind),
-            Self::InvalidPayloadLength(len) => write!(f, "Invalid payload length: {}", len),
-            Self::InvalidReferenceIndex(index) => write!(f, "Invalid reference index: {}.", index),
-            Self::InvalidSignature => write!(f, "Invalid signature provided."),
-            Self::InvalidStrongParentsCount(count) => write!(f, "Invalid strong parents count: {}", count),
-            Self::InvalidUnlockBlockCount(count) => write!(f, "Invalid unlock block count: {}.", count),
+            Self::InvalidInputCount(count) => write!(f, "invalid input count: {}", count),
+            Self::InvalidMessageLength(len) => write!(f, "invalid message length: {}", len),
+            Self::InvalidOutputCount(count) => write!(f, "invalid output count: {}", count),
+            Self::InvalidOutputIndex(index) => write!(f, "Inavlid output index: {}", index),
+            Self::InvalidParentsCount(count) => write!(f, "invalid parents count: {}", count),
+            Self::InvalidPayloadKind(kind) => write!(f, "invalid payload kind: {}", kind),
+            Self::InvalidPayloadLength(len) => write!(f, "invalid payload length: {}", len),
+            Self::InvalidReferenceIndex(index) => write!(f, "invalid reference index: {}", index),
+            Self::InvalidSignature => write!(f, "invalid signature provided"),
+            Self::InvalidStrongParentsCount(count) => write!(f, "invalid strong parents count: {}", count),
+            Self::InvalidUnlockBlockCount(count) => write!(f, "invalid unlock block count: {}", count),
             Self::InvalidUnlockBlockReference(index) => {
-                write!(f, "Invalid unlock block reference: {}", index)
+                write!(f, "invalid unlock block reference: {}", index)
             }
-            Self::MissingField(field) => write!(f, "Missing required field: {}.", field),
-            Self::ParentsNotUniqueSorted => write!(f, "Parents not unique and/or sorted."),
+            Self::MissingField(field) => write!(f, "missing required field: {}", field),
+            Self::ParentsNotUniqueSorted => write!(f, "parents not unique and/or sorted"),
             Self::SignaturePublicKeyMismatch(expected, actual) => {
                 write!(
                     f,
-                    "Signature public key mismatch: expected {}, got {}.",
+                    "signature public key mismatch: expected {}, got {}",
                     expected, actual,
                 )
             }
             Self::TransactionInputsNotSorted => {
-                write!(f, "Transaction inputs are not sorted.")
+                write!(f, "transaction inputs are not sorted")
             }
             Self::TransactionOutputsNotSorted => {
-                write!(f, "Transaction outputs are not sorted.")
+                write!(f, "transaction outputs are not sorted")
             }
         }
     }
